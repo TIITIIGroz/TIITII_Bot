@@ -1,6 +1,12 @@
 const { Client, GatewayIntentBits, Collection } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
+const http = require("http");
+
+http.createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("Bot is running!\n");
+}).listen(process.env.PORT || 3000);
 
 const client = new Client({
     intents: [
@@ -53,7 +59,7 @@ client.on("interactionCreate", async interaction => {
 });
 
 // Bot prêt
-client.once("clientready", () => {
+client.once("clientReady", () => {
 
     console.log(`✅ Connecté en tant que ${client.user.tag}`);
 
