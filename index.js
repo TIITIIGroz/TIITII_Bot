@@ -60,7 +60,7 @@ client.once("ready", () => {
     client.user.setPresence({
         activities: [
             {
-                name: "TIITII_Groz 👀",
+                name: "https://twitch.tv/TIITII_Groz",
                 type: 3
             }
         ],
