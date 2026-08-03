@@ -76,4 +76,35 @@ client.once("clientready", () => {
 
 });
 
+client.on("guildMemberUpdate", async (oldMember, newMember) => {
+    const ACCESS_ROLE = "1509584318203433001";
+
+    const TRIGGER_ROLES = [
+        "1269778023826067699",
+        "1533558027825840218"
+    ];
+
+    const hasTriggerRole = TRIGGER_ROLES.some(roleId =>
+        newMember.roles.cache.has(roleId)
+    );
+
+    const hasAccessRole = newMember.roles.cache.has(ACCESS_ROLE);
+
+    try {
+
+        if (hasTriggerRole && !hasAccessRole) {
+            await newMember.roles.add(ACCESS_ROLE);
+            console.log(`✅ ${newMember.user.tag} a reçu le rôle accès salon`);
+        }
+
+        if (!hasTriggerRole && hasAccessRole) {
+            await newMember.roles.remove(ACCESS_ROLE);
+            console.log(`❌ ${newMember.user.tag} a perdu le rôle accès salon`);
+        }
+
+    } catch (err) {
+        console.error(err);
+    }
+});
+
 client.login(process.env.TOKEN);
