@@ -59,7 +59,7 @@ client.on("interactionCreate", async interaction => {
 });
 
 // Bot prêt
-client.once("clientReady", () => {
+client.once("clientready", () => {
 
     console.log(`✅ Connecté en tant que ${client.user.tag}`);
 
