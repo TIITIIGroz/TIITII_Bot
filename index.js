@@ -59,15 +59,15 @@ client.on("interactionCreate", async interaction => {
 });
 
 // Bot prêt
-client.once("clientready", () => {
-
+client.once(Events.ClientReady, () => {
     console.log(`✅ Connecté en tant que ${client.user.tag}`);
 
     client.user.setPresence({
         activities: [
             {
-                name: "Search TIITII_Groz on Twitch !",
-                type: ActivityType.Watching,
+                name: "TIITII_Groz sur Twitch",
+                type: ActivityType.Streaming,
+                url: "https://www.twitch.tv/tiitii_groz", // Remplace par ton lien Twitch exact
             },
         ],
         status: "online",
