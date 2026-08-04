@@ -74,8 +74,6 @@ client.once("clientready", () => {
     });
 });
 
-});
-
 client.on("guildMemberUpdate", async (oldMember, newMember) => {
     const ACCESS_ROLE = "1509584318203433001";
 
