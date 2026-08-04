@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, Collection } = require("discord.js");
+const { Client, GatewayIntentBits, Collection, ActivityType, Events } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 const http = require("http");
@@ -64,12 +64,11 @@ client.once("clientready", () => {
     console.log(`✅ Connecté en tant que ${client.user.tag}`);
 
     client.user.setPresence({
-        activities: [
-            {
-                name: "twitch.tv/tiitii_groz",
-                type: ActivityType.Watching,
-            },
-        ],
+    activities: [{
+        name: "Live Twitch !",
+        type: ActivityType.Streaming,
+        url: "https://www.twitch.tv/tiitii_groz"
+    }],
         status: "online",
     });
 });
