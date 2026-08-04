@@ -66,9 +66,8 @@ client.once("clientready", () => {
     client.user.setPresence({
     activities: [
         {
-            name: "TIITII_Groz",
-            type: 1,
-            url: "https://twitch.tv/TIITII_Groz"
+            name: "https://twitch.tv/TIITII_Groz",
+            type: 3,
         }
     ],
     status: "online"
