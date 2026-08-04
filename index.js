@@ -64,11 +64,12 @@ client.once("clientready", () => {
     console.log(`✅ Connecté en tant que ${client.user.tag}`);
 
     client.user.setPresence({
-    activities: [{
-        name: "Live Twitch !",
-        type: ActivityType.Streaming,
-        url: "https://www.twitch.tv/tiitii_groz"
-    }],
+        activities: [
+            {
+                name: "https://twitch.tv/TIITII_Groz",
+                type: ActivityType.Watching,
+            },
+        ],
         status: "online",
     });
 });
