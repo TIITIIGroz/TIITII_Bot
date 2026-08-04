@@ -66,7 +66,7 @@ client.once("clientready", () => {
     client.user.setPresence({
         activities: [
             {
-                name: "https://twitch.tv/TIITII_Groz",
+                name: "Search TIITII_Groz on Twitch !",
                 type: ActivityType.Watching,
             },
         ],
