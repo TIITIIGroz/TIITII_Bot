@@ -13,7 +13,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
 
-            .setColor(#800020)
+            .setColor(800020)
 
             .setTitle("🔗 Les liens de 𝑻𝑰𝑰𝑻𝑰𝑰\\_𝑮𝒓𝒐𝒛 - Social media of 𝑻𝑰𝑰𝑻𝑰𝑰\\_𝑮𝒓𝒐𝒛")
 
