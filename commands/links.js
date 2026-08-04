@@ -15,12 +15,12 @@ module.exports = {
 
             .setColor(0x9146FF)
 
-            .setTitle("🔗 Les liens de 𝑻𝑰𝑰𝑻𝑰𝑰\__𝑮𝒓𝒐𝒛 - Social media of 𝑻𝑰𝑰𝑻𝑰𝑰\__𝑮𝒓𝒐𝒛")
+            .setTitle("🔗 Les liens de 𝑻𝑰𝑰𝑻𝑰𝑰\\_𝑮𝒓𝒐𝒛 - Social media of 𝑻𝑰𝑰𝑻𝑰𝑰\\_𝑮𝒓𝒐𝒛")
 
             .setDescription(
-`**Salut ! Voici comme demandé les liens de** 𝑻𝑰𝑰𝑻𝑰𝑰\__𝑮𝒓𝒐𝒛
+`**Salut ! Voici comme demandé les liens de** 𝑻𝑰𝑰𝑻𝑰𝑰\\_𝑮𝒓𝒐𝒛
 
-**Hey! Here are the socials for** 𝑻𝑰𝑰𝑻𝑰𝑰\__𝑮𝒓𝒐𝒛
+**Hey! Here are the socials for** 𝑻𝑰𝑰𝑻𝑰𝑰\\_𝑮𝒓𝒐𝒛
 
 🌐 **Tous ses réseaux / All his links:**
 https://beacons.ai/TIITII_Groz
