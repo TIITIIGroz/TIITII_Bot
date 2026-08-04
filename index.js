@@ -65,9 +65,9 @@ client.once(Events.ClientReady, () => {
     client.user.setPresence({
         activities: [
             {
-                name: "TIITII_Groz sur Twitch",
+                name: "TIITII_Groz sur/on Twitch",
                 type: ActivityType.Streaming,
-                url: "https://www.twitch.tv/tiitii_groz", // Remplace par ton lien Twitch exact
+                url: "https://www.twitch.tv/TIITII_Groz",
             },
         ],
         status: "online",
