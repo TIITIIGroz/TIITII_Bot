@@ -9,6 +9,10 @@
     "deploy": "node deploy-commands.js"
   },
   "dependencies": {
-    "discord.js": "^14.16.3"
+    "@napi-rs/canvas": "^1.0.3",
+    "discord.js": "^14.16.3",
+    "pg": "^8.22.0",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^6.0.1"
   }
 }
