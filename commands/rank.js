@@ -38,8 +38,8 @@ module.exports = {
 
             // Message texte formaté selon ta demande exacte
             const rankMessage = `***<@${userId}>*** !\n\n` +
-                `Tu es au _niveau ***${currentLevel}***_ ! Il te reste _${xpRemaining}_xp à avoir pour être au _niveau ***${nextLevel}***_ !\n\n` +
-                `You're at _level ***${currentLevel}***_ ! There's still _${xpRemaining}_xp left to have in order to be at _niveau ***${nextLevel}***_ !`;
+                `Tu es au _niveau ***${currentLevel}***_ ! Il te reste _ ${xpRemaining} _xp à avoir pour être au _niveau ***${nextLevel}***_ !\n\n` +
+                `You're at _level ***${currentLevel}***_ ! There's still _ ${xpRemaining} _xp left to have in order to be at _niveau ***${nextLevel}***_ !`;
 
             await interaction.editReply({ content: rankMessage });
         } catch (error) {
