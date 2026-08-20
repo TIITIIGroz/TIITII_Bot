@@ -14,8 +14,15 @@ for (const file of commandFiles) {
     console.log(`📦 Chargement de ${file}...`);
 
     const command = require(path.join(commandsPath, file));
+    
+    // 👈 Ajoute cette ligne pour tester
+    console.log(`✨ ${file} chargé avec succès en mémoire !`);
 
-    commands.push(command.data.toJSON());
+    if ('data' in command && 'execute' in command) {
+        commands.push(command.data.toJSON());
+    } else {
+        console.log(`[AVERTISSEMENT] La commande à ${file} manque de 'data' ou 'execute'.`);
+    }
 }
 
 console.log(`📋 ${commands.length} commande(s) trouvée(s).`);
