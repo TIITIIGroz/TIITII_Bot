@@ -16,9 +16,9 @@ module.exports = {
                 return interaction.editReply("📊 Aucun classement disponible pour le moment. Envoyez des messages pour gagner de l'XP !");
             }
 
-            const embed = new EmbedBuilder()
-                .setTitle('Classement des niveaux - Ranking of levels')
-                .setColor('#FF0000') // Rouge demandé
+const embed = new EmbedBuilder()
+                .setTitle('Classement des niveaux\n-\nRanking of levels')
+                .setColor('#FF0000')
                 .setTimestamp();
 
             let description = '';
@@ -27,8 +27,13 @@ module.exports = {
                 const userEntry = topUsers[i];
                 const rankNumber = i + 1;
 
-                // Format exact demandé : 1 - @nom d'utilisateur: Niveau 35 (XP total: 1250)
-                description += `${rankNumber} - <@${userEntry.userId}>: Niveau ${userEntry.level} (XP total: ${userEntry.totalXp})\n`;
+                // PostgreSQL renvoie souvent tout en minuscules (userid, totalxp, etc.)
+                // On gère les deux cas pour être sûr de ne plus avoir de "undefined"
+                const userId = userEntry.userId || userEntry.userid || userEntry.user_id;
+                const level = userEntry.level !== undefined ? userEntry.level : 0;
+                const totalXp = userEntry.totalXp !== undefined ? userEntry.totalXp : (userEntry.totalxp || 0);
+
+                description += `${rankNumber} - <@${userId}>: Niveau ${level} (XP total: ${totalXp})\n`;
             }
 
             embed.setDescription(description);
