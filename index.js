@@ -73,4 +73,6 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
     } catch (err) { console.error(err); }
 });
 
-client.login(process.env.TOKEN);
+client.login(process.env.TOKEN).catch(err => {
+    console.error("❌ ERREUR FATALE DE CONNEXION DISCORD :", err);
+});
