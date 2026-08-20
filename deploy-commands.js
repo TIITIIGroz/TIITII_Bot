@@ -15,7 +15,6 @@ for (const file of commandFiles) {
 
     const command = require(path.join(commandsPath, file));
     
-    // 👈 Ajoute cette ligne pour tester
     console.log(`✨ ${file} chargé avec succès en mémoire !`);
 
     if ('data' in command && 'execute' in command) {
@@ -34,10 +33,17 @@ const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
         console.log("🚀 Déploiement des commandes...");
         console.log(`📤 Envoi de ${commands.length} commandes à Discord...`);
 
-const data = await rest.put(
-    Routes.applicationGuildCommands("1343093684832436367", "864898646343811077"),
-    { body: commands }
-);
+        // Sécurité anti-blocage (timeout de 10 secondes)
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Timeout : La connexion avec Discord a pris trop de temps (blocage réseau Render).")), 10000)
+        );
+
+        const putPromise = rest.put(
+            Routes.applicationGuildCommands("1343093684832436367", "864898646343811077"),
+            { body: commands }
+        );
+
+        const data = await Promise.race([putPromise, timeoutPromise]);
 
         console.log(`✅ Succès ! ${data.length} commande(s) déployée(s).`);
         process.exit(0);
