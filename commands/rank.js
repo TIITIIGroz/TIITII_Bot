@@ -36,8 +36,8 @@ module.exports = {
 
             // Utilisation de __ pour souligner (underline) au lieu de _ (italique)
             const rankMessage = `***<@${userId}>*** !\n\n` +
-                `Tu es au niveau __${currentLevel}__ ! Il te reste __${xpRemaining}__xp à avoir pour être au niveau __${nextLevel}__ !\n\n` +
-                `You're at level __${currentLevel}__ ! There's still __${xpRemaining}__xp left to have in order to be at level __${nextLevel}__ !`;
+                `Tu es au __niveau **${currentLevel}**__ ! Il te reste __${xpRemaining} xp__ à avoir pour être au __niveau ${nextLevel}__ !\n\n` +
+                `You're at __level **${currentLevel}**__ ! There's still __${xpRemaining} xp__ left to have in order to be at __level ${nextLevel}__ !`;
 
             await interaction.editReply({ content: rankMessage });
         } catch (error) {
