@@ -1,5 +1,4 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { generateRankCard, database: pool } = require('../systems/levels');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -12,7 +11,7 @@ module.exports = {
         ),
     async execute(interaction) {
         await interaction.deferReply();
-
+        const { generateRankCard, database: pool } = require('../systems/levels');
         const targetMember = interaction.options.getMember('membre') || interaction.member;
         const userId = targetMember.id;
         const guildId = interaction.guild.id;
