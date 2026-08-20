@@ -11,7 +11,10 @@ module.exports = {
         ),
     async execute(interaction) {
         await interaction.deferReply();
-        const { database: pool, getXpForLevel } = require('../systems/levels');
+        const { database: pool } = require('../systems/levels');
+        // On importe getXpForLevel directement depuis ton fichier level.js
+        const { getXpForLevel } = require('../systems/levels/level'); 
+        
         const targetMember = interaction.options.getMember('membre') || interaction.member;
         const userId = targetMember.id;
         const guildId = interaction.guild.id;
@@ -29,9 +32,8 @@ module.exports = {
             const currentTotalXp = parseInt(userData.totalxp) || 0;
             const nextLevel = currentLevel + 1;
 
-            // Calcul de l'XP nécessaire pour atteindre le prochain niveau
-            // (Assure-toi que getXpForLevel existe dans ton système, sinon utilise ton calcul habituel)
-            const xpNeededForNext = typeof getXpForLevel === 'function' ? getXpForLevel(nextLevel) : (nextLevel * 100);
+            // Calcul exact de l'XP requis pour le prochain niveau avec ta formule MEE6
+            const xpNeededForNext = getXpForLevel(currentLevel);
             const xpRemaining = Math.max(0, xpNeededForNext - currentTotalXp);
 
             // Message texte formaté selon ta demande exacte
