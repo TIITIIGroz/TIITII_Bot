@@ -2,6 +2,12 @@ const { Client, GatewayIntentBits, Collection, ActivityType, Events } = require(
 const fs = require("fs");
 const path = require("path");
 const http = require("http");
+
+// 👇 1. AJOUTE CETTE SÉCURITÉ TOUT EN HAUT POUR ATTRAPER LES ERREURS 👇
+process.on('unhandledRejection', error => {
+    console.error('❌ Erreur non gérée (Unhandled Rejection) :', error);
+});
+
 // Import des systèmes
 const { handleXpMessage } = require("./systems/levels/xp");
 console.log("TEST TOKEN :", process.env.TOKEN ? "Le token est bien lu !" : "ATTENTION : Le token est VIDE !");
@@ -56,12 +62,10 @@ client.on(Events.MessageCreate, async (message) => {
 client.once(Events.ClientReady, () => {
     console.log(`✅ Connecté en tant que ${client.user.tag}`);
     
-    // 👇 VÉRIFICATION DES COMMANDES EN MÉMOIRE 👇
     console.log(`📋 Commandes enregistrées en mémoire : ${client.commands.size}`);
     client.commands.forEach((cmd, name) => {
         console.log(` - /${name}`);
     });
-    // 👆 --------------------------------------- 👆
 
     client.user.setPresence({
         activities: [{ name: "TIITII_Groz sur/on Twitch", type: ActivityType.Streaming, url: "https://www.twitch.tv/TIITII_Groz" }],
@@ -82,7 +86,9 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
     } catch (err) { console.error(err); }
 });
 
+// 👇 2. AJOUTE CE MESSAGE ICI JUSTE AVANT LA CONNEXION 👇
 console.log("Tentative de connexion à Discord...");
+
 client.login(process.env.TOKEN).catch(err => {
     console.error("❌ ERREUR FATALE DE CONNEXION DISCORD :", err);
 });
