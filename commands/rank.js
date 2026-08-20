@@ -12,7 +12,6 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
         const { database: pool } = require('../systems/levels');
-        // On importe getXpForLevel directement depuis ton fichier level.js
         const { getXpForLevel } = require('../systems/levels/level'); 
         
         const targetMember = interaction.options.getMember('membre') || interaction.member;
@@ -32,14 +31,13 @@ module.exports = {
             const currentTotalXp = parseInt(userData.totalxp) || 0;
             const nextLevel = currentLevel + 1;
 
-            // Calcul exact de l'XP requis pour le prochain niveau avec ta formule MEE6
             const xpNeededForNext = getXpForLevel(currentLevel);
             const xpRemaining = Math.max(0, xpNeededForNext - currentTotalXp);
 
-            // Message texte formaté selon ta demande exacte
+            // Utilisation de __ pour souligner (underline) au lieu de _ (italique)
             const rankMessage = `***<@${userId}>*** !\n\n` +
-                `Tu es au _niveau ***${currentLevel}***_ ! Il te reste _ ${xpRemaining} _xp à avoir pour être au _niveau ***${nextLevel}***_ !\n\n` +
-                `You're at _level ***${currentLevel}***_ ! There's still _ ${xpRemaining} _xp left to have in order to be at _niveau ***${nextLevel}***_ !`;
+                `Tu es au niveau __${currentLevel}__ ! Il te reste __${xpRemaining}__xp à avoir pour être au niveau __${nextLevel}__ !\n\n` +
+                `You're at level __${currentLevel}__ ! There's still __${xpRemaining}__xp left to have in order to be at level __${nextLevel}__ !`;
 
             await interaction.editReply({ content: rankMessage });
         } catch (error) {
