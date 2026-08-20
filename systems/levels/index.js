@@ -5,7 +5,6 @@ const level = require('./level');
 const { handleXpMessage } = require('./xp');
 const { checkAndReward } = require('./rewards');
 const { getLeaderboard } = require('./leaderboard');
-const { generateRankCard } = require('./rankCard');
 
 module.exports = {
     database,
@@ -14,6 +13,5 @@ module.exports = {
     level,
     handleXpMessage,
     checkAndReward,
-    getLeaderboard,
-    generateRankCard
+    getLeaderboard
 };
