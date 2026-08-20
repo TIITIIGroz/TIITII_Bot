@@ -3,18 +3,13 @@
   "version": "1.0.0",
   "description": "Bot Discord de TIITII_Groz",
   "main": "index.js",
-  "scripts": {
-    "start": "node index.js",
-    "deploy": "node deploy-commands.js"
-  },
   "dependencies": {
     "discord.js": "^14.14.1",
     "dotenv": "^16.4.5",
     "pg": "^8.11.3",
     "canvas": "^2.11.2"
+  },
+  "engines": {
+    "node": "20.18.0"
   }
-},
-  "engines": {
-    "node": "20.18.0"
-  }
 }
