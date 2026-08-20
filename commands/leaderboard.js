@@ -17,21 +17,18 @@ module.exports = {
             }
 
             const embed = new EmbedBuilder()
-                .setTitle('🏆 Classement du serveur - Top 10')
-                .setColor('#800020') // Rouge bordeaux Famille Groz
+                .setTitle('Classement des niveaux - Ranking of levels')
+                .setColor('#FF0000') // Rouge demandé
                 .setTimestamp();
 
             let description = '';
 
             for (let i = 0; i < topUsers.length; i++) {
                 const userEntry = topUsers[i];
-                let medal = '';
-                if (i === 0) medal = '🥇 ';
-                else if (i === 1) medal = '🥈 ';
-                else if (i === 2) medal = '🥉 ';
-                else medal = `**#${i + 1}** `;
+                const rankNumber = i + 1;
 
-                description += `${medal} <@${userEntry.userId}> — Niveau **${userEntry.level}** (${userEntry.totalXp} XP)\n`;
+                // Format exact demandé : 1 - @nom d'utilisateur: Niveau 35 (XP total: 1250)
+                description += `${rankNumber} - <@${userEntry.userId}>: Niveau ${userEntry.level} (XP total: ${userEntry.totalXp})\n`;
             }
 
             embed.setDescription(description);
