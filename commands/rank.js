@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { generateRankCard, database } = require('../systems/levels');
+const { generateRankCard, database: pool } = require('../systems/levels');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -17,26 +17,20 @@ module.exports = {
         const userId = targetMember.id;
         const guildId = interaction.guild.id;
 
-        database.get(
-            `SELECT * FROM users WHERE userId = ? AND guildId = ?`,
-            [userId, guildId],
-            async (err, row) => {
-                if (err) {
-                    console.error("❌ Erreur lors de la lecture de la base de données (/rank) :", err.message);
-                    return interaction.editReply("Une erreur est survenue lors de la récupération de ton rang.");
-                }
+        try {
+            const res = await pool.query(
+                `SELECT * FROM users WHERE userId = $1 AND guildId = $2`,
+                [userId, guildId]
+            );
 
-                // Si l'utilisateur n'a pas encore d'XP enregistrée
-                const userData = row || { xp: 0, totalXp: 0, level: 0, messages: 0 };
+            const row = res.rows[0];
+            const userData = row || { xp: 0, totalXp: 0, level: 0, messages: 0 };
 
-                try {
-                    const attachment = await generateRankCard(targetMember, userData);
-                    await interaction.editReply({ files: [attachment] });
-                } catch (error) {
-                    console.error("❌ Erreur lors de la génération de la carte rank :", error);
-                    await interaction.editReply(`Niveau : **${userData.level}** | XP : **${userData.totalXp}**`);
-                }
-            }
-        );
+            const attachment = await generateRankCard(targetMember, userData);
+            await interaction.editReply({ files: [attachment] });
+        } catch (error) {
+            console.error("❌ Erreur lors de la génération de la carte rank :", error);
+            await interaction.editReply("Une erreur est survenue lors de la récupération de ton rang.");
+        }
     },
 };
