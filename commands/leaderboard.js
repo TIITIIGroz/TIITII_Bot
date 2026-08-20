@@ -17,7 +17,7 @@ module.exports = {
             }
 
 const embed = new EmbedBuilder()
-                .setTitle('Classement des niveaux\n-\nRanking of levels')
+                .setTitle('Classement des niveaux:\n-\nRanking of levels:')
                 .setColor('#FF0000')
                 .setTimestamp();
 
@@ -33,7 +33,7 @@ const embed = new EmbedBuilder()
                 const level = userEntry.level !== undefined ? userEntry.level : 0;
                 const totalXp = userEntry.totalXp !== undefined ? userEntry.totalXp : (userEntry.totalxp || 0);
 
-                description += `${rankNumber} - <@${userId}>: Niveau ${level} (XP total: ${totalXp})\n`;
+                description += `${rankNumber} - <@${userId}>: Niveau **${level}** (XP total: ${totalXp})\n`;
             }
 
             embed.setDescription(description);
