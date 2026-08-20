@@ -5,7 +5,7 @@ function getXpForLevel(level) {
 }
 
 // Fonction pour déterminer le niveau d'un joueur en fonction de son XP total
-function calculateLevel(totalXp) {
+function getLevelFromXp(totalXp) {
     let level = 0;
     while (totalXp >= getXpForLevel(level)) {
         totalXp -= getXpForLevel(level);
@@ -34,6 +34,7 @@ function getLevelProgress(totalXp) {
 
 module.exports = {
     getXpForLevel,
-    calculateLevel,
+    calculateLevel: getLevelFromXp, // Gardé au cas où un autre fichier l'appelle ainsi
+    getLevelFromXp,
     getLevelProgress
 };
