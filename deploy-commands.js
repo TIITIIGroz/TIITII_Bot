@@ -32,7 +32,7 @@ const rest = new REST({ version: "10" })
 
 (async () => {
     try {
-        console.log(":rocket: Déploiement des commandes...");
+        console.log("📈 Déploiement des commandes...");
 
         const data = await rest.put(
             Routes.applicationCommands("1343093684832436367"),
