@@ -39,7 +39,9 @@ async function handleXpMessage(message, client) {
                 const channelId = config.LEVELUP_CHANNEL_ID || message.channel.id;
                 const targetChannel = client.channels.cache.get(channelId);
                 if (targetChannel) {
-                    await targetChannel.send(`🎉 Félicitations <@${userId}> ! Tu passes au niveau **${newLevel}** ! 👑`);
+                    // Nouveau format de message demandé (sans embed)
+                    const levelUpMessage = `***<@${userId}>*** !\n\nTu viens de passer _niveau ${newLevel}_ !\n\n You just passed _level ${newLevel}_ !`;
+                    await targetChannel.send(levelUpMessage);
                 }
             }
         } else {
