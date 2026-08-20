@@ -53,7 +53,7 @@ client.on(Events.MessageCreate, async (message) => {
 });
 
 // Bot prêt
-client.once(Events.Clientready, () => {
+client.once(Events.ClientReady, () => {
     console.log(`✅ Connecté en tant que ${client.user.tag}`);
     
     // 👇 VÉRIFICATION DES COMMANDES EN MÉMOIRE 👇
