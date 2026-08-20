@@ -1,5 +1,4 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { getLeaderboard } = require('../systems/levels');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -7,7 +6,7 @@ module.exports = {
         .setDescription('Affiche le top 10 des membres les plus actifs du serveur'),
     async execute(interaction) {
         await interaction.deferReply();
-
+        const { getLeaderboard } = require('../systems/levels');
         const guildId = interaction.guild.id;
 
         try {
