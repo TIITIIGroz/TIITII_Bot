@@ -82,6 +82,7 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
     } catch (err) { console.error(err); }
 });
 
+console.log("Tentative de connexion à Discord...");
 client.login(process.env.TOKEN).catch(err => {
     console.error("❌ ERREUR FATALE DE CONNEXION DISCORD :", err);
 });
