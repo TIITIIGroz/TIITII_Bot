@@ -55,6 +55,14 @@ client.on(Events.MessageCreate, async (message) => {
 // Bot prêt
 client.once(Events.ClientReady, () => {
     console.log(`✅ Connecté en tant que ${client.user.tag}`);
+    
+    // 👇 VÉRIFICATION DES COMMANDES EN MÉMOIRE 👇
+    console.log(`📋 Commandes enregistrées en mémoire : ${client.commands.size}`);
+    client.commands.forEach((cmd, name) => {
+        console.log(` - /${name}`);
+    });
+    // 👆 --------------------------------------- 👆
+
     client.user.setPresence({
         activities: [{ name: "TIITII_Groz sur/on Twitch", type: ActivityType.Streaming, url: "https://www.twitch.tv/TIITII_Groz" }],
         status: "online",
