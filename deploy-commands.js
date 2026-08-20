@@ -34,10 +34,10 @@ const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
         console.log("🚀 Déploiement des commandes...");
         console.log(`📤 Envoi de ${commands.length} commandes à Discord...`);
 
-        const data = await rest.put(
-            Routes.applicationCommands("1343093684832436367"),
-            { body: commands }
-        );
+const data = await rest.put(
+    Routes.applicationGuildCommands("1343093684832436367", "864898646343811077"),
+    { body: commands }
+);
 
         console.log(`✅ Succès ! ${data.length} commande(s) déployée(s).`);
         process.exit(0);
