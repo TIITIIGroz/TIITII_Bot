@@ -4,6 +4,7 @@ const path = require("path");
 const http = require("http");
 // Import des systèmes
 const { handleXpMessage } = require("./systems/levels/xp");
+console.log("TEST TOKEN :", process.env.TOKEN ? "Le token est bien lu !" : "ATTENTION : Le token est VIDE !");
 
 http.createServer((req, res) => {
     res.writeHead(200, { "Content-Type": "text/plain" });
