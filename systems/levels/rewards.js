@@ -1,24 +1,24 @@
-const config = require('./config');
-
 async function checkAndReward(member, newLevel) {
-    // Vérifie si un rôle est configuré pour ce niveau exact
-    const roleId = config.LEVEL_ROLES[newLevel];
-    if (!roleId) return; // Pas de rôle pour ce niveau
+    // ID du rôle obligatoire unique à attribuer (remplace par ton ID de rôle)
+    const mandatoryRoleId = "1509577333584171038"; 
 
-    const role = member.guild.roles.cache.get(roleId);
-    if (!role) {
-        console.warn(`⚠️ Le rôle avec l'ID ${roleId} configuré pour le niveau ${newLevel} est introuvable sur le serveur.`);
-        return;
-    }
-
-    try {
-        // Vérifie si le membre a déjà le rôle pour éviter les doublons
-        if (!member.roles.cache.has(roleId)) {
-            await member.roles.add(role);
-            console.log(`👑 Rôle ${role.name} attribué avec succès à ${member.user.tag} (Niveau ${newLevel})`);
+    // Si l'utilisateur atteint le niveau 1 ou plus
+    if (newLevel >= 1) {
+        const role = member.guild.roles.cache.get(mandatoryRoleId);
+        if (!role) {
+            console.warn(`⚠️ Le rôle obligatoire avec l'ID ${mandatoryRoleId} est introuvable sur le serveur.`);
+            return;
         }
-    } catch (error) {
-        console.error(`❌ Impossible d'attribuer le rôle ${role.name} à ${member.user.tag} :`, error);
+
+        try {
+            // Vérifie si le membre a déjà le rôle pour éviter les doublons
+            if (!member.roles.cache.has(mandatoryRoleId)) {
+                await member.roles.add(role);
+                console.log(`👑 Rôle obligatoire ${role.name} attribué avec succès à ${member.user.tag} (Niveau ${newLevel})`);
+            }
+        } catch (error) {
+            console.error(`❌ Impossible d'attribuer le rôle obligatoire ${role.name} à ${member.user.tag} :`, error);
+        }
     }
 }
 
