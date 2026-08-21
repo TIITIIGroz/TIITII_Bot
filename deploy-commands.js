@@ -41,7 +41,7 @@ const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
         const putPromise = rest.put(
             Routes.applicationGuildCommands("1343093684832436367", "864898646343811077"),
-            { body: [] }
+            { body: commands }
         );
 
         const data = await Promise.race([putPromise, timeoutPromise]);
