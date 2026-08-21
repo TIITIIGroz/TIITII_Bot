@@ -1,10 +1,18 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 
+// Liste des IDs Discord des personnes autorisées à utiliser cette commande
+const AUTHORIZED_USERS = [
+    "894668340902125618", // The King
+    "1012357140679229511",  // Co-Fondateur
+    "894669520902451220",  // Admin normal
+    "987485855474147368",  // Modérateur
+];
+
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('embed')
+        .setName('embed') // Important: en minuscules pour Discord
         .setDescription('Crée un embed personnalisé dans le salon de ton choix')
-        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages) // Réservé aux membres qui gèrent les messages
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
         .addStringOption(option =>
             option.setName('titre')
                 .setDescription('Le titre de l\'embed')
@@ -17,7 +25,7 @@ module.exports = {
         )
         .addStringOption(option =>
             option.setName('couleur')
-                .setDescription('La couleur en Hexadécimal (ex: #FF0000 pour rouge, ou rouge, bleu...)')
+                .setDescription('La couleur en Hexadécimal (ex: #FF0000 pour rouge)')
                 .setRequired(false)
         )
         .addChannelOption(option =>
@@ -27,12 +35,20 @@ module.exports = {
         ),
 
     async execute(interaction) {
+        // Vérification si l'utilisateur fait partie des personnes autorisées
+        if (!AUTHORIZED_USERS.includes(interaction.user.id)) {
+            return interaction.reply({
+                content: "❌ Tu n'as pas la permission d'utiliser cette commande.",
+                ephemeral: true
+            });
+        }
+
         await interaction.deferReply({ ephemeral: true });
 
-        const title = interaction.options.getString('titre');
-        const messageText = interaction.options.getString('message');
-        const colorInput = interaction.options.getString('couleur') || '#FF0000'; // Rouge par défaut
-        const targetChannel = interaction.options.getChannel('salon') || interaction.channel;
+        const title = interaction.options.getString('Titre');
+        const messageText = interaction.options.getString('Message');
+        const colorInput = interaction.options.getString('Couleur') || '#FF0000'; // Rouge par défaut
+        const targetChannel = interaction.options.getChannel('Salon') || interaction.channel;
 
         try {
             // Convertir les sauts de ligne littéraux (\n) si tu en écris dans l'option Discord
