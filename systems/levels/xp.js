@@ -36,12 +36,16 @@ async function handleXpMessage(message, client) {
 
             if (newLevel > oldLevel) {
                 await checkAndReward(message.member, newLevel);
-                const channelId = config.LEVELUP_CHANNEL_ID || message.channel.id;
+                
+                // Utilisation directe de ton ID de salon spécifique
+                const channelId = "1011649291124744212";
                 const targetChannel = client.channels.cache.get(channelId);
+                
                 if (targetChannel) {
-                    // Nouveau format de message demandé (sans embed)
-                    const levelUpMessage = `***<@${userId}>*** !\n\nTu viens de passer _niveau ${newLevel}_ !\n\n You just passed _level ${newLevel}_ !`;
+                    const levelUpMessage = `***<@${userId}>*** !\n\nTu viens de passer _niveau ${newLevel}_ !\n\nYou just passed _level ${newLevel}_ !`;
                     await targetChannel.send(levelUpMessage);
+                } else {
+                    console.log("⚠️ Salon de niveau introuvable ou bot sans permissions dans ce salon.");
                 }
             }
         } else {
