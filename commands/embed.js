@@ -2,7 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('disc
 
 // Liste des IDs Discord des personnes autorisées à utiliser cette commande
 const AUTHORIZED_USERS = [
-    "913798085686198292" // mon id TIITII_Groz
+    "913798085686198292", // mon id TIITII_Groz
     "894668340902125618", // The King
     "1012357140679229511",  // Co-Fondateur
     "894669520902451220",  // Admin normal
