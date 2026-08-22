@@ -10,18 +10,23 @@ const AUTHORIZED_USERS = [
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('embed') // Important: en minuscules pour Discord
-        .setDescription('Crée un embed personnalisé dans le salon de ton choix')
+        .setName('embed')
+        .setDescription('Crée un embed personnalisé (avec option d\'image) dans le salon de ton choix')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
         .addStringOption(option =>
             option.setName('titre')
                 .setDescription('Le titre de l\'embed')
-                .setRequired(true)
+                .setRequired(false) // Devenu optionnel si tu veux mettre juste une image
         )
         .addStringOption(option =>
             option.setName('message')
                 .setDescription('Le texte/description de l\'embed')
-                .setRequired(true)
+                .setRequired(false) // Devenu optionnel
+        )
+        .addAttachmentOption(option =>
+            option.setName('image')
+                .setDescription('Une photo à inclure dans l\'embed')
+                .setRequired(false) // Optionnel aussi
         )
         .addStringOption(option =>
             option.setName('couleur')
@@ -45,20 +50,33 @@ module.exports = {
 
         await interaction.deferReply({ ephemeral: true });
 
-        const title = interaction.options.getString('Titre');
-        const messageText = interaction.options.getString('Message');
-        const colorInput = interaction.options.getString('Couleur') || '#FF0000'; // Rouge par défaut
-        const targetChannel = interaction.options.getChannel('Salon') || interaction.channel;
+        const title = interaction.options.getString('titre');
+        const messageText = interaction.options.getString('message');
+        const imageAttachment = interaction.options.getAttachment('image');
+        const colorInput = interaction.options.getString('couleur') || '#FF0000'; // Rouge par défaut
+        const targetChannel = interaction.options.getChannel('salon') || interaction.channel;
+
+        // Petite sécurité : vérifier qu'on a au moins mis un titre, un message ou une image
+        if (!title && !messageText && !imageAttachment) {
+            return interaction.editReply("❌ Tu dois fournir au moins un **titre**, un **message** ou une **image** pour créer l'embed !");
+        }
 
         try {
-            // Convertir les sauts de ligne littéraux (\n) si tu en écris dans l'option Discord
-            const formattedMessage = messageText.replace(/\\n/g, '\n');
-
             const customEmbed = new EmbedBuilder()
-                .setTitle(title)
-                .setDescription(formattedMessage)
                 .setColor(colorInput)
                 .setTimestamp();
+
+            if (title) customEmbed.setTitle(title);
+            
+            if (messageText) {
+                const formattedMessage = messageText.replace(/\\n/g, '\n');
+                customEmbed.setDescription(formattedMessage);
+            }
+
+            // Si une image a été jointe, on l'ajoute dans l'embed
+            if (imageAttachment) {
+                customEmbed.setImage(imageAttachment.url);
+            }
 
             // Envoyer l'embed dans le salon cible
             const sentMessage = await targetChannel.send({ embeds: [customEmbed] });
@@ -69,7 +87,7 @@ module.exports = {
 
         } catch (error) {
             console.error("❌ Erreur lors de la création de l'embed :", error);
-            await interaction.editReply("❌ Une erreur est survenue lors de la création de l'embed. Vérifie que la couleur est valide (ex: `#FF0000`) ou que le bot a les permissions d'écrire dans ce salon.");
+            await interaction.editReply("❌ Une erreur est survenue lors de la création de l'embed. Vérifie que la couleur est valide (ex: `#FF0000`) ou que l'image est correcte.");
         }
     },
 };
