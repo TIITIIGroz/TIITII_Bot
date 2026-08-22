@@ -39,6 +39,11 @@ module.exports = {
                 .setDescription('Une nouvelle image à inclure')
                 .setRequired(false)
         )
+        .addBooleanOption(option =>
+            option.setName('supprimer_image')
+                .setDescription('Mets sur True si tu veux retirer l\'image actuelle de l\'embed')
+                .setRequired(false)
+        )
         .addStringOption(option =>
             option.setName('nouvelle_couleur')
                 .setDescription('Le nouveau code couleur Hexadécimal (ex: #00FF00)')
@@ -61,6 +66,7 @@ module.exports = {
         const newTitle = interaction.options.getString('nouveau_titre');
         const newMessageText = interaction.options.getString('nouveau_message');
         const newImageAttachment = interaction.options.getAttachment('nouvelle_image');
+        const removeImage = interaction.options.getBoolean('supprimer_image');
         const newColorInput = interaction.options.getString('nouvelle_couleur');
 
         try {
@@ -95,7 +101,10 @@ module.exports = {
                 updatedEmbed.setDescription(formattedMessage);
             }
 
-            if (newImageAttachment) {
+            // Gestion de l'image (Suppression prioritaire ou ajout d'une nouvelle)
+            if (removeImage === true) {
+                updatedEmbed.setImage(null);
+            } else if (newImageAttachment) {
                 updatedEmbed.setImage(newImageAttachment.url);
             }
 
