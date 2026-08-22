@@ -65,7 +65,6 @@ module.exports = {
         try {
             const customEmbed = new EmbedBuilder()
                 .setColor(colorInput)
-                .setTimestamp();
 
             if (title) customEmbed.setTitle(title);
             
