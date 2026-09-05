@@ -52,6 +52,7 @@ module.exports = {
         //Catégorie Support
         "1263628374388113560", // Guides
         "896311964861620266", // Guides Roles
+        "1534243455952224359" // Le truc de miel pour bot
         
         //Catégorie Création
         "1085589773877518506", // Créer Salons 
@@ -63,7 +64,7 @@ module.exports = {
     ],
 
     EXCLUDED_ROLES: [
-        "913882559363043388" // Remplace par l'ID réel du rôle
+        "913882559363043388" // Rôle prisonniers
     ],
 
     // Rôles de récompense selon les niveaux
