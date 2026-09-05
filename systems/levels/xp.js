@@ -3,6 +3,7 @@ const config = require('./config');
 const { getRandomXp, isValidMessage } = require('./utils');
 const { getLevelFromXp } = require('./level');
 const { checkAndReward } = require('./rewards');
+const { EmbedBuilder } = require('discord.js'); // Importation de l'EmbedBuilder
 
 async function handleXpMessage(message, client) {
     if (!isValidMessage(message)) return;
@@ -42,8 +43,12 @@ async function handleXpMessage(message, client) {
                 const targetChannel = client.channels.cache.get(channelId);
                 
                 if (targetChannel) {
-                    const levelUpMessage = `***<@${userId}>*** !\n\nTu viens de passer _niveau ${newLevel}_ !\n\nYou just passed _level ${newLevel}_ !`;
-                    await targetChannel.send(levelUpMessage);
+                    // Création de l'embed couleur bleu clair (#3498DB ou #00BFFF)
+                    const levelUpEmbed = new EmbedBuilder()
+                        .setColor('#3498DB') // Bleu clair
+                        .setDescription(`***<@${userId}>*** !\n\nTu viens de passer _niveau ${newLevel}_ !\n\nYou just passed _level ${newLevel}_ !`);
+
+                    await targetChannel.send({ embeds: [levelUpEmbed] });
                 } else {
                     console.log("⚠️ Salon de niveau introuvable ou bot sans permissions dans ce salon.");
                 }
