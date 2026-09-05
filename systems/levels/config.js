@@ -52,7 +52,7 @@ module.exports = {
         //Catégorie Support
         "1263628374388113560", // Guides
         "896311964861620266", // Guides Roles
-        "1534243455952224359" // Le truc de miel pour bot
+        "1534243455952224359", // Le truc de miel pour bot
         
         //Catégorie Création
         "1085589773877518506", // Créer Salons 
@@ -60,11 +60,11 @@ module.exports = {
         "1113386813034348544", // Créer Serveur
         
         //Catégorie économie
-        "1421659004756693043" // explication
+        "1421659004756693043", // explication
     ],
 
     EXCLUDED_ROLES: [
-        "913882559363043388" // Rôle prisonniers
+        "913882559363043388", // Rôle prisonniers
     ],
 
     // Rôles de récompense selon les niveaux
