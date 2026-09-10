@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const http = require("http");
 
-// 👇 1. AJOUTE CETTE SÉCURITÉ TOUT EN HAUT POUR ATTRAPER LES ERREURS 👇
+// 👇 1. SÉCURITÉ POUR ATTRAPER LES ERREURS 👇
 process.on('unhandledRejection', error => {
     console.error('❌ Erreur non gérée (Unhandled Rejection) :', error);
 });
@@ -73,7 +73,7 @@ client.once(Events.ClientReady, () => {
     });
 });
 
-// Gestion des rôles
+// Gestion des rôles automatiques
 client.on("guildMemberUpdate", async (oldMember, newMember) => {
     const ACCESS_ROLE = "1509584318203433001";
     const TRIGGER_ROLES = ["1269778023826067699", "1533558027825840218"];
@@ -86,7 +86,10 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
     } catch (err) { console.error(err); }
 });
 
-// 👇 2. AJOUTE CE MESSAGE ICI JUSTE AVANT LA CONNEXION 👇
+// 👇 2. CHARGEMENT DE TON AUTOMATISME CONFIG REMINDER 👇
+require('./Automatisme/ConfigReminder')(client);
+
+// 👇 3. CONNEXION DISCORD 👇
 console.log("Tentative de connexion à Discord...");
 
 client.login(process.env.TOKEN).catch(err => {
