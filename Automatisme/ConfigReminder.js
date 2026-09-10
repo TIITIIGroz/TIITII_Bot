@@ -8,7 +8,7 @@ module.exports = (client) => {
         return new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId('delete_reminder')
-                .setLabel('Supprimer')
+                .setLabel('Traité / Supprimer')
                 .setStyle(ButtonStyle.Success) // Bouton vert
                 .setEmoji('✅')
         );
@@ -30,19 +30,24 @@ module.exports = (client) => {
         }
     });
 
-    // Détection d'un nouveau rôle
+    // Détection d'un nouveau rôle (avec un petit délai pour capter le renommage si fait rapidement)
     client.on(Events.GuildRoleCreate, async (role) => {
-        try {
-            const targetChannel = await client.channels.fetch(targetChannelId);
-            if (targetChannel) {
-                await targetChannel.send({
-                    content: `**Nouveau rôle détecté !** Pense à l'ajouter dans \`config.js\` :\n> **Nom :** \`${role.name}\`\n> **ID :** \`${role.id}\``,
-                    components: [createDeleteButton()]
-                });
+        setTimeout(async () => {
+            try {
+                // On récupère les infos fraîches du rôle au cas où il a été renommé
+                const freshRole = role.guild.roles.cache.get(role.id) || role;
+                const targetChannel = await client.channels.fetch(targetChannelId);
+                
+                if (targetChannel) {
+                    await targetChannel.send({
+                        content: `**Nouveau rôle détecté !** Pense à l'ajouter dans \`config.js\` :\n> **Nom :** \`${freshRole.name}\`\n> **ID :** \`${freshRole.id}\``,
+                        components: [createDeleteButton()]
+                    });
+                }
+            } catch (error) {
+                console.error("Erreur lors de l'envoi de l'alerte rôle :", error);
             }
-        } catch (error) {
-            console.error("Erreur lors de l'envoi de l'alerte rôle :", error);
-        }
+        }, 1000); // Attend 1 seconde pour laisser le temps de renommer
     });
 
     // Gestion du clic sur le bouton pour supprimer le message
