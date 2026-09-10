@@ -31,6 +31,9 @@ https://twitch.tv/TIITII_Groz
 🎬 **YouTube:**
 https://youtube.com/@TIITII_Groz
 
+📸 **Instagram:**
+https://instagram.com/TIITII_Groz
+
 📱 **TikTok:**
 https://tiktok.com/@TIITII_Groz`
 )
