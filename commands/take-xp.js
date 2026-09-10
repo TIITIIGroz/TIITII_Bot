@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { removeXpFromUser } = require('../systems/levels/database'); // Ajuste le chemin selon ton fichier de DB
+const pool = require('../systems/levels/database');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -24,11 +24,19 @@ module.exports = {
         }
 
         try {
-            await removeXpFromUser(target.id, interaction.guild.id, amount);
+            // Retire de l'XP en s'assurant de ne pas descendre en dessous de 0
+            await pool.query(
+                `INSERT INTO users (userId, guildId, xp, totalXp, createdAt) 
+                 VALUES ($1, $2, 0, 0, $4) 
+                 ON CONFLICT (userId, guildId) 
+                 DO UPDATE SET xp = GREATEST(0, users.xp - $3)`,
+                [target.id, interaction.guild.id, amount, Date.now()]
+            );
+
             await interaction.reply({ content: `⚠️ **${amount} XP** ont été retirés à ${target}.`, ephemeral: true });
         } catch (error) {
             console.error(error);
-            interaction.reply({ content: '❌ Une erreur est survenue lors du retrait d\'XP.', ephemeral: true });
+            await interaction.reply({ content: '❌ Une erreur est survenue lors du retrait d\'XP.', ephemeral: true });
         }
     },
 };
