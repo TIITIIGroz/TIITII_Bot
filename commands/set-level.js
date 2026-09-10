@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { setUserLevel } = require('../systems/levels/database'); // Ajuste le chemin selon ton fichier de DB
+const pool = require('../systems/levels/database');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -24,11 +24,19 @@ module.exports = {
         }
 
         try {
-            await setUserLevel(target.id, interaction.guild.id, level);
+            // Met à jour directement le niveau dans la table
+            await pool.query(
+                `INSERT INTO users (userId, guildId, level, createdAt) 
+                 VALUES ($1, $2, $3, $4) 
+                 ON CONFLICT (userId, guildId) 
+                 DO UPDATE SET level = $3`,
+                [target.id, interaction.guild.id, level, Date.now()]
+            );
+
             await interaction.reply({ content: `⭐ Le niveau de ${target} a été défini à **${level}**.`, ephemeral: true });
         } catch (error) {
             console.error(error);
-            interaction.reply({ content: '❌ Une erreur est survenue lors de la modification du niveau.', ephemeral: true });
+            await interaction.reply({ content: '❌ Une erreur est survenue lors de la modification du niveau.', ephemeral: true });
         }
     },
 };
