@@ -147,8 +147,9 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
     }
 });
 
-// 👇 2. CHARGEMENT DE TON AUTOMATISME CONFIG REMINDER 👇
+// 👇 CHARGEMENT DE TES AUTOMATISMES 👇
 require('./Automatisme/ConfigReminder')(client);
+require('./Automatisme/WelcomeSystem')(client);
 
 // 👇 3. CONNEXION DISCORD 👇
 console.log("Tentative de connexion à Discord...");
