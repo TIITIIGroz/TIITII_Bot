@@ -5,7 +5,7 @@ module.exports = (client) => {
 
     // Détection d'un nouveau salon
     client.on(Events.ChannelCreate, async (channel) => {
-        if (!channel.guild) return; // Ignore les messages privés
+        if (!channel.guild) return;
         try {
             const targetChannel = await client.channels.fetch(targetChannelId);
             if (targetChannel) {
@@ -17,7 +17,7 @@ module.exports = (client) => {
     });
 
     // Détection d'un nouveau rôle
-    client.on(Events.RoleCreate, async (role) => {
+    client.on(Events.GuildRoleCreate, async (role) => {
         try {
             const targetChannel = await client.channels.fetch(targetChannelId);
             if (targetChannel) {
