@@ -21,7 +21,7 @@ module.exports = (client) => {
             const targetChannel = await client.channels.fetch(targetChannelId);
             if (targetChannel) {
                 await targetChannel.send({
-                    content: `**Nouveau salon détecté !** Pense à l'ajouter dans `config.js` :\n> **Nom :** \`${channel.name}\`\n> **ID :** \`${channel.id}\`\n ------------------------------------------------`,
+                    content: `**Nouveau salon détecté !** Pense à l'ajouter dans \`config.js\` :\n> **Nom :** \`${channel.name}\`\n> **ID :** \`${channel.id}\`\n ------------------------------------------------`,
                     components: [createDeleteButton()]
                 });
             }
