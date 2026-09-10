@@ -8,7 +8,7 @@ module.exports = (client) => {
         return new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId('delete_reminder')
-                .setLabel('Traité / Supprimer')
+                .setLabel('Supprimer')
                 .setStyle(ButtonStyle.Success) // Bouton vert
                 .setEmoji('✅')
         );
