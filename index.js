@@ -73,7 +73,7 @@ client.once(Events.ClientReady, () => {
     });
 });
 
-// Gestion des rôles automatiques
+// Gestion des rôles automatiques (Accès)
 client.on("guildMemberUpdate", async (oldMember, newMember) => {
     const ACCESS_ROLE = "1509584318203433001";
     const TRIGGER_ROLES = ["1269778023826067699", "1533558027825840218"];
@@ -83,7 +83,68 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
     try {
         if (hasTriggerRole && !hasAccessRole) await newMember.roles.add(ACCESS_ROLE);
         if (!hasTriggerRole && hasAccessRole) await newMember.roles.remove(ACCESS_ROLE);
-    } catch (err) { console.error(err); }
+    } catch (err) { console.error("Erreur gestion rôle d'accès :", err); }
+});
+
+// Gestion des Boosts Serveur
+client.on("guildMemberUpdate", async (oldMember, newMember) => {
+    const BOOST_ROLE_ID = "1547695661435195424";
+    const LOG_CHANNEL_ID = "1534224381109076172";
+
+    const wasBoosting = oldMember.premiumSinceTimestamp !== null;
+    const isBoosting = newMember.premiumSinceTimestamp !== null;
+
+    try {
+        // Vient de booster
+        if (!wasBoosting && isBoosting) {
+            if (!newMember.roles.cache.has(BOOST_ROLE_ID)) {
+                await newMember.roles.add(BOOST_ROLE_ID);
+            }
+            const channel = await client.channels.fetch(LOG_CHANNEL_ID).catch(() => null);
+            if (channel) {
+                await channel.send(`🎉 Merci beaucoup ${newMember} pour le boost du serveur ! Le rôle de soutien t'a été attribué.`);
+            }
+        }
+
+        // Le boost est terminé
+        if (wasBoosting && !isBoosting) {
+            if (newMember.roles.cache.has(BOOST_ROLE_ID)) {
+                await newMember.roles.remove(BOOST_ROLE_ID);
+            }
+        }
+    } catch (err) { 
+        console.error("Erreur gestion boost :", err); 
+    }
+});
+
+// Gestion du Tag utilisateur
+client.on("guildMemberUpdate", async (oldMember, newMember) => {
+    const TAG_ROLE_ID = "1547699213700309072";
+    const TARGET_TAG = "TIITII"; // Modifie si besoin par ton tag exact
+
+    const oldName = oldMember.nickname || oldMember.user.username;
+    const newName = newMember.nickname || newMember.user.username;
+
+    const hadTag = oldName.includes(TARGET_TAG);
+    const hasTag = newName.includes(TARGET_TAG);
+
+    try {
+        // Ajout du tag
+        if (!hadTag && hasTag) {
+            if (!newMember.roles.cache.has(TAG_ROLE_ID)) {
+                await newMember.roles.add(TAG_ROLE_ID);
+            }
+        }
+
+        // Retrait du tag
+        if (hadTag && !hasTag) {
+            if (newMember.roles.cache.has(TAG_ROLE_ID)) {
+                await newMember.roles.remove(TAG_ROLE_ID);
+            }
+        }
+    } catch (err) { 
+        console.error("Erreur gestion tag :", err); 
+    }
 });
 
 // 👇 2. CHARGEMENT DE TON AUTOMATISME CONFIG REMINDER 👇
