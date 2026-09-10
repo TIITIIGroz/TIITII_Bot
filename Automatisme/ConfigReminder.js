@@ -8,7 +8,7 @@ module.exports = (client) => {
         return new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId('delete_reminder')
-                .setLabel('Traité / Supprimer')
+                .setLabel('Supprimer')
                 .setStyle(ButtonStyle.Success) // Bouton vert
                 .setEmoji('✅')
         );
@@ -30,12 +30,12 @@ module.exports = (client) => {
         }
     });
 
-    // Détection d'un nouveau rôle (avec un petit délai pour capter le renommage si fait rapidement)
+    // Détection d'un nouveau rôle (avec un délai et un fetch API pour attraper le renommage)
     client.on(Events.GuildRoleCreate, async (role) => {
         setTimeout(async () => {
             try {
-                // On récupère les infos fraîches du rôle au cas où il a été renommé
-                const freshRole = role.guild.roles.cache.get(role.id) || role;
+                // Va chercher les données fraîches directement auprès de Discord
+                const freshRole = await role.guild.roles.fetch(role.id).catch(() => role);
                 const targetChannel = await client.channels.fetch(targetChannelId);
                 
                 if (targetChannel) {
@@ -47,7 +47,7 @@ module.exports = (client) => {
             } catch (error) {
                 console.error("Erreur lors de l'envoi de l'alerte rôle :", error);
             }
-        }, 1000); // Attend 1 seconde pour laisser le temps de renommer
+        }, 1500); // Attend 1.5 seconde pour laisser le temps de renommer
     });
 
     // Gestion du clic sur le bouton pour supprimer le message
