@@ -21,7 +21,7 @@ module.exports = (client) => {
             const targetChannel = await client.channels.fetch(targetChannelId);
             if (targetChannel) {
                 await targetChannel.send({
-                    content: `**Nouveau salon détecté !** Pense à l'ajouter dans \`config.js\` :\n> **Nom :** \`${channel.name}\`\n> **ID :** \`${channel.id}\`\n ------------------------------------------------`,
+                    content: `**Nouveau salon détecté !** Pense à l'ajouter dans \`config.js\` :\n> **Salon :** <#${channel.id}>\n> **Nom :** \`${channel.name}\`\n> **ID :** \`${channel.id}\`\n ------------------------------------------------`,
                     components: [createDeleteButton()]
                 });
             }
@@ -29,7 +29,7 @@ module.exports = (client) => {
             console.error("Erreur lors de l'envoi de l'alerte salon :", error);
         }
     });
-
+    
     // Détection d'un nouveau rôle (avec un délai et un fetch API pour attraper le renommage)
     client.on(Events.GuildRoleCreate, async (role) => {
         setTimeout(async () => {
@@ -40,7 +40,7 @@ module.exports = (client) => {
                 
                 if (targetChannel) {
                     await targetChannel.send({
-                        content: `**Nouveau rôle détecté !** Pense à l'ajouter dans \`config.js\` :\n> **Mention :** <@&${freshRole.id}>\n> **ID :** \`${freshRole.id}\``,
+                        content: `**Nouveau rôle détecté !** Pense à l'ajouter dans \`config.js\` :\n> **Mention :** <@&${freshRole.id}>\n> **ID :** \`${freshRole.id}\`------------------------------------------------`,
                         components: [createDeleteButton()]
                     });
                 }
