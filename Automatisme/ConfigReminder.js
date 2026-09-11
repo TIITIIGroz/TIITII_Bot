@@ -1,7 +1,7 @@
 const { Events, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 module.exports = (client) => {
-    const targetChannelId = '1534224381109076172';
+    const targetChannelId = '1547857175878041630';
 
     // Fonction pour créer le bouton interactif de suppression
     const createDeleteButton = () => {
