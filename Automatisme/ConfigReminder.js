@@ -40,7 +40,7 @@ module.exports = (client) => {
                 
                 if (targetChannel) {
                     await targetChannel.send({
-                        content: `**Nouveau rôle détecté !** Pense à l'ajouter dans \`config.js\` :\n> **Nom :** \`${freshRole.name}\`\n> **ID :** \`${freshRole.id}\``,
+                        content: `**Nouveau rôle détecté !** Pense à l'ajouter dans \`config.js\` :\n> **Mention :** <@&${freshRole.id}>\n> **Nom :** \`${freshRole.name}\`\n> **ID :** \`${freshRole.id}\``,
                         components: [createDeleteButton()]
                     });
                 }
