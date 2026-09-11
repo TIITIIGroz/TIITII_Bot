@@ -59,7 +59,7 @@ client.on(Events.MessageCreate, async (message) => {
 });
 
 // Bot prêt
-client.once(Events.ClientReady, () => {
+client.once(Events.ClientReady, async () => {
     console.log(`✅ Connecté en tant que ${client.user.tag}`);
     
     console.log(`📋 Commandes enregistrées en mémoire : ${client.commands.size}`);
@@ -71,6 +71,17 @@ client.once(Events.ClientReady, () => {
         activities: [{ name: "TIITII_Groz sur/on Twitch", type: ActivityType.Streaming, url: "https://www.twitch.tv/TIITII_Groz" }],
         status: "online",
     });
+
+    // Envoi du message de connexion sur Render
+    const ONLINE_CHANNEL_ID = "1547854332333006899";
+    try {
+        const channel = await client.channels.fetch(ONLINE_CHANNEL_ID).catch(() => null);
+        if (channel) {
+            await channel.send("Je suis en ligne !");
+        }
+    } catch (err) {
+        console.error("Erreur lors de l'envoi du message 'Je suis en ligne' :", err);
+    }
 });
 
 // Gestion des rôles automatiques (Accès)
