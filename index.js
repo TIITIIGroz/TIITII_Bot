@@ -72,12 +72,13 @@ client.once(Events.ClientReady, async () => {
         status: "online",
     });
 
-    // Envoi du message de connexion sur Render
+    // Envoi du message de connexion sur Render avec l'heure dynamique
     const ONLINE_CHANNEL_ID = "1547854332333006899";
     try {
         const channel = await client.channels.fetch(ONLINE_CHANNEL_ID).catch(() => null);
         if (channel) {
-            await channel.send("Je suis en ligne !");
+            const timestamp = Math.floor(Date.now() / 1000);
+            await channel.send(`Je suis en ligne ! Lancé à <t:${timestamp}:T>`);
         }
     } catch (err) {
         console.error("Erreur lors de l'envoi du message 'Je suis en ligne' :", err);
