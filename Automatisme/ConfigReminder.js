@@ -21,7 +21,7 @@ module.exports = (client) => {
             const targetChannel = await client.channels.fetch(targetChannelId);
             if (targetChannel) {
                 await targetChannel.send({
-                    content: `**Nouveau salon détecté !** Pense à l'ajouter dans \`config.js\` :\n> **Salon :** <#${channel.id}>\n> **Nom :** \`${channel.name}\`\n> **ID :** \`${channel.id}\`\n ------------------------------------------------`,
+                    content: `**Nouveau salon détecté !** Pense à l'ajouter dans \`config.js\` :\n> **Salon :** <#${channel.id}>\n> **Nom :** \`${channel.name}\`\n> **ID :** \`${channel.id}\`\n`,
                     components: [createDeleteButton()]
                 });
             }
@@ -40,7 +40,7 @@ module.exports = (client) => {
                 
                 if (targetChannel) {
                     await targetChannel.send({
-                        content: `**Nouveau rôle détecté !** Pense à l'ajouter dans \`config.js\` :\n> **Mention :** <@&${freshRole.id}>\n> **ID :** \`${freshRole.id}\`------------------------------------------------`,
+                        content: `**Nouveau rôle détecté !** Pense à l'ajouter dans \`config.js\` :\n> **Mention :** <@&${freshRole.id}>\n> **ID :** \`${freshRole.id}\``,
                         components: [createDeleteButton()]
                     });
                 }
