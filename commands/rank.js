@@ -12,7 +12,7 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
         const { database: pool } = require('../systems/levels');
-        const { getXpForLevel } = require('../systems/levels/level'); 
+        const { getLevelProgress } = require('../systems/levels/level'); 
         
         const targetMember = interaction.options.getMember('membre') || interaction.member;
         const userId = targetMember.id;
@@ -25,16 +25,16 @@ module.exports = {
             );
 
             const row = res.rows[0];
-            const userData = row || { xp: 0, totalXp: 0, level: 0, messages: 0 };
+            const userData = row || { totalXp: 0, level: 0 };
 
-            const currentLevel = parseInt(userData.level) || 0;
             const currentTotalXp = parseInt(userData.totalxp) || 0;
+            
+            // On utilise getLevelProgress pour obtenir des données cohérentes
+            const progress = getLevelProgress(currentTotalXp);
+            const currentLevel = progress.level;
             const nextLevel = currentLevel + 1;
+            const xpRemaining = progress.requiredXp - progress.currentXp;
 
-            const xpNeededForNext = getXpForLevel(currentLevel);
-            const xpRemaining = Math.max(0, xpNeededForNext - currentTotalXp);
-
-            // Utilisation de __ pour souligner (underline) au lieu de _ (italique)
             const rankMessage = `***<@${userId}>*** !\n\n` +
                 `Tu es au **niveau ${currentLevel}** ! Il te reste __${xpRemaining}__ xp à avoir pour être au __niveau ${nextLevel}__ !\n\n` +
                 `You're at **level ${currentLevel}** ! There's still __${xpRemaining}__ xp left to have in order to be at __level ${nextLevel}__ !`;
