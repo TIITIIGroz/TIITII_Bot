@@ -33,6 +33,7 @@ module.exports = {
             const progress = getLevelProgress(currentTotalXp);
             const currentLevel = progress.level;
             const nextLevel = currentLevel + 1;
+            const currentXp = progress.currentXp; // Correction ici
             const xpRemaining = progress.requiredXp - progress.currentXp;
 
             const rankMessage = `***<@${userId}>*** !\n\n` +
