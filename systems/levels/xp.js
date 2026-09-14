@@ -3,7 +3,7 @@ const config = require('./config');
 const { getRandomXp, isValidMessage } = require('./utils');
 const { getLevelFromXp } = require('./level');
 const { checkAndReward } = require('./rewards');
-const { EmbedBuilder } = require('discord.js'); // Importation de l'EmbedBuilder
+const { EmbedBuilder } = require('discord.js');
 
 async function handleXpMessage(message, client) {
     if (!isValidMessage(message)) return;
@@ -12,16 +12,22 @@ async function handleXpMessage(message, client) {
     const guildId = message.guild.id;
     const now = Date.now();
 
+    console.log(`💬 [DEBUG XP] Message reçu de ${message.author.tag} dans la guilde ${guildId}`);
+
     try {
+        console.log(`💬 [DEBUG XP] Étape 1 : Requête SELECT dans la BDD...`);
         const res = await pool.query(
             `SELECT * FROM users WHERE userId = $1 AND guildId = $2`,
             [userId, guildId]
         );
         let user = res.rows[0];
+        console.log(`💬 [DEBUG XP] Étape 1 réussie. Utilisateur trouvé ? ${user ? "Oui" : "Non (Création)"}`);
 
         if (user) {
-            // PostgreSQL renvoie les colonnes en minuscules
-            if (now - parseInt(user.lastmessage) < config.COOLDOWN) return;
+            if (now - parseInt(user.lastmessage) < config.COOLDOWN) {
+                console.log(`💬 [DEBUG XP] Ignoré (Cooldown actif).`);
+                return;
+            }
 
             const xpEarned = getRandomXp();
             const newXp = parseInt(user.xp) + xpEarned;
@@ -30,39 +36,40 @@ async function handleXpMessage(message, client) {
             const newLevel = getLevelFromXp(newTotalXp);
             const oldLevel = parseInt(user.level);
 
+            console.log(`💬 [DEBUG XP] Étape 2 : Requête UPDATE en cours...`);
             await pool.query(
                 `UPDATE users SET xp = $1, totalXp = $2, level = $3, messages = $4, lastMessage = $5 WHERE userId = $6 AND guildId = $7`,
                 [newXp, newTotalXp, newLevel, newMessages, now, userId, guildId]
             );
+            console.log(`💬 [DEBUG XP] Étape 2 réussie (Update OK).`);
 
             if (newLevel > oldLevel) {
+                console.log(`🎉 [DEBUG XP] Level Up ! Passage du niveau ${oldLevel} au niveau ${newLevel}`);
                 await checkAndReward(message.member, newLevel);
                 
-                // Utilisation directe de ton ID de salon spécifique
                 const channelId = "1011649291124744212";
                 const targetChannel = client.channels.cache.get(channelId);
                 
                 if (targetChannel) {
-                    // Création de l'embed couleur bleu clair (#3498DB ou #00BFFF)
                     const levelUpEmbed = new EmbedBuilder()
-                        .setColor('#3498DB') // Bleu clair
+                        .setColor('#3498DB')
                         .setDescription(`***<@${userId}>*** !\n\nTu viens de passer _niveau ${newLevel}_ !\n\nYou just passed _level ${newLevel}_ !`);
 
                     await targetChannel.send({ embeds: [levelUpEmbed] });
-                } else {
-                    console.log("⚠️ Salon de niveau introuvable ou bot sans permissions dans ce salon.");
                 }
             }
         } else {
             const xpEarned = getRandomXp();
             const newLevel = getLevelFromXp(xpEarned);
+            console.log(`💬 [DEBUG XP] Étape 2b : Insertion d'un nouvel utilisateur...`);
             await pool.query(
                 `INSERT INTO users (userId, guildId, xp, totalXp, level, messages, lastMessage, createdAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
                 [userId, guildId, xpEarned, xpEarned, newLevel, 1, now, now]
             );
+            console.log(`💬 [DEBUG XP] Insertion réussie.`);
         }
     } catch (err) {
-        console.error("❌ Erreur dans le système d'XP :", err);
+        console.error("❌ ERREUR CRITIQUE dans le système d'XP texte :", err);
     }
 }
 
