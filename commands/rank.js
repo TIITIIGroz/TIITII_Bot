@@ -36,8 +36,8 @@ module.exports = {
             const xpRemaining = progress.requiredXp - progress.currentXp;
 
             const rankMessage = `***<@${userId}>*** !\n\n` +
-                `Tu es au **niveau ${currentLevel}** ! Il te reste __${xpRemaining}__ xp à avoir pour être au __niveau ${nextLevel}__ !\n\n` +
-                `You're at **level ${currentLevel}** ! There's still __${xpRemaining}__ xp left to have in order to be at __level ${nextLevel}__ !`;
+                `Tu es au **niveau ${currentLevel}** avec **${currentXp}** xp ! Il te reste __${xpRemaining}__ xp à avoir pour être au __niveau ${nextLevel}__ !\n\n` +
+                `You're at **level ${currentLevel}** with **${currentXp}** xp ! There's still __${xpRemaining}__ xp left to have in order to be at __level ${nextLevel}__ !`;
 
             await interaction.editReply({ content: rankMessage });
         } catch (error) {
