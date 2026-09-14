@@ -17,18 +17,19 @@ function getLevelFromXp(totalXp) {
 // Calcule l'XP actuel et l'XP requis pour le niveau en cours
 function getLevelProgress(totalXp) {
     let level = 0;
-    let xpRemaining = totalXp;
-    
-    while (xpRemaining >= getXpForLevel(level)) {
-        xpRemaining -= getXpForLevel(level);
+    let xpNeeded = getXpForLevel(level);
+
+    // Tant qu'on a assez d'XP pour passer au niveau supérieur, on déduit le coût du palier
+    while (totalXp >= xpNeeded) {
+        totalXp -= xpNeeded;
         level++;
+        xpNeeded = getXpForLevel(level);
     }
-    
-    const xpRequired = getXpForLevel(level);
+
     return {
         level: level,
-        currentXp: xpRemaining,
-        requiredXp: xpRequired
+        currentXp: totalXp,     // L'XP actuel accumulé dans le niveau en cours
+        requiredXp: xpNeeded    // L'XP total requis pour valider ce niveau
     };
 }
 
