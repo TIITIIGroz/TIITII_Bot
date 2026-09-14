@@ -21,8 +21,9 @@ const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildMessages, // REQUIS POUR L'XP
-        GatewayIntentBits.MessageContent  // REQUIS POUR LIRE LE TEXTE
+        GatewayIntentBits.GuildMessages, // REQUIS POUR L'XP TEXTUEL
+        GatewayIntentBits.MessageContent, // REQUIS POUR LIRE LE TEXTE
+        GatewayIntentBits.GuildVoiceStates // 👈 REQUIS POUR DÉTECTER LE VOCAL (XP VOCAL)
     ]
 });
 
@@ -159,9 +160,10 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
     }
 });
 
-// 👇 CHARGEMENT DE TES AUTOMATISMES 👇
+// 👇 CHARGEMENT DE TES AUTOMATISMES ET SYSTÈMES 👇
 require('./Automatisme/ConfigReminder')(client);
 require('./Automatisme/WelcomeSystem')(client);
+require('./systems/levels/voiceXp')(client); // 👈 CHARGEMENT DU FUTUR SYSTÈME VOCAL
 
 // 👇 3. CONNEXION DISCORD 👇
 console.log("Tentative de connexion à Discord...");
