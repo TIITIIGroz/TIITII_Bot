@@ -6,13 +6,19 @@ const { checkAndReward } = require('./rewards');
 const { EmbedBuilder } = require('discord.js');
 
 async function handleXpMessage(message, client) {
-    if (!isValidMessage(message)) return;
+    // 🔍 TEST BRUT : S'affiche dès qu'un message passe par l'événement
+    console.log(`🔍 [TEST BRUT] Message capté de ${message.author?.tag} (Bot: ${message.author?.bot}) dans le salon ${message.channel?.id}`);
+
+    if (!isValidMessage(message)) {
+        console.log(`🔍 [TEST BRUT] Message rejeté par isValidMessage()`);
+        return;
+    }
 
     const userId = message.author.id;
     const guildId = message.guild.id;
     const now = Date.now();
 
-    console.log(`💬 [DEBUG XP] Message reçu de ${message.author.tag} dans la guilde ${guildId}`);
+    console.log(`💬 [DEBUG XP] Message valide de ${message.author.tag} dans la guilde ${guildId}`);
 
     try {
         console.log(`💬 [DEBUG XP] Étape 1 : Requête SELECT dans la BDD...`);
