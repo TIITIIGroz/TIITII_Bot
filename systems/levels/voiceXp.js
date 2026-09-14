@@ -4,6 +4,12 @@ const { checkAndReward } = require('./rewards');
 const { EmbedBuilder } = require('discord.js');
 
 module.exports = (client) => {
+    // 🛑 Liste des IDs des salons vocaux où l'XP est désactivé
+    const EXCLUDED_CHANNELS = [
+        "896742491565473812", // Voc AFK
+        "990642579542536262" // Voc Attente Moov
+    ];
+
     // Vérification toutes les 60 secondes (60000 ms)
     setInterval(async () => {
         try {
@@ -13,13 +19,16 @@ module.exports = (client) => {
                 for (const channel of guild.channels.cache.values()) {
                     if (!channel.isVoiceBased()) continue;
 
+                    // 🚫 Si le salon est dans la liste des exclus, on passe au suivant
+                    if (EXCLUDED_CHANNELS.includes(channel.id)) continue;
+
                     // Parcourt les membres connectés dans le vocal (on ignore les bots)
                     for (const member of channel.members.values()) {
                         if (member.user.bot) continue;
 
                         const userId = member.id;
                         const guildId = guild.id;
-                        const voiceXpEarned = 2; // 👈 Moins d'XP qu'à l'écrit (ajuste si tu veux 3 ou 5)
+                        const voiceXpEarned = 2; // XP gagné par minute en vocal
 
                         // Vérifie si l'utilisateur existe déjà en BDD
                         const res = await pool.query(
