@@ -65,6 +65,7 @@ module.exports = {
 
     EXCLUDED_ROLES: [
         "913882559363043388", // Rôle prisonniers
+        "1549495761761214484", // Rôle Cachot
     ],
 
     // Rôles de récompense selon les niveaux
