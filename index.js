@@ -133,7 +133,7 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
 // Gestion du Tag utilisateur
 client.on("guildMemberUpdate", async (oldMember, newMember) => {
     const TAG_ROLE_ID = "1547699213700309072";
-    const TARGET_TAG = "TIITII"; // Modifie si besoin par ton tag exact
+    const TARGET_TAG = "GROZ"; // Modifie si besoin par ton tag exact
 
     const oldName = oldMember.nickname || oldMember.user.username;
     const newName = newMember.nickname || newMember.user.username;
