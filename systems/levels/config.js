@@ -29,6 +29,7 @@ module.exports = {
 
         //Catégorie Staff
         "1534249654701785168", // Test
+        "1549500976317337670", // Choses à garder
         "987031560945553418", // Test-Bot
         "1491749498094092388", // Choses à faire
         "1533214591201312909", // Choses à faire + tard
@@ -36,7 +37,9 @@ module.exports = {
  
         //Catégorie TIITII_Bot
         "1533889676513906838", // TIITII_Bot
+        "1547854332333006899", // en ligne
         "1534224381109076172", // Bot choses à faire
+        "1547857175878041630", // Config.js
         "1534599616681607388", // Infos Modifications
 
         //Catégorie notifications
