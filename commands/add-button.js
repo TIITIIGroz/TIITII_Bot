@@ -83,7 +83,8 @@ module.exports = {
             try {
                 const logChannel = await interaction.client.channels.fetch(LOG_CHANNEL_ID);
                 if (logChannel) {
-                    await logChannel.send(`Le bouton '${buttonName}' vient d'être créé, la key pour le retirer c'est '${key}' avec le message dont l'ID c'est '${messageId}'.`);
+                    await logChannel.send(`Le bouton ' ${buttonName} ' vient d'être créé, la key pour le retirer c'est key avec le message dont l'ID c'est ${messageId}.`\n \n ------------------------------------------------
+`);
                 }
             } catch (logError) {
                 console.error("Impossible d'envoyer le message de log dans le salon :", logError);
