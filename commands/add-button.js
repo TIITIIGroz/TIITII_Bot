@@ -4,15 +4,15 @@ const supabase = require('../supabase');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('add-button')
-        .setDescription('Ajoute un bouton personnalisé et interactif à un message existant')
+        .setDescription('Ajoute un bouton interactif à un message')
         .addStringOption(option =>
             option.setName('message_id')
-                .setDescription('ID du message auquel ajouter le bouton')
+                .setDescription('ID du message cible')
                 .setRequired(true)
         )
         .addStringOption(option =>
             option.setName('button_name')
-                .setDescription('Le texte affiché SUR le bouton (et utilisé comme identifiant)')
+                .setDescription('Le nom affiché sur le bouton')
                 .setRequired(true)
         )
         .addStringOption(option =>
@@ -28,8 +28,8 @@ module.exports = {
         const buttonName = interaction.options.getString('button_name');
         const responseText = interaction.options.getString('response_text');
 
-        // On nettoie le nom du bouton pour en faire un identifiant propre (minuscules, sans espaces) pour le customId
-        const buttonKey = buttonName.trim().toLowerCase().replace(/\s+/g, '_');
+        // Génération automatique d'un identifiant unique en arrière-plan basé sur le nom du bouton
+        const buttonKey = buttonName.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
 
         try {
             const message = await interaction.channel.messages.fetch(messageId);
@@ -37,7 +37,7 @@ module.exports = {
                 return interaction.editReply({ content: "❌ Impossible de trouver un message avec cet ID." });
             }
 
-            // Enregistrement dans Supabase en utilisant le nom du bouton comme clé
+            // Enregistrement dans Supabase
             const { error: dbError } = await supabase
                 .from('button_translations')
                 .upsert({ key: buttonKey, response_text: responseText });
@@ -65,7 +65,7 @@ module.exports = {
 
             if (!added) {
                 if (rows.length >= 5) {
-                    return interaction.editReply({ content: "❌ Limite maximale de boutons atteinte sur ce message." });
+                    return interaction.editReply({ content: "❌ Ce message a atteint la limite maximale de boutons." });
                 }
                 const newRow = new ActionRowBuilder().addComponents(newButton);
                 rows.push(newRow);
