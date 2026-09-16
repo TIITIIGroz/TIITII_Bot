@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
-const supabase = require('../supabase'); // Import direct de ton fichier supabase.js à la racine
+const supabase = require('../supabase');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -12,12 +12,7 @@ module.exports = {
         )
         .addStringOption(option =>
             option.setName('button_name')
-                .setDescription('Le texte affiché SUR le bouton')
-                .setRequired(true)
-        )
-        .addStringOption(option =>
-            option.setName('key')
-                .setDescription('Un identifiant unique (ex: regles_en)')
+                .setDescription('Le texte affiché SUR le bouton (et utilisé comme identifiant)')
                 .setRequired(true)
         )
         .addStringOption(option =>
@@ -31,8 +26,10 @@ module.exports = {
 
         const messageId = interaction.options.getString('message_id');
         const buttonName = interaction.options.getString('button_name');
-        const key = interaction.options.getString('key');
         const responseText = interaction.options.getString('response_text');
+
+        // On nettoie le nom du bouton pour en faire un identifiant propre (minuscules, sans espaces) pour le customId
+        const buttonKey = buttonName.trim().toLowerCase().replace(/\s+/g, '_');
 
         try {
             const message = await interaction.channel.messages.fetch(messageId);
@@ -40,10 +37,10 @@ module.exports = {
                 return interaction.editReply({ content: "❌ Impossible de trouver un message avec cet ID." });
             }
 
-            // Enregistrement ou mise à jour dans Supabase
+            // Enregistrement dans Supabase en utilisant le nom du bouton comme clé
             const { error: dbError } = await supabase
                 .from('button_translations')
-                .upsert({ key: key, response_text: responseText });
+                .upsert({ key: buttonKey, response_text: responseText });
 
             if (dbError) {
                 console.error("Erreur Supabase upsert :", dbError);
@@ -51,7 +48,7 @@ module.exports = {
             }
 
             const newButton = new ButtonBuilder()
-                .setCustomId(`translate_${key}`)
+                .setCustomId(`translate_${buttonKey}`)
                 .setLabel(buttonName)
                 .setStyle(ButtonStyle.Primary);
 
@@ -68,7 +65,7 @@ module.exports = {
 
             if (!added) {
                 if (rows.length >= 5) {
-                    return interaction.editReply({ content: "❌ Limite maximale de boutons atteinte." });
+                    return interaction.editReply({ content: "❌ Limite maximale de boutons atteinte sur ce message." });
                 }
                 const newRow = new ActionRowBuilder().addComponents(newButton);
                 rows.push(newRow);
