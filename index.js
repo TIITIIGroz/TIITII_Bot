@@ -39,8 +39,39 @@ if (fs.existsSync(commandsPath)) {
     }
 }
 
-// Slash Commands
+// Slash Commands & Boutons interactifs (/tbouton)
 client.on("interactionCreate", async interaction => {
+    // 1. Gestion des clics sur les boutons (générés par /tbouton)
+    if (interaction.isButton()) {
+        if (interaction.customId.startsWith('translate_')) {
+            const key = interaction.customId.replace('translate_', '');
+            
+            let translations = {};
+            const filePath = path.join(__dirname, 'translations.json');
+            
+            try {
+                if (fs.existsSync(filePath)) {
+                    translations = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                }
+            } catch (err) {
+                console.error("Erreur lecture translations.json :", err);
+            }
+
+            const responseText = translations[key] || "❌ Texte secret introuvable.";
+
+            try {
+                return await interaction.reply({
+                    content: responseText,
+                    ephemeral: true
+                });
+            } catch (err) {
+                console.error("Erreur réponse bouton :", err);
+            }
+        }
+        return;
+    }
+
+    // 2. Gestion classique des commandes Slash
     if (!interaction.isChatInputCommand()) return;
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
