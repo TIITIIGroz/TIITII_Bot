@@ -1,9 +1,9 @@
-const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
-// Chemin vers ton fichier de sauvegarde des traductions/textes
-const filePath = path.join(__dirname, '../translations.json'); // Ajuste le chemin selon l'emplacement de ton fichier
+// Chemin vers le fichier JSON qui stockera les textes secrets
+const filePath = path.join(__dirname, '../translations.json');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -21,7 +21,7 @@ module.exports = {
         )
         .addStringOption(option =>
             option.setName('key')
-                .setDescription('Un identifiant unique pour ce texte (ex: regles_1, faq_2)')
+                .setDescription('Un identifiant unique pour ce texte (ex: regles_en, faq_1)')
                 .setRequired(true)
         )
         .addStringOption(option =>
@@ -31,7 +31,7 @@ module.exports = {
         ),
 
     async execute(interaction) {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
         const messageId = interaction.options.getString('message_id');
         const buttonName = interaction.options.getString('button_name');
@@ -42,10 +42,10 @@ module.exports = {
             // 1. Récupérer le message dans le salon actuel
             const message = await interaction.channel.messages.fetch(messageId);
             if (!message) {
-                return interaction.editReply("❌ Impossible de trouver un message avec cet ID dans ce salon.");
+                return interaction.editReply({ content: "❌ Impossible de trouver un message avec cet ID dans ce salon." });
             }
 
-            // 2. Charger ou créer le fichier JSON pour stocker le texte associé à la clé
+            // 2. Charger ou créer le fichier JSON pour stocker le texte secret associé à la clé
             let translations = {};
             if (fs.existsSync(filePath)) {
                 translations = JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -57,15 +57,13 @@ module.exports = {
             // 3. Créer le nouveau bouton avec le nom choisi
             const newButton = new ButtonBuilder()
                 .setCustomId(`translate_${key}`)
-                .setLabel(buttonName) // Le texte que tu veux sur le bouton
+                .setLabel(buttonName)
                 .setStyle(ButtonStyle.Primary);
 
-            // 4. Gérer l'empilement intelligent des boutons
-            // Discord autorise max 5 boutons par ligne (ActionRow) et max 5 lignes (soit 25 boutons au total)
+            // 4. Gérer l'empilement intelligent des boutons (jusqu'à 5 par ligne, 5 lignes max)
             let rows = message.components.map(row => ActionRowBuilder.from(row));
             let added = false;
 
-            // On cherche s'il reste de la place sur une ligne existante (moins de 5 boutons)
             for (let row of rows) {
                 if (row.components.length < 5) {
                     row.addComponents(newButton);
@@ -74,24 +72,23 @@ module.exports = {
                 }
             }
 
-            // Si toutes les lignes existantes sont pleines (ou s'il n'y a aucune ligne), on en crée une nouvelle
             if (!added) {
                 if (rows.length >= 5) {
-                    return interaction.editReply("❌ Ce message a atteint la limite maximale de boutons autorisée par Discord.");
+                    return interaction.editReply({ content: "❌ Ce message a atteint la limite maximale de boutons autorisée par Discord." });
                 }
                 const newRow = new ActionRowBuilder().addComponents(newButton);
                 rows.push(newRow);
             }
 
-            // 5. Mettre à jour le message sur Discord avec tous les boutons
+            // 5. Mettre à jour le message sur Discord avec les nouveaux composants
             await message.edit({
                 components: rows
             });
 
-            await interaction.editReply(`✅ Succès ! Le bouton **"${buttonName}"** a été ajouté au message.`);
+            await interaction.editReply({ content: `✅ Succès ! Le bouton **"${buttonName}"** a bien été ajouté au message.` });
         } catch (error) {
             console.error(error);
-            await interaction.editReply("❌ Une erreur est survenue (Vérifie l'ID du message et les permissions du bot).");
+            await interaction.editReply({ content: "❌ Une erreur est survenue (Vérifie l'ID du message et les permissions du bot)." });
         }
     },
 };
