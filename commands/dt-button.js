@@ -1,18 +1,18 @@
 const { SlashCommandBuilder, ActionRowBuilder, MessageFlags } = require('discord.js');
-const supabase = require('../supabase'); // Import direct de ton fichier supabase.js à la racine
+const supabase = require('../supabase');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('dt-button')
-        .setDescription('Retire un bouton spécifique d\'un message grâce à sa clé')
+        .setDescription('Retire un bouton d\'un message grâce au nom exact affiché dessus')
         .addStringOption(option =>
             option.setName('message_id')
                 .setDescription('ID du message contenant le bouton à supprimer')
                 .setRequired(true)
         )
         .addStringOption(option =>
-            option.setName('key')
-                .setDescription('La clé unique du bouton à supprimer')
+            option.setName('button_name')
+                .setDescription('Le nom exact du bouton à supprimer')
                 .setRequired(true)
         ),
 
@@ -20,8 +20,11 @@ module.exports = {
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
         const messageId = interaction.options.getString('message_id');
-        const keyToRemove = interaction.options.getString('key');
-        const targetCustomId = `translate_${keyToRemove}`;
+        const buttonName = interaction.options.getString('button_name');
+        
+        // On recrée la même normalisation pour retrouver le bon customId
+        const buttonKey = buttonName.trim().toLowerCase().replace(/\s+/g, '_');
+        const targetCustomId = `translate_${buttonKey}`;
 
         try {
             const message = await interaction.channel.messages.fetch(messageId);
@@ -54,24 +57,24 @@ module.exports = {
             }
 
             if (!buttonFound) {
-                return interaction.editReply({ content: `❌ Aucun bouton avec la clé **"${keyToRemove}"** n'a été trouvé.` });
+                return interaction.editReply({ content: `❌ Aucun bouton nommé **"${buttonName}"** n'a été trouvé sur ce message.` });
             }
 
             await message.edit({
                 components: newRows.length > 0 ? newRows : []
             });
 
-            // Suppression de la ligne dans Supabase
+            // Suppression de la ligne correspondante dans Supabase
             const { error: dbError } = await supabase
                 .from('button_translations')
                 .delete()
-                .eq('key', keyToRemove);
+                .eq('key', buttonKey);
 
             if (dbError) {
                 console.error("Erreur Supabase delete :", dbError);
             }
 
-            await interaction.editReply({ content: `✅ Succès ! Le bouton associé à la clé **"${keyToRemove}"** a été supprimé.` });
+            await interaction.editReply({ content: `✅ Succès ! Le bouton **"${buttonName}"** a été supprimé du message et de la base de données.` });
         } catch (error) {
             console.error("Erreur lors de la suppression du bouton :", error);
             await interaction.editReply({ content: "❌ Une erreur est survenue." });
