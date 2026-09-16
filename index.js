@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, Collection, ActivityType, Events } = require("discord.js");
+const { Client, GatewayIntentBits, Collection, ActivityType, Events, MessageFlags } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 const http = require("http");
@@ -8,8 +8,9 @@ process.on('unhandledRejection', error => {
     console.error('❌ Erreur non gérée (Unhandled Rejection) :', error);
 });
 
-// Import des systèmes
+// Import des systèmes & de Supabase (Adapte le chemin vers ton fichier client supabase si nécessaire)
 const { handleXpMessage } = require("./systems/levels/xp");
+const supabase = require("./systems/levels/supabase"); // ⚠️ Assure-toi que ce chemin pointe vers ton instance Supabase
 console.log("TEST TOKEN :", process.env.TOKEN ? "Le token est bien lu !" : "ATTENTION : Le token est VIDE !");
 
 http.createServer((req, res) => {
@@ -39,30 +40,35 @@ if (fs.existsSync(commandsPath)) {
     }
 }
 
-// Slash Commands & Boutons interactifs (/tbouton)
+// Slash Commands & Boutons interactifs (Depuis Supabase)
 client.on("interactionCreate", async interaction => {
-    // 1. Gestion des clics sur les boutons (générés par /tbouton)
+    // 1. Gestion des clics sur les boutons (générés par /add-button)
     if (interaction.isButton()) {
         if (interaction.customId.startsWith('translate_')) {
             const key = interaction.customId.replace('translate_', '');
-            
-            let translations = {};
-            const filePath = path.join(__dirname, 'translations.json');
-            
+            let responseText = "❌ Texte secret introuvable.";
+
             try {
-                if (fs.existsSync(filePath)) {
-                    translations = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                // Récupération du texte directement depuis Supabase
+                const { data, error } = await supabase
+                    .from('button_translations')
+                    .select('response_text')
+                    .eq('key', key)
+                    .single();
+
+                if (data && data.response_text) {
+                    responseText = data.response_text;
+                } else if (error) {
+                    console.error("Erreur requête Supabase (bouton) :", error.message);
                 }
             } catch (err) {
-                console.error("Erreur lecture translations.json :", err);
+                console.error("Erreur lecture Supabase :", err);
             }
-
-            const responseText = translations[key] || "❌ Texte secret introuvable.";
 
             try {
                 return await interaction.reply({
                     content: responseText,
-                    ephemeral: true
+                    flags: [MessageFlags.Ephemeral]
                 });
             } catch (err) {
                 console.error("Erreur réponse bouton :", err);
@@ -80,7 +86,7 @@ client.on("interactionCreate", async interaction => {
         await command.execute(interaction);
     } catch (error) {
         console.error(error);
-        const reply = { content: "Une erreur est survenue.", ephemeral: true };
+        const reply = { content: "Une erreur est survenue.", flags: [MessageFlags.Ephemeral] };
         interaction.replied || interaction.deferred ? await interaction.followUp(reply) : await interaction.reply(reply);
     }
 });
