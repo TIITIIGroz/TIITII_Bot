@@ -1,4 +1,31 @@
-// ... (garde le début de ton SlashCommandBuilder)
+const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
+const supabase = require('../supabase'); // Import direct de ton fichier supabase.js à la racine
+
+module.exports = {
+    data: new SlashCommandBuilder()
+        .setName('add-button')
+        .setDescription('Ajoute un bouton personnalisé et interactif à un message existant')
+        .addStringOption(option =>
+            option.setName('message_id')
+                .setDescription('ID du message auquel ajouter le bouton')
+                .setRequired(true)
+        )
+        .addStringOption(option =>
+            option.setName('button_name')
+                .setDescription('Le texte affiché SUR le bouton')
+                .setRequired(true)
+        )
+        .addStringOption(option =>
+            option.setName('key')
+                .setDescription('Un identifiant unique (ex: regles_en)')
+                .setRequired(true)
+        )
+        .addStringOption(option =>
+            option.setName('response_text')
+                .setDescription('Le texte secret affiché en éphémère')
+                .setRequired(true)
+        ),
+
     async execute(interaction) {
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
@@ -14,7 +41,7 @@
             }
 
             // Enregistrement ou mise à jour dans Supabase
-            const { error: dbError } = await interaction.client.supabase // Ou ton instance supabase
+            const { error: dbError } = await supabase
                 .from('button_translations')
                 .upsert({ key: key, response_text: responseText });
 
