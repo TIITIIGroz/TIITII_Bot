@@ -10,7 +10,7 @@ process.on('unhandledRejection', error => {
 
 // Import des systèmes & de Supabase (Adapte le chemin vers ton fichier client supabase si nécessaire)
 const { handleXpMessage } = require("./systems/levels/xp");
-const supabase = require("./systems/levels/supabase"); // ⚠️ Assure-toi que ce chemin pointe vers ton instance Supabase
+const supabase = require("./supabase"); // ⚠️ Assure-toi que ce chemin pointe vers ton instance Supabase
 console.log("TEST TOKEN :", process.env.TOKEN ? "Le token est bien lu !" : "ATTENTION : Le token est VIDE !");
 
 http.createServer((req, res) => {
