@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder } = require('discord.js');
+const { SlashCommandBuilder, ActionRowBuilder, MessageFlags } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -20,7 +20,7 @@ module.exports = {
         ),
 
     async execute(interaction) {
-        await interaction.deferReply({ ephemeral: true });
+        await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
         const messageId = interaction.options.getString('message_id');
         const keyToRemove = interaction.options.getString('key');
@@ -30,30 +30,28 @@ module.exports = {
             // 1. Récupérer le message dans le salon
             const message = await interaction.channel.messages.fetch(messageId);
             if (!message) {
-                return interaction.editReply("❌ Impossible de trouver un message avec cet ID dans ce salon.");
+                return interaction.editReply({ content: "❌ Impossible de trouver un message avec cet ID dans ce salon." });
             }
 
             if (!message.components || message.components.length === 0) {
-                return interaction.editReply("❌ Ce message ne contient aucun bouton.");
+                return interaction.editReply({ content: "❌ Ce message ne contient aucun bouton." });
             }
 
             let buttonFound = false;
             let newRows = [];
 
-            // 2. Parcourir les lignes et les boutons pour filtrer et exclure celui qu'on veut supprimer
+            // 2. Parcourir les lignes et filtrer les composants
             for (let row of message.components) {
                 let actionRow = ActionRowBuilder.from(row);
                 
-                // On filtre les composants pour garder tous les boutons SAUF celui qui correspond au customId
                 let filteredComponents = actionRow.components.filter(component => {
                     if (component.data.custom_id === targetCustomId) {
                         buttonFound = true;
-                        return false; // On le retire
+                        return false;
                     }
-                    return true; // On le garde
+                    return true;
                 });
 
-                // S'il reste des boutons sur cette ligne, on l'ajoute à nos nouvelles lignes
                 if (filteredComponents.length > 0) {
                     let newRow = new ActionRowBuilder().addComponents(filteredComponents);
                     newRows.push(newRow);
@@ -61,15 +59,15 @@ module.exports = {
             }
 
             if (!buttonFound) {
-                return interaction.editReply(`❌ Aucun bouton avec la clé **"${keyToRemove}"** n'a été trouvé sur ce message.`);
+                return interaction.editReply({ content: `❌ Aucun bouton avec la clé **"${keyToRemove}"** n'a été trouvé sur ce message.` });
             }
 
-            // 3. Mettre à jour le message sur Discord (s'il ne reste plus de lignes, on passe components à un tableau vide)
+            // 3. Mettre à jour le message sur Discord
             await message.edit({
                 components: newRows.length > 0 ? newRows : []
             });
 
-            // 4. Nettoyer le fichier translations.json pour supprimer la traduction associée
+            // 4. Nettoyer le fichier translations.json
             if (fs.existsSync(filePath)) {
                 let translations = JSON.parse(fs.readFileSync(filePath, 'utf8'));
                 if (translations[keyToRemove]) {
@@ -78,10 +76,10 @@ module.exports = {
                 }
             }
 
-            await interaction.editReply(`✅ Succès ! Le bouton associé à la clé **"${keyToRemove}"** a été supprimé du message et de la base de données.`);
+            await interaction.editReply({ content: `✅ Succès ! Le bouton associé à la clé **"${keyToRemove}"** a été supprimé du message et de la base de données.` });
         } catch (error) {
             console.error("Erreur lors de la suppression du bouton :", error);
-            await interaction.editReply("❌ Une erreur est survenue (Vérifie l'ID du message et les permissions du bot).");
+            await interaction.editReply({ content: "❌ Une erreur est survenue (Vérifie l'ID du message et les permissions du bot)." });
         }
     },
 };
