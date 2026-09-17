@@ -200,7 +200,6 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
 // 👇 CHARGEMENT DE TES AUTOMATISMES ET SYSTÈMES 👇
 require('./Automatisme/ConfigReminder')(client);
 require('./Automatisme/WelcomeSystem')(client);
-require('./Automatisme/WelcomeReminder')(client); // 👈 CHARGEMENT DU RAPPEL DE BIENVENUE AJOUTÉ ICI
 require('./systems/levels/voiceXp')(client); 
 
 // 👇 3. CONNEXION DISCORD 👇
