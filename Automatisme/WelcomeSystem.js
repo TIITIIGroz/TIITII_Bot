@@ -10,7 +10,7 @@ module.exports = (client) => {
             // 1. Envoi de l'image et du message dans le salon de bienvenue
             const welcomeChannel = await member.guild.channels.fetch(welcomeChannelId).catch(() => null);
             if (welcomeChannel) {
-                const imagePath = path.join(__dirname, '../images/Welcome.png'); 
+                const imagePath = path.join(__dirname, '../Images/Welcome.png'); 
                 const attachment = new AttachmentBuilder(imagePath, { name: 'Welcome.png' });
                 const welcomeMessage = `Bienvenu(e) ! ${member} vient de nous rejoindre ! 🎉`;
 
