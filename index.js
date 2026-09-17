@@ -200,7 +200,8 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
 // 👇 CHARGEMENT DE TES AUTOMATISMES ET SYSTÈMES 👇
 require('./Automatisme/ConfigReminder')(client);
 require('./Automatisme/WelcomeSystem')(client);
-require('./systems/levels/voiceXp')(client); // 👈 CHARGEMENT DU FUTUR SYSTÈME VOCAL
+require('./Automatisme/WelcomeReminder')(client); // 👈 CHARGEMENT DU RAPPEL DE BIENVENUE AJOUTÉ ICI
+require('./systems/levels/voiceXp')(client); 
 
 // 👇 3. CONNEXION DISCORD 👇
 console.log("Tentative de connexion à Discord...");
