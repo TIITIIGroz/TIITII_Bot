@@ -25,6 +25,52 @@ module.exports = (client) => {
             if (notificationChannel) {
                 await notificationChannel.send(`${member} vient d'arriver dans le royaume !`);
             }
+
+            // 3. Envoi du message de présentation en Message Privé (DM) à l'utilisateur
+            try {
+                const dmMessage = 
+`┌━━━━━━━━━━━━━┐⚕️ 𝑭𝒂𝒎𝒊𝒍𝒍𝒆 𝑮𝒓𝒐𝒛 ⚕️┌━━━━━━━━━━━━━┐
+
+▬▬▬▬▬▬▬▬▬▬▬▬⊰ ♛ ⊱▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+🛡️ ✦ sᴇʀᴠᴇᴜʀ ɢᴀᴍɪɴɢ & ᴄʜɪʟʟ ᴏᴜᴠᴇʀᴛ ᴀ̀ ᴛᴏᴜs.
+
+🎮 ✦ ᴊᴇᴜx ᴘʀɪɴᴄɪᴘᴀᴜx :
+➤ Rocket League  
+➤ Call of Duty  
+➤ Minecraft  
+➤ Rainbow Six Siege  
+➤ ᴇᴛ ʙɪᴇɴ ᴅ’ᴀᴜᴛʀᴇs sᴇʟᴏɴ ᴠᴏs ᴇɴᴠɪᴇs !
+
+🤝 ✦ ᴜɴᴇ ᴄᴏᴍᴍᴜɴᴀᴜᴛᴇ́ ᴄʜɪʟʟ ᴇᴛ ғᴜɴ.
+
+🎧 ✦ ᴅᴇs sᴀʟᴏɴs ᴠᴏᴄᴀᴜx ᴘᴏᴜʀ ᴊᴏᴜᴇʀ ᴇɴsᴇᴍʙʟᴇ.
+
+💬 ✦ ᴅᴇs ᴅɪsᴄᴜssɪᴏɴs ᴘᴏᴜʀ ᴄʜɪʟʟ ᴇᴛ ғᴀɪʀᴇ ᴅᴇs ʀᴇɴᴄᴏɴᴛʀᴇs.
+
+🤖 ✦ ᴅᴇs ʙᴏᴛs ᴘᴏᴜʀ ᴀᴍᴇ́ʟɪᴏʀᴇʀ ᴠᴏᴛʀᴇ ᴇxᴘᴇ́ʀɪᴇɴᴄᴇ.
+
+📷 ✦ ᴘᴀʀᴛᴀɢᴇ de ᴄʀᴇ́ᴀᴛɪᴏɴs, ᴄʟɪps et ᴍᴏᴍᴇɴᴛs.
+
+😂 ✦ ʙᴏɴɴᴇ ʜᴜᴍᴇᴜʀ ᴏʙʟɪɢᴀᴛᴏɪʀᴇ (2ᴇ ᴅᴇɢʀᴇ́ ᴄᴏnsᴇɪʟʟᴇ́ 😏).
+
+💎 ✦ ɪᴄɪ, ᴛᴜ ᴛʀᴏᴜᴠᴇs ᴛᴏᴜᴊᴏᴜʀs ᴅᴇs ᴊᴏᴜᴇᴜʀs ᴘᴏᴜʀ ᴛᴇ ʟᴀɴᴄᴇʀ.
+
+🔥 ✦ ʀᴇᴊᴏɪɢɴᴇᴢ ʟᴀ 𝑭𝒂𝒎𝒊𝒍𝒍𝒆 𝑮𝒓𝒐𝒛 ᴅᴇ̀s ᴍᴀɪɴᴛᴇɴᴀɴᴛ !
+
+🎟️ ✦ ᴛᴏɴ ᴛɪᴄᴋᴇᴛ ➝ https://invites.gg/TIITII_Groz
+
+📹 ✦ ʀᴇ́sᴇᴀᴜx ➝ https://beacons.ai/tiitii_groz
+▬▬▬▬▬▬▬▬▬▬▬▬⊰ ♛ ⊱▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+└━━━━━━━━━━━━━┘⚕️ 𝑭𝒂𝒎𝒊𝒍𝒍𝒆 𝑮𝒓𝒐𝒛 ⚕️└━━━━━━━━━━━━━┘`;
+
+                await member.send(dmMessage);
+            } catch (dmError) {
+                // L'utilisateur a probablement ses messages privés fermés (bloqués)
+                console.log(`Impossible d'envoyer le MP de bienvenue à ${member.user.tag} (DMs fermés).`);
+            }
+
         } catch (error) {
             console.error("Erreur lors de l'envoi du message de bienvenue :", error);
         }
