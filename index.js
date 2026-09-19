@@ -8,9 +8,10 @@ process.on('unhandledRejection', error => {
     console.error('❌ Erreur non gérée (Unhandled Rejection) :', error);
 });
 
-// Import des systèmes & de Supabase
+// Import des systèmes, de Supabase & de la BDD PostgreSQL (pool)
 const { handleXpMessage } = require("./systems/levels/xp");
 const supabase = require("./supabase"); 
+const pool = require("./systems/levels/database"); // Pool PostgreSQL utilisé par ton xp.js
 console.log("TEST TOKEN :", process.env.TOKEN ? "Le token est bien lu !" : "ATTENTION : Le token est VIDE !");
 
 http.createServer((req, res) => {
@@ -93,11 +94,11 @@ client.on(Events.MessageCreate, async (message) => {
     await handleXpMessage(message, client);
 });
 
-// 📌 GESTION DU DÉPART D'UN MEMBRE : Sauvegarde prison & Reset total Supabase
+// 📌 GESTION DU DÉPART D'UN MEMBRE : Sauvegarde prison & Reset total de ses données
 client.on(Events.GuildMemberRemove, async (member) => {
     const PRISON_ROLES = ["1549495761761214484", "913882559363043388"];
     
-    // 1. Sauvegarde des rôles prison s'il les avait
+    // 1. Sauvegarde des rôles prison s'il les avait (dans Supabase)
     const hasPrisonRole = member.roles.cache.some(role => PRISON_ROLES.includes(role.id));
     
     if (hasPrisonRole) {
@@ -109,17 +110,13 @@ client.on(Events.GuildMemberRemove, async (member) => {
             .catch(err => console.error("Erreur sauvegarde prison Supabase :", err));
     }
 
-    // 2. NETTOYAGE COMPLET DE SES DONNÉES SUPABASE (Repart de 0 partout)
+    // 2. NETTOYAGE COMPLET DE SES DONNÉES D'XP (Base PostgreSQL de xp.js)
     try {
-        // Supprime l'XP textuel / profil principal (adapte le nom de ta table d'XP si besoin, ex: 'levels', 'users', etc.)
-        await supabase.from('user_levels').delete().eq('user_id', member.id);
-        
-        // Si tu as une table séparée pour l'XP vocal, décommente la ligne ci-dessous :
-        // await supabase.from('voice_levels').delete().eq('user_id', member.id);
-
-        console.log(`🧹 Reset complet Supabase effectué pour le départ de ${member.user.tag}`);
+        // Supprime l'utilisateur de la table 'users' pour qu'il reparte de 0 partout (XP, messages, niveaux)
+        await pool.query(`DELETE FROM users WHERE userid = $1 AND guildid = $2`, [member.id, member.guild.id]);
+        console.log(`🧹 Reset complet BDD PostgreSQL effectué pour le départ de ${member.user.tag}`);
     } catch (err) {
-        console.error("Erreur lors du nettoyage Supabase au départ :", err);
+        console.error("Erreur lors du nettoyage de la BDD au départ :", err);
     }
 });
 
@@ -161,7 +158,9 @@ client.once(Events.ClientReady, async () => {
         const channel = await client.channels.fetch(ONLINE_CHANNEL_ID).catch(() => null);
         if (channel) {
             const timestamp = Math.floor(Date.now() / 1000);
-            const updateDescription = "update index.js (Gestion prison & reset Supabase complet au départ)";
+            
+            // 👉 Modifie ce texte à chaque mise à jour :
+            const updateDescription = "update index.js (Gestion prison & reset BDD PostgreSQL au départ)";
             
             await channel.send(`Je suis en ligne depuis <t:${timestamp}:T> ! Déploiement : \`${updateDescription}\``);
         }
