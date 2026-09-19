@@ -119,7 +119,7 @@ client.once(Events.ClientReady, async () => {
             // Récupère les 7 premiers caractères du commit Render (ou affiche "Local" si tu testes chez toi)
             const commitHash = process.env.RENDER_GIT_COMMIT ? process.env.RENDER_GIT_COMMIT.substring(0, 7) : "Local";
             
-            await channel.send(`Je suis en ligne à <t:${timestamp}:T> ! (Déploiement commit : \`${commitHash}\`)`);
+            await channel.send(`Je suis en ligne depuis <t:${timestamp}:T> ! Déploiemeny: \`${updateDescription}\``);
         }
     } catch (err) {
         console.error("Erreur lors de l'envoi du message 'Je suis en ligne' :", err);
