@@ -14,6 +14,13 @@ async function handleXpMessage(message, client) {
         return;
     }
 
+    // 🔒 RÔLES PRISON : Si l'utilisateur a l'un des rôles, il ne gagne aucun XP textuel
+    const PRISON_ROLES = ["1549495761761214484", "913882559363043388"];
+    if (message.member && message.member.roles.cache.some(role => PRISON_ROLES.includes(role.id))) {
+        console.log(`🔒 [XP TEXTE BLOQUÉ] ${message.author.tag} est en prison.`);
+        return;
+    }
+
     const userId = message.author.id;
     const guildId = message.guild.id;
     const now = Date.now();
