@@ -10,6 +10,9 @@ module.exports = (client) => {
         "990642579542536262" // Voc Attente Moov
     ];
 
+    // 🔒 Rôles prison
+    const PRISON_ROLES = ["1549495761761214484", "913882559363043388"];
+
     // Vérification toutes les 60 secondes (60000 ms)
     setInterval(async () => {
         try {
@@ -25,6 +28,11 @@ module.exports = (client) => {
                     // Parcourt les membres connectés dans le vocal (on ignore les bots)
                     for (const member of channel.members.values()) {
                         if (member.user.bot) continue;
+
+                        // 🔒 RÔLES PRISON : Si l'utilisateur a un rôle prison, il ne gagne aucun XP vocal
+                        if (member.roles.cache.some(role => PRISON_ROLES.includes(role.id))) {
+                            continue; // Ignore ce membre pour l'XP vocal
+                        }
 
                         const userId = member.id;
                         const guildId = guild.id;
