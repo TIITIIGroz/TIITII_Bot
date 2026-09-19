@@ -110,13 +110,16 @@ client.once(Events.ClientReady, async () => {
         status: "online",
     });
 
-    // Envoi du message de connexion sur Render avec l'heure dynamique
+// Envoi du message de connexion sur Render avec l'heure dynamique et le commit Render
     const ONLINE_CHANNEL_ID = "1547854332333006899";
     try {
         const channel = await client.channels.fetch(ONLINE_CHANNEL_ID).catch(() => null);
         if (channel) {
             const timestamp = Math.floor(Date.now() / 1000);
-            await channel.send(`Je suis en ligne ! Lancé à <t:${timestamp}:T>`);
+            // Récupère les 7 premiers caractères du commit Render (ou affiche "Local" si tu testes chez toi)
+            const commitHash = process.env.RENDER_GIT_COMMIT ? process.env.RENDER_GIT_COMMIT.substring(0, 7) : "Local";
+            
+            await channel.send(`Je suis en ligne à <t:${timestamp}:T> ! (Déploiement commit : \`${commitHash}\`)`);
         }
     } catch (err) {
         console.error("Erreur lors de l'envoi du message 'Je suis en ligne' :", err);
