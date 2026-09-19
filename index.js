@@ -8,9 +8,9 @@ process.on('unhandledRejection', error => {
     console.error('❌ Erreur non gérée (Unhandled Rejection) :', error);
 });
 
-// Import des systèmes & de Supabase (Adapte le chemin vers ton fichier client supabase si nécessaire)
+// Import des systèmes & de Supabase
 const { handleXpMessage } = require("./systems/levels/xp");
-const supabase = require("./supabase"); // ⚠️ Assure-toi que ce chemin pointe vers ton instance Supabase
+const supabase = require("./supabase"); 
 console.log("TEST TOKEN :", process.env.TOKEN ? "Le token est bien lu !" : "ATTENTION : Le token est VIDE !");
 
 http.createServer((req, res) => {
@@ -21,10 +21,10 @@ http.createServer((req, res) => {
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildMessages, // REQUIS POUR L'XP TEXTUEL
-        GatewayIntentBits.MessageContent, // REQUIS POUR LIRE LE TEXTE
-        GatewayIntentBits.GuildVoiceStates // 👈 REQUIS POUR DÉTECTER LE VOCAL (XP VOCAL)
+        GatewayIntentBits.GuildMembers, // REQUIS POUR DÉTECTER LES ARRIVÉES/DÉPARTS ET RENDRE LES RÔLES
+        GatewayIntentBits.GuildMessages, 
+        GatewayIntentBits.MessageContent, 
+        GatewayIntentBits.GuildVoiceStates 
     ]
 });
 
@@ -42,14 +42,12 @@ if (fs.existsSync(commandsPath)) {
 
 // Slash Commands & Boutons interactifs (Depuis Supabase)
 client.on("interactionCreate", async interaction => {
-    // 1. Gestion des clics sur les boutons (générés par /add-button)
     if (interaction.isButton()) {
         if (interaction.customId.startsWith('translate_')) {
             const key = interaction.customId.replace('translate_', '');
             let responseText = "❌ Texte secret introuvable.";
 
             try {
-                // Récupération du texte directement depuis Supabase
                 const { data, error } = await supabase
                     .from('button_translations')
                     .select('response_text')
@@ -77,7 +75,6 @@ client.on("interactionCreate", async interaction => {
         return;
     }
 
-    // 2. Gestion classique des commandes Slash
     if (!interaction.isChatInputCommand()) return;
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
@@ -96,6 +93,55 @@ client.on(Events.MessageCreate, async (message) => {
     await handleXpMessage(message, client);
 });
 
+// 📌 GESTION DU DÉPART D'UN MEMBRE : Sauvegarde prison & Reset total Supabase
+client.on(Events.GuildMemberRemove, async (member) => {
+    const PRISON_ROLES = ["1549495761761214484", "913882559363043388"];
+    
+    // 1. Sauvegarde des rôles prison s'il les avait
+    const hasPrisonRole = member.roles.cache.some(role => PRISON_ROLES.includes(role.id));
+    
+    if (hasPrisonRole) {
+        const heldPrisonRoles = member.roles.cache.filter(role => PRISON_ROLES.includes(role.id)).map(r => r.id);
+        
+        await supabase
+            .from('prison_escapes')
+            .upsert({ user_id: member.id, prison_roles: heldPrisonRoles }, { onConflict: 'user_id' })
+            .catch(err => console.error("Erreur sauvegarde prison Supabase :", err));
+    }
+
+    // 2. NETTOYAGE COMPLET DE SES DONNÉES SUPABASE (Repart de 0 partout)
+    try {
+        // Supprime l'XP textuel / profil principal (adapte le nom de ta table d'XP si besoin, ex: 'levels', 'users', etc.)
+        await supabase.from('user_levels').delete().eq('user_id', member.id);
+        
+        // Si tu as une table séparée pour l'XP vocal, décommente la ligne ci-dessous :
+        // await supabase.from('voice_levels').delete().eq('user_id', member.id);
+
+        console.log(`🧹 Reset complet Supabase effectué pour le départ de ${member.user.tag}`);
+    } catch (err) {
+        console.error("Erreur lors du nettoyage Supabase au départ :", err);
+    }
+});
+
+// 📌 GESTION DE L'ARRIVÉE D'UN MEMBRE : Restauration des rôles prison uniquement
+client.on(Events.GuildMemberAdd, async (member) => {
+    try {
+        const { data } = await supabase
+            .from('prison_escapes')
+            .select('prison_roles')
+            .eq('user_id', member.id)
+            .single();
+
+        if (data && data.prison_roles && data.prison_roles.length > 0) {
+            await member.roles.add(data.prison_roles).catch(err => console.error("Erreur attribution rôles prison :", err));
+            await supabase.from('prison_escapes').delete().eq('user_id', member.id);
+            console.log(`🔒 Rôles prison restitués pour ${member.user.tag}`);
+        }
+    } catch (err) {
+        // S'il n'était pas en prison, il arrive totalement vierge de 0
+    }
+});
+
 // Bot prêt
 client.once(Events.ClientReady, async () => {
     console.log(`✅ Connecté en tant que ${client.user.tag}`);
@@ -110,15 +156,12 @@ client.once(Events.ClientReady, async () => {
         status: "online",
     });
 
-    // Envoi du message de connexion sur Render avec l'heure dynamique et le nom de la mise à jour
     const ONLINE_CHANNEL_ID = "1547854332333006899";
     try {
         const channel = await client.channels.fetch(ONLINE_CHANNEL_ID).catch(() => null);
         if (channel) {
             const timestamp = Math.floor(Date.now() / 1000);
-            
-            // 👉 Modifie ce texte à chaque mise à jour :
-            const updateDescription = "update WelcomeSystem.js et index.js";
+            const updateDescription = "update index.js (Gestion prison & reset Supabase complet au départ)";
             
             await channel.send(`Je suis en ligne depuis <t:${timestamp}:T> ! Déploiement : \`${updateDescription}\``);
         }
@@ -149,7 +192,6 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
     const isBoosting = newMember.premiumSinceTimestamp !== null;
 
     try {
-        // Vient de booster
         if (!wasBoosting && isBoosting) {
             if (!newMember.roles.cache.has(BOOST_ROLE_ID)) {
                 await newMember.roles.add(BOOST_ROLE_ID);
@@ -160,7 +202,6 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
             }
         }
 
-        // Le boost est terminé
         if (wasBoosting && !isBoosting) {
             if (newMember.roles.cache.has(BOOST_ROLE_ID)) {
                 await newMember.roles.remove(BOOST_ROLE_ID);
@@ -174,7 +215,7 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
 // Gestion du Tag utilisateur
 client.on("guildMemberUpdate", async (oldMember, newMember) => {
     const TAG_ROLE_ID = "1547699213700309072";
-    const TARGET_TAG = "GROZ"; // Modifie si besoin par ton tag exact
+    const TARGET_TAG = "GROZ"; 
 
     const oldName = oldMember.nickname || oldMember.user.username;
     const newName = newMember.nickname || newMember.user.username;
@@ -183,14 +224,12 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
     const hasTag = newName.includes(TARGET_TAG);
 
     try {
-        // Ajout du tag
         if (!hadTag && hasTag) {
             if (!newMember.roles.cache.has(TAG_ROLE_ID)) {
                 await newMember.roles.add(TAG_ROLE_ID);
             }
         }
 
-        // Retrait du tag
         if (hadTag && !hasTag) {
             if (newMember.roles.cache.has(TAG_ROLE_ID)) {
                 await newMember.roles.remove(TAG_ROLE_ID);
