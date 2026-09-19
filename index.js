@@ -162,7 +162,7 @@ client.once(Events.ClientReady, async () => {
             // 👉 Modifie ce texte à chaque mise à jour :
             const updateDescription = "update index.js (Gestion prison & reset BDD PostgreSQL au départ)";
             
-            await channel.send(`Je suis en ligne depuis <t:${timestamp}:T> ! Déploiement : \`${updateDescription}\``);
+            await channel.send(`Je suis en ligne depuis <t:${timestamp}:T> !`);
         }
     } catch (err) {
         console.error("Erreur lors de l'envoi du message 'Je suis en ligne' :", err);
@@ -197,7 +197,7 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
             }
             const channel = await client.channels.fetch(LOG_CHANNEL_ID).catch(() => null);
             if (channel) {
-                await channel.send(`🎉 Merci beaucoup ${newMember} pour le boost du serveur ! Le rôle de soutien t'a été attribué.`);
+                await channel.send(`Le propriétaire et le staff te remerci beaucoup ${newMember} pour le boost du serveur ! Le rôle de soutien t'a été attribué.`);
             }
         }
 
