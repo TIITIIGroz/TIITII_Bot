@@ -4,16 +4,16 @@ const supabase = require('../../supabase');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('anniv-list')
-        .setNameLocalizations({
-            'en-US': 'bday-list',
-            'en-GB': 'bday-list'
-        })
-        .setDescription('Affiche la liste des anniversaires du serveur')
-        .setDescriptionLocalizations({
-            'en-US': 'Displays the list of server birthdays',
-            'en-GB': 'Displays the list of server birthdays'
-        }),
+        .setDescription('Affiche la liste des anniversaires du serveur'),
     async execute(interaction) {
+        const FRENCH_ROLE_ID = "1094758355085574204";
+        if (!interaction.member.roles.cache.has(FRENCH_ROLE_ID)) {
+            return interaction.reply({
+                content: "❌ Cette commande est réservée aux membres ayant le rôle de langue française.",
+                flags: [MessageFlags.Ephemeral]
+            });
+        }
+
         const guildId = interaction.guild.id;
 
         try {
@@ -41,7 +41,7 @@ module.exports = {
 
             await interaction.reply({ embeds: [embed] });
         } catch (err) {
-            console.error("Erreur bday-list :", err);
+            console.error("Erreur anniv-list :", err);
             await interaction.reply({
                 content: "❌ Une erreur est survenue lors de la récupération des anniversaires.",
                 flags: [MessageFlags.Ephemeral]
