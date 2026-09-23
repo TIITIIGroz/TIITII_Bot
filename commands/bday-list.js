@@ -4,46 +4,53 @@ const supabase = require('../supabase');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('bday-list')
-        .setDescription('Displays the list of server birthdays'),
+        .setDescription('Displays the list of all server birthdays.'),
+
     async execute(interaction) {
         const ENGLISH_ROLE_ID = "1094758180938067989";
+
         if (!interaction.member.roles.cache.has(ENGLISH_ROLE_ID)) {
-            return interaction.reply({
-                content: "❌ This command is restricted to members with the English language role.",
+            return await interaction.reply({
+                content: "❌ You don't have the required role to use this command.",
                 flags: [MessageFlags.Ephemeral]
             });
         }
 
-        const guildId = interaction.guild.id;
-
         try {
-            const { data, error } = await supabase
+            const { data: birthdays, error } = await supabase
                 .from('birthdays')
-                .select('*')
-                .eq('guild_id', guildId);
+                .select('*');
 
             if (error) throw error;
 
-            if (!data || data.length === 0) {
-                return interaction.reply({
-                    content: "🎂 No birthdays are registered on this server yet.",
+            if (!birthdays || birthdays.length === 0) {
+                return await interaction.reply({
+                    content: "📅 No birthdays have been registered on the server yet.",
                     flags: [MessageFlags.Ephemeral]
                 });
             }
 
-            const listFormatted = data.map(b => `<@${b.user_id}> : **${b.birth_date}**`).join('\n');
+            // Tri des anniversaires par mois et jour
+            birthdays.sort((a, b) => {
+                const [dayA, monthA] = a.birth_date.split('/').map(Number);
+                const [dayB, monthB] = b.birth_date.split('/').map(Number);
+                if (monthA !== monthB) return monthA - monthB;
+                return dayA - dayB;
+            });
+
+            let listText = birthdays.map(b => `• <@${b.user_id}> : **${b.birth_date}**`).join('\n');
 
             const embed = new EmbedBuilder()
                 .setColor('#FF69B4')
-                .setTitle('🎂 Server Birthdays List')
-                .setDescription(listFormatted)
+                .setTitle('🎂 Server Birthdays List 🎉')
+                .setDescription(listText)
                 .setTimestamp();
 
             await interaction.reply({ embeds: [embed] });
         } catch (err) {
             console.error("Erreur bday-list :", err);
             await interaction.reply({
-                content: "❌ An error occurred while fetching the birthdays.",
+                content: "❌ An error occurred while fetching the birthday list.",
                 flags: [MessageFlags.Ephemeral]
             });
         }
