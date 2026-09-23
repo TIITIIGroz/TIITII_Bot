@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
-const supabase = require('../../supabase');
+const supabase = '../supabase';
 
 module.exports = {
     data: new SlashCommandBuilder()
