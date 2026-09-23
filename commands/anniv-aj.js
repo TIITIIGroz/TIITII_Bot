@@ -1,34 +1,28 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
-const supabase = require('../../supabase'); // Ajuste le chemin vers ton fichier supabase.js si besoin
+const supabase = require('../../supabase');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('anniv-add')
-        .setNameLocalizations({
-            'en-US': 'bday-add',
-            'en-GB': 'bday-add'
-        })
+        .setName('anniv-aj')
         .setDescription('Enregistre ta date d\'anniversaire')
-        .setDescriptionLocalizations({
-            'en-US': 'Register your birthday date',
-            'en-GB': 'Register your birthday date'
-        })
         .addStringOption(option =>
             option.setName('date')
-                .setNameLocalizations({ 'en-US': 'date', 'en-GB': 'date' })
                 .setDescription('Ta date d\'anniversaire au format JJ/MM (ex: 25/12)')
-                .setDescriptionLocalizations({
-                    'en-US': 'Your birthday date in DD/MM format (e.g., 25/12)',
-                    'en-GB': 'Your birthday date in DD/MM format (e.g., 25/12)'
-                })
                 .setRequired(true)
         ),
     async execute(interaction) {
+        const FRENCH_ROLE_ID = "1094758355085574204";
+        if (!interaction.member.roles.cache.has(FRENCH_ROLE_ID)) {
+            return interaction.reply({
+                content: "❌ Cette commande est réservée aux membres ayant le rôle de langue française.",
+                flags: [MessageFlags.Ephemeral]
+            });
+        }
+
         const dateInput = interaction.options.getString('date');
         const userId = interaction.user.id;
         const guildId = interaction.guild.id;
 
-        // Validation simple du format JJ/MM
         const regex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])$/;
         if (!regex.test(dateInput)) {
             return interaction.reply({
@@ -49,7 +43,7 @@ module.exports = {
                 flags: [MessageFlags.Ephemeral]
             });
         } catch (err) {
-            console.error("Erreur bday-add :", err);
+            console.error("Erreur anniv-aj :", err);
             await interaction.reply({
                 content: "❌ Une erreur est survenue lors de l'enregistrement de ton anniversaire.",
                 flags: [MessageFlags.Ephemeral]
