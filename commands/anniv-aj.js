@@ -7,7 +7,7 @@ module.exports = {
         .setDescription('Enregistre ta date d\'anniversaire')
         .addStringOption(option =>
             option.setName('date')
-                .setDescription('Ta date d\'anniversaire au format JJ/MM (ex: 25/12)')
+                .setDescription('Ta date d\'anniversaire au format JJ/MM (ex: 25/12) ou modifie la en remettant la bonne date')
                 .setRequired(true)
         ),
     async execute(interaction) {
