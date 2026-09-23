@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, Collection, ActivityType, Events, MessageFlags } = require("discord.js");
+const { Client, GatewayIntentBits, Collection, ActivityType, Events, MessageFlags, EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 const http = require("http");
@@ -112,7 +112,6 @@ client.on(Events.GuildMemberRemove, async (member) => {
 
     // 2. NETTOYAGE COMPLET DE SES DONNÉES D'XP (Base PostgreSQL de xp.js)
     try {
-        // Supprime l'utilisateur de la table 'users' pour qu'il reparte de 0 partout (XP, messages, niveaux)
         await pool.query(`DELETE FROM users WHERE userid = $1 AND guildid = $2`, [member.id, member.guild.id]);
         console.log(`🧹 Reset complet BDD PostgreSQL effectué pour le départ de ${member.user.tag}`);
     } catch (err) {
@@ -160,13 +159,54 @@ client.once(Events.ClientReady, async () => {
             const timestamp = Math.floor(Date.now() / 1000);
             
             // 👉 Modifie ce texte à chaque mise à jour :
-            const updateDescription = "update index.js (Gestion prison & reset BDD PostgreSQL au départ)";
+            const updateDescription = "update index.js (Système d'anniversaire & vérification quotidienne)";
             
             await channel.send(`Je suis en ligne depuis <t:${timestamp}:T> !`);
         }
     } catch (err) {
         console.error("Erreur lors de l'envoi du message 'Je suis en ligne' :", err);
     }
+
+    // 🎂 SYSTÈME AUTOMATIQUE DES ANNIVERSAIRES (Vérification chaque jour à minuit)
+    setInterval(async () => {
+        const now = new Date();
+        // Vérifie s'il est minuit (00:00)
+        if (now.getHours() === 0 && now.getMinutes() === 0) {
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const todayFormatted = `${day}/${month}`;
+
+            try {
+                const { data: birthdays, error } = await supabase
+                    .from('birthdays')
+                    .select('*')
+                    .like('birth_date', `${todayFormatted}%`); // Correspond au format JJ/MM
+
+                if (error) throw error;
+                if (!birthdays || birthdays.length === 0) return;
+
+                // ID du salon où poster les souhaits d'anniversaire (Remplace par ton ID de salon)
+                const BIRTHDAY_CHANNEL_ID = "1011649291124744212"; 
+
+                for (const b of birthdays) {
+                    const guild = client.guilds.cache.get(b.guild_id);
+                    if (!guild) continue;
+                    const channel = guild.channels.cache.get(BIRTHDAY_CHANNEL_ID);
+                    if (!channel) continue;
+
+                    const bdayEmbed = new EmbedBuilder()
+                        .setColor('#FF69B4')
+                        .setTitle('🎉 Joyeux Anniversaire ! 🎂')
+                        .setDescription(`Tout le monde souhaite un excellent anniversaire à <@${b.user_id}> ! Passe une merveilleuse journée ! 🎈`)
+                        .setTimestamp();
+
+                    await channel.send({ embeds: [bdayEmbed] });
+                }
+            } catch (err) {
+                console.error("❌ Erreur lors de la vérification automatique des anniversaires :", err);
+            }
+        }
+    }, 60000); // Vérifie chaque minute si l'heure est arrivée
 });
 
 // Gestion des rôles automatiques (Accès)
