@@ -185,8 +185,8 @@ client.once(Events.ClientReady, async () => {
                 if (error) throw error;
                 if (!birthdays || birthdays.length === 0) return;
 
-                // ID du salon où poster les souhaits d'anniversaire (Remplace par ton ID de salon)
-                const BIRTHDAY_CHANNEL_ID = "1011649291124744212"; 
+                // ID du salon où poster les souhaits d'anniversaire
+                const BIRTHDAY_CHANNEL_ID = "1011657738994065468"; 
 
                 for (const b of birthdays) {
                     const guild = client.guilds.cache.get(b.guild_id);
