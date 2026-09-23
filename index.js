@@ -159,7 +159,7 @@ client.once(Events.ClientReady, async () => {
             const timestamp = Math.floor(Date.now() / 1000);
             
             // 👉 Modifie ce texte à chaque mise à jour :
-            const updateDescription = "update index.js (Système d'anniversaire & vérification quotidienne)";
+            const updateDescription = "update index.js (Système d'anniversaire complet avec rôles et pings)";
             
             await channel.send(`Je suis en ligne depuis <t:${timestamp}:T> !`);
         }
@@ -176,21 +176,56 @@ client.once(Events.ClientReady, async () => {
             const month = String(now.getMonth() + 1).padStart(2, '0');
             const todayFormatted = `${day}/${month}`;
 
+            // Calcul de la date d'hier pour retirer le rôle à ceux dont l'anniversaire est passé
+            const yesterdayDate = new Date(now);
+            yesterdayDate.setDate(now.getDate() - 1);
+            const yDay = String(yesterdayDate.getDate()).padStart(2, '0');
+            const yMonth = String(yesterdayDate.getMonth() + 1).padStart(2, '0');
+            const yesterdayFormatted = `${yDay}/${yMonth}`;
+
+            const BIRTHDAY_ROLE_ID = "1011652804269580389";
+            // ID du salon où poster les vœux
+            const BIRTHDAY_CHANNEL_ID = "1011649291124744212"; 
+            // ID du rôle à pinguer
+            const PING_ROLE_ID = "864898646343811077";
+
             try {
+                // 1. RETIRER LE RÔLE DE CEUX DONT C'ÉTAIT L'ANNIVERSAIRE HIER
+                const { data: oldBirthdays } = await supabase
+                    .from('birthdays')
+                    .select('*')
+                    .like('birth_date', `${yesterdayFormatted}%`);
+
+                if (oldBirthdays && oldBirthdays.length > 0) {
+                    for (const b of oldBirthdays) {
+                        const guild = client.guilds.cache.get(b.guild_id);
+                        if (!guild) continue;
+                        const member = await guild.members.fetch(b.user_id).catch(() => null);
+                        if (member && member.roles.cache.has(BIRTHDAY_ROLE_ID)) {
+                            await member.roles.remove(BIRTHDAY_ROLE_ID).catch(err => console.error("Erreur retrait rôle anniv :", err));
+                        }
+                    }
+                }
+
+                // 2. AJOUTER LE RÔLE ET ENVOYER LE MESSAGE POUR CEUX DONT C'EST L'ANNIVERSAIRE AUJOURD'HUI
                 const { data: birthdays, error } = await supabase
                     .from('birthdays')
                     .select('*')
-                    .like('birth_date', `${todayFormatted}%`); // Correspond au format JJ/MM
+                    .like('birth_date', `${todayFormatted}%`);
 
                 if (error) throw error;
                 if (!birthdays || birthdays.length === 0) return;
 
-                // ID du salon où poster les souhaits d'anniversaire
-                const BIRTHDAY_CHANNEL_ID = "1011657738994065468"; 
-
                 for (const b of birthdays) {
                     const guild = client.guilds.cache.get(b.guild_id);
                     if (!guild) continue;
+                    
+                    const member = await guild.members.fetch(b.user_id).catch(() => null);
+                    if (member) {
+                        // Ajout du rôle anniversaire
+                        await member.roles.add(BIRTHDAY_ROLE_ID).catch(err => console.error("Erreur ajout rôle anniv :", err));
+                    }
+
                     const channel = guild.channels.cache.get(BIRTHDAY_CHANNEL_ID);
                     if (!channel) continue;
 
@@ -200,13 +235,17 @@ client.once(Events.ClientReady, async () => {
                         .setDescription(`Tout le monde souhaite un excellent anniversaire à <@${b.user_id}> ! Passe une merveilleuse journée ! 🎈`)
                         .setTimestamp();
 
-                    await channel.send({ embeds: [bdayEmbed] });
+                    // Envoi du message avec la mention du rôle et l'embed
+                    await channel.send({
+                        content: `<@&${PING_ROLE_ID}>`,
+                        embeds: [bdayEmbed]
+                    });
                 }
             } catch (err) {
-                console.error("❌ Erreur lors de la vérification automatique des anniversaires :", err);
+                console.error("❌ Erreur lors de la gestion automatique des anniversaires :", err);
             }
         }
-    }, 60000); // Vérifie chaque minute si l'heure est arrivée
+    }, 60000); // Vérifie chaque minute
 });
 
 // Gestion des rôles automatiques (Accès)
