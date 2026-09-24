@@ -321,7 +321,8 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
 // 👇 CHARGEMENT DE TES AUTOMATISMES ET SYSTÈMES 👇
 require('./Automatisme/ConfigReminder')(client);
 require('./Automatisme/WelcomeSystem')(client);
-require('./systems/levels/voiceXp')(client); 
+require('./Automatisme/Gbye.js')(client);
+require('./systems/levels/voiceXp')(client);
 
 // 👇 3. CONNEXION DISCORD 👇
 console.log("Tentative de connexion à Discord...");
