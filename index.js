@@ -22,7 +22,7 @@ http.createServer((req, res) => {
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMembers, // REQUIS POUR DÉTECTER LES ARRIVÉES/DÉPARTS ET RENDRE LES RÔLES
+        GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessages, 
         GatewayIntentBits.MessageContent, 
         GatewayIntentBits.GuildVoiceStates 
@@ -125,8 +125,8 @@ client.on("interactionCreate", async interaction => {
 
                 return await interaction.editReply({
                     content: isFrench 
-                        ? `✅ Ton ticket français a été créé : ${channel}` 
-                        : `✅ Your English ticket has been created: ${channel}`
+                        ? `Ton ticket français a été créé : ${channel} !✅` 
+                        : `Your English ticket has been created: ${channel} !✅`
                 });
 
             } catch (err) {
@@ -139,7 +139,7 @@ client.on("interactionCreate", async interaction => {
 
         // 🔒 FERMETURE DU TICKET
         if (interaction.customId === 'close_ticket') {
-            await interaction.reply({ content: '🔒 Fermeture du ticket en cours... / Closing ticket...' });
+            await interaction.reply({ content: 'Fermeture du ticket... / Closing ticket...' });
             
             setTimeout(async () => {
                 try {
@@ -232,7 +232,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                         allow: [
                             PermissionFlagsBits.Connect,
                             PermissionFlagsBits.Speak,
-                            PermissionFlagsBits.ManageChannels, // Contrôle TOTAL (modifier le nom, etc.)
+                            PermissionFlagsBits.ManageChannels,
                             PermissionFlagsBits.MuteMembers,
                             PermissionFlagsBits.DeafenMembers,
                             PermissionFlagsBits.MoveMembers
@@ -252,7 +252,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
             if (logsChannel) {
                 const voiceLogEmbed = new EmbedBuilder()
                     .setColor('#2ECC71')
-                    .setTitle('🔊 Salon vocal temporaire créé')
+                    .setTitle('Salon vocal temporaire créé !🔊')
                     .addFields(
                         { name: '👤 Propriétaire', value: `${member.user.tag} (<@${member.id}>)`, inline: true },
                         { name: '📂 Salon', value: `${tempChannel} (\`${tempChannel.name}\`)`, inline: true }
@@ -279,7 +279,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                 if (logsChannel) {
                     const deleteLogEmbed = new EmbedBuilder()
                         .setColor('#E74C3C')
-                        .setTitle('🔇 Salon vocal temporaire supprimé')
+                        .setTitle('Salon vocal temporaire supprimé !🔇')
                         .addFields(
                             { name: '📂 Salon', value: `\`${emptyChannel.name}\``, inline: true },
                             { name: '👤 Propriétaire initial', value: `<@${ownerId}>`, inline: true }
