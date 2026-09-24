@@ -44,7 +44,7 @@ if (fs.existsSync(commandsPath)) {
 // Slash Commands & Boutons interactifs (Depuis Supabase & Tickets)
 client.on("interactionCreate", async interaction => {
     if (interaction.isButton()) {
-        // 🎫 GESTIONNAIRE DES TICKETS (FR & EN)
+        // 🎫 GESTIONNAIRE DES TICKETS (FR & EN) AVEC LOGS DÉTAILLÉS ET NOUVEAU TEXTE
         if (interaction.customId === 'create_ticket_fr' || interaction.customId === 'create_ticket_en') {
             await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
@@ -52,8 +52,9 @@ client.on("interactionCreate", async interaction => {
             const member = interaction.member;
             const isFrench = interaction.customId === 'create_ticket_fr';
 
-            const TICKET_CATEGORY_ID = null; // Remplace par l'ID de ta catégorie si tu en as une
-            const ADMIN_ROLE_ID = "1008853465415553075"; // Ton rôle administrateur
+            const TICKET_CATEGORY_ID = null; 
+            const ADMIN_ROLE_ID = "1008853465415553075"; 
+            const LOGS_CHANNEL_ID = "1552573413850218587";
 
             try {
                 const channelName = isFrench ? `ticket-fr-${member.user.username}` : `ticket-en-${member.user.username}`;
@@ -79,14 +80,14 @@ client.on("interactionCreate", async interaction => {
                     ],
                 });
 
-                // Message embed et texte selon la langue choisie
+                // Message embed avec les textes combinés selon la langue
                 const ticketEmbed = new EmbedBuilder()
                     .setColor(isFrench ? '#57F287' : '#FEE75C')
                     .setTitle(isFrench ? `Ticket de ${member.user.username} (FR)` : `Ticket for ${member.user.username} (EN)`)
                     .setDescription(
                         isFrench 
-                            ? '🇫🇷 Merci d\'avoir ouvert un ticket ! Explique ton problème en détail, un administrateur va te répondre.' 
-                            : '🇬🇧 Thank you for opening a ticket! Explain your issue in detail, an administrator will be with you shortly.'
+                            ? "Merci d'avoir ouvert un ticket ! Si c'est une fausse manipulation, ferme-le vite ; sinon, décris ton problème en détail et partage tes preuves sans attendre." 
+                            : "Thank you for opening a ticket! If this was a mistake, please close it quickly; otherwise, describe your issue in detail and share your proof right away."
                     );
 
                 const closeButtonLabel = isFrench ? 'Fermer le ticket' : 'Close ticket';
@@ -100,15 +101,32 @@ client.on("interactionCreate", async interaction => {
 
                 // Mention automatique de l'utilisateur et du rôle administrateur dans le salon
                 await channel.send({
-                    content: `<@${member.id}> | <@&${ADMIN_ROLE_ID}>`,
+                    content: `<@${member.id}> \vert{} <@&${ADMIN_ROLE_ID}>`,
                     embeds: [ticketEmbed],
                     components: [closeRow]
                 });
 
+                // 📊 ENVOI DES INFORMATIONS DÉTAILLÉES DANS LE SALON DE LOGS
+                const logsChannel = await guild.channels.fetch(LOGS_CHANNEL_ID).catch(() => null);
+                if (logsChannel) {
+                    const logEmbed = new EmbedBuilder()
+                        .setColor(isFrench ? '#3498DB' : '#E67E22')
+                        .setTitle('🎫 Nouveau ticket ouvert')
+                        .addFields(
+                            { name: '👤 Utilisateur', value: `${member.user.tag} (<@${member.id}>)`, inline: true },
+                            { name: '🌐 Langue', value: isFrench ? 'Français (FR)' : 'Anglais (EN)', inline: true },
+                            { name: '📂 Salon créé', value: `${channel} (\`${channel.name}\`)`, inline: false },
+                            { name: '🆔 ID du membre', value: `\`${member.id}\``, inline: true }
+                        )
+                        .setTimestamp();
+
+                    await logsChannel.send({ embeds: [logEmbed] });
+                }
+
                 return await interaction.editReply({
                     content: isFrench 
-                        ? `✅ Ton ticket français a été créé : ${channel}` 
-                        : `✅ Your English ticket has been created: ${channel}`
+                        ? `✅ Ton ticket français a été créé : ${channel} !` 
+                        : `✅ Your English ticket has been created: ${channel} !`
                 });
 
             } catch (err) {
@@ -121,7 +139,7 @@ client.on("interactionCreate", async interaction => {
 
         // 🔒 FERMETURE DU TICKET
         if (interaction.customId === 'close_ticket') {
-            await interaction.reply({ content: '🔒 Fermeture du ticket en cours... / Closing ticket...' });
+            await interaction.reply({ content: 'Fermeture du ticket... / Closing ticket...' });
             
             setTimeout(async () => {
                 try {
