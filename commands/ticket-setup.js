@@ -11,8 +11,8 @@ module.exports = {
             .setColor('#5865F2')
             .setTitle('🎫 Support & Tickets | Help Desk')
             .setDescription(
-                '🇫🇷 **Besoin d\'aide ?** Clique sur ce bouton pour ouvrir un ticket en français.\n\n' +
-                '🇬🇧 **Need help?** Click this button to open an English ticket.'
+                '🇫🇷 **Besoin d\'aide ?** Clique pour ouvrir un ticket en français.\n\n' +
+                '🇬🇧 **Need help?** Click to open an English ticket.'
             );
 
         const row = new ActionRowBuilder().addComponents(
