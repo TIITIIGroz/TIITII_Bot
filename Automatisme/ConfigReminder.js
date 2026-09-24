@@ -1,4 +1,4 @@
-const { Events, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { Events, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType } = require('discord.js');
 
 module.exports = (client) => {
     const targetChannelId = '1547857175878041630';
@@ -17,6 +17,10 @@ module.exports = (client) => {
     // Détection d'un nouveau salon
     client.on(Events.ChannelCreate, async (channel) => {
         if (!channel.guild) return;
+        
+        // Ignore tout ce qui n'est pas un salon textuel (ex: salons vocaux temporaires, catégories, etc.)
+        if (channel.type !== ChannelType.GuildText) return;
+
         try {
             const targetChannel = await client.channels.fetch(targetChannelId);
             if (targetChannel) {
