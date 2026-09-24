@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, Collection, ActivityType, Events, MessageFlags, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+const { Client, GatewayIntentBits, Collection, ActivityType, Events, MessageFlags, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, PermissionFlagsBits } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 const http = require("http");
@@ -44,7 +44,7 @@ if (fs.existsSync(commandsPath)) {
 // Slash Commands & Boutons interactifs (Depuis Supabase & Tickets)
 client.on("interactionCreate", async interaction => {
     if (interaction.isButton()) {
-        // 🎫 GESTIONNAIRE DES TICKETS (FR & EN) AVEC LOGS DÉTAILLÉS ET NOUVEAU TEXTE
+        // 🎫 GESTIONNAIRE DES TICKETS (FR & EN) AVEC LE NOUVEAU SALON DE LOGS
         if (interaction.customId === 'create_ticket_fr' || interaction.customId === 'create_ticket_en') {
             await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
@@ -54,7 +54,7 @@ client.on("interactionCreate", async interaction => {
 
             const TICKET_CATEGORY_ID = null; 
             const ADMIN_ROLE_ID = "1008853465415553075"; 
-            const LOGS_CHANNEL_ID = "1552573413850218587";
+            const LOGS_TICKET_ID = "1258726665232842762"; // Nouveau salon de logs tickets
 
             try {
                 const channelName = isFrench ? `ticket-fr-${member.user.username}` : `ticket-en-${member.user.username}`;
@@ -62,7 +62,7 @@ client.on("interactionCreate", async interaction => {
                 // Création du salon avec permissions pour l'utilisateur et le rôle admin
                 const channel = await guild.channels.create({
                     name: channelName,
-                    type: 0, // GuildText
+                    type: ChannelType.GuildText,
                     parent: TICKET_CATEGORY_ID,
                     permissionOverwrites: [
                         {
@@ -106,8 +106,8 @@ client.on("interactionCreate", async interaction => {
                     components: [closeRow]
                 });
 
-                // 📊 ENVOI DES INFORMATIONS DÉTAILLÉES DANS LE SALON DE LOGS
-                const logsChannel = await guild.channels.fetch(LOGS_CHANNEL_ID).catch(() => null);
+                // 📊 ENVOI DES INFORMATIONS DÉTAILLÉES DANS LE SALON DE LOGS TICKETS
+                const logsChannel = await guild.channels.fetch(LOGS_TICKET_ID).catch(() => null);
                 if (logsChannel) {
                     const logEmbed = new EmbedBuilder()
                         .setColor(isFrench ? '#3498DB' : '#E67E22')
@@ -125,8 +125,8 @@ client.on("interactionCreate", async interaction => {
 
                 return await interaction.editReply({
                     content: isFrench 
-                        ? `✅ Ton ticket français a été créé : ${channel} !` 
-                        : `✅ Your English ticket has been created: ${channel} !`
+                        ? `✅ Ton ticket français a été créé : ${channel}` 
+                        : `✅ Your English ticket has been created: ${channel}`
                 });
 
             } catch (err) {
@@ -139,7 +139,7 @@ client.on("interactionCreate", async interaction => {
 
         // 🔒 FERMETURE DU TICKET
         if (interaction.customId === 'close_ticket') {
-            await interaction.reply({ content: 'Fermeture du ticket... / Closing ticket...' });
+            await interaction.reply({ content: '🔒 Fermeture du ticket en cours... / Closing ticket...' });
             
             setTimeout(async () => {
                 try {
@@ -200,6 +200,98 @@ client.on("interactionCreate", async interaction => {
 // Écouteur de messages pour l'XP
 client.on(Events.MessageCreate, async (message) => {
     await handleXpMessage(message, client);
+});
+
+// 🎙️ GESTIONNAIRE DES SALONS VOCAUX TEMPORAIRES (CHANNEL MANAGER)
+const temporaryVoiceChannels = new Map(); // Stocke l'association ID du salon vocal -> ID du propriétaire
+
+client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
+    const PILOT_CHANNEL_ID = "1533281900318167060";
+    const LOGS_VOICE_ID = "1258726912721817611";
+    const guild = newState.guild;
+    const member = newState.member;
+
+    // 1. Un utilisateur rejoint le salon pilote
+    if (newState.channelId === PILOT_CHANNEL_ID) {
+        try {
+            const channelName = `Voc ${member.user.username}`;
+            const parentCategory = newState.channel?.parent; // Garde la même catégorie si le salon pilote y est
+
+            // Création du salon temporaire avec permissions de gestion totale pour le membre
+            const tempChannel = await guild.channels.create({
+                name: channelName,
+                type: ChannelType.GuildVoice,
+                parent: parentCategory,
+                permissionOverwrites: [
+                    {
+                        id: guild.id,
+                        allow: [PermissionFlagsBits.Connect, PermissionFlagsBits.Speak],
+                    },
+                    {
+                        id: member.id,
+                        allow: [
+                            PermissionFlagsBits.Connect,
+                            PermissionFlagsBits.Speak,
+                            PermissionFlagsBits.ManageChannels, // Contrôle TOTAL (modifier le nom, etc.)
+                            PermissionFlagsBits.MuteMembers,
+                            PermissionFlagsBits.DeafenMembers,
+                            PermissionFlagsBits.MoveMembers
+                        ],
+                    },
+                ],
+            });
+
+            // Déplacement immédiat du membre dans son nouveau salon
+            await member.voice.setChannel(tempChannel);
+
+            // Enregistrement du propriétaire du salon
+            temporaryVoiceChannels.set(tempChannel.id, member.id);
+
+            // Log de création dans le salon dédié
+            const logsChannel = await guild.channels.fetch(LOGS_VOICE_ID).catch(() => null);
+            if (logsChannel) {
+                const voiceLogEmbed = new EmbedBuilder()
+                    .setColor('#2ECC71')
+                    .setTitle('🔊 Salon vocal temporaire créé')
+                    .addFields(
+                        { name: '👤 Propriétaire', value: `${member.user.tag} (<@${member.id}>)`, inline: true },
+                        { name: '📂 Salon', value: `${tempChannel} (\`${tempChannel.name}\`)`, inline: true }
+                    )
+                    .setTimestamp();
+                await logsChannel.send({ embeds: [voiceLogEmbed] });
+            }
+        } catch (err) {
+            console.error("Erreur lors de la création du salon vocal temporaire :", err);
+        }
+    }
+
+    // 2. Suppression automatique d'un salon temporaire lorsqu'il est vide
+    if (oldState.channel && temporaryVoiceChannels.has(oldState.channelId)) {
+        const emptyChannel = oldState.channel;
+        if (emptyChannel.members.size === 0) {
+            try {
+                const ownerId = temporaryVoiceChannels.get(emptyChannel.id);
+                temporaryVoiceChannels.delete(emptyChannel.id);
+                await emptyChannel.delete();
+
+                // Log de suppression
+                const logsChannel = await guild.channels.fetch(LOGS_VOICE_ID).catch(() => null);
+                if (logsChannel) {
+                    const deleteLogEmbed = new EmbedBuilder()
+                        .setColor('#E74C3C')
+                        .setTitle('🔇 Salon vocal temporaire supprimé')
+                        .addFields(
+                            { name: '📂 Salon', value: `\`${emptyChannel.name}\``, inline: true },
+                            { name: '👤 Propriétaire initial', value: `<@${ownerId}>`, inline: true }
+                        )
+                        .setTimestamp();
+                    await logsChannel.send({ embeds: [deleteLogEmbed] });
+                }
+            } catch (err) {
+                console.error("Erreur lors de la suppression du salon vocal vide :", err);
+            }
+        }
+    }
 });
 
 // 📌 GESTION DU DÉPART D'UN MEMBRE : Sauvegarde prison & Reset total de ses données
