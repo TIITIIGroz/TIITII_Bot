@@ -18,40 +18,6 @@ module.exports = {
         const lang = interaction.options.getString('lang') || 'fr';
         const isFrench = lang === 'fr';
 
-        // 📝 DESCRIPTIONS DE TES COMMANDES (FR & EN)
-        const commandDescriptions = {
-            links: {
-                fr: "Affiche la liste de toutes les réseaux sociaux de TIITII_Groz.",
-                en: "Displays the list of all the network of TIITII_Groz."
-            },
-            rank: {
-                fr: "Affiche le rang du membre identifié ou sans vous identifier vous aurez votre rang.",
-                en: "Displays the rank of the identified member or, without identifying yourself, you will have your rank."
-            },
-            leaderboard: {
-                fr: "Affiche le classement des 10 premiers membres (XP).",
-                en: "Displays the leaderboard of the 10 first members(XP)."
-            },
-            'anniv-js': {
-                fr: "Ajout de VOTRE anniversaire, vous pouvez le modifier en refaisant la commande.",
-            },
-            'anniv-list': {
-                fr: "Affiche l'anniversaire de TOUT le monde ayant mis leur anniversaire.",
-            },
-            'anniv-rt': {
-                fr: "Retire votre anniversaire des données du bot.",
-            },
-            'bday-add': {
-                en: "Adding YOUR birthday, you can change it by reordering."
-            },
-            'bday-list': {
-                en: "Display the birthday of ALL the people who put on their birthdays."
-            },
-            'bday-rm': {
-                en: "Remove your birthday from the bot’s data."
-            },
-        };
-
         const embed = new EmbedBuilder()
             .setColor(isFrench ? '#57F287' : '#FEE75C')
             .setTitle(isFrench ? '📖 Liste des commandes / Command List' : '📖 Command List / Liste des commandes')
@@ -62,14 +28,10 @@ module.exports = {
             )
             .setTimestamp();
 
-        // Récupère toutes les commandes enregistrées dans le bot dynamiquement
+        // 🔄 Récupération 100% dynamique de toutes les commandes enregistrées dans le bot
         interaction.client.commands.forEach((cmd, name) => {
-            const descObj = commandDescriptions[name];
-            let description = isFrench ? "Aucune description." : "No description.";
-
-            if (descObj) {
-                description = isFrench ? descObj.fr : descObj.en;
-            }
+            // Récupère la description directement depuis la configuration de la commande
+            let description = cmd.data.description || (isFrench ? "Aucune description." : "No description.");
 
             embed.addFields({
                 name: `/${name}`,
