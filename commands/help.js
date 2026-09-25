@@ -18,8 +18,12 @@ module.exports = {
         const lang = interaction.options.getString('lang') || 'fr';
         const isFrench = lang === 'fr';
 
-        // 🔒 LISTE DES COMMANDES SECRETES - ADMIN À NE PAS AFFICHER DANS LE /HELP
+        // 🔒 COMMANDES CACHÉES (Admin)
         const hiddenCommands = ['add-button', 'dt-button','embed-edit','embed', 'set-level','take-xp','give-xp','admin-anniv','insta','ticket-setup'];
+
+        // 🌐 TES 3 COMMANDES FRANÇAISES ET TES 3 ANGLAISES
+        const frenchOnlyCommands = ['anniv-aj', 'anniv-rt', 'anniv-list'];
+        const englishOnlyCommands = ['bday-add', 'bday-rm', 'bday-list'];
 
         const embed = new EmbedBuilder()
             .setColor(isFrench ? '#57F287' : '#FEE75C')
@@ -31,48 +35,33 @@ module.exports = {
             )
             .setTimestamp();
 
-        // Filtrer d'abord les commandes valides
-        const availableCommands = Array.from(interaction.client.commands.entries())
-            .filter(([name]) => !hiddenCommands.includes(name));
+        // Filtrer les commandes selon la langue
+        const availableCommands = Array.from(interaction.client.commands.entries()).filter(([name]) => {
+            if (hiddenCommands.includes(name)) return false;
 
-        availableCommands.forEach(([name, cmd], index) => {
-            // 🌐 GESTION DE LA LANGUE POUR LA DESCRIPTION
-            // Si ta commande possède une description gérée en objet (ex: { fr: "...", en: "..." }) 
-            // ou si tu veux adapter selon la description native :
-            let description = cmd.data.description;
-
-            // Astuce : Si tes descriptions nativaux sont en français, tu peux soit :
-            // 1. Traduire directement ici avec un dictionnaire/switch si tu as peu de commandes
-            // 2. Ou utiliser la propriété description de la commande si elle est déjà bilingue.
-            
-            // Exemple simple de traduction manuelle propre pour le /help si tu veux forcer l'anglais :
-            if (!isFrench) {
-                // Tu peux mapper l'anglais ici si tu veux des textes spécifiques en anglais :
-                const englishDescriptions = {
-                    'ping': 'Displays the bot latency',
-                    'help': 'Displays the list of commands',
-                    // Ajoute tes autres commandes ici si besoin, sinon la description par défaut s'affichera
-                };
-                description = englishDescriptions[name] || cmd.data.description || "No description.";
+            if (isFrench) {
+                return !englishOnlyCommands.includes(name);
             } else {
-                description = cmd.data.description || "Aucune description.";
+                return !frenchOnlyCommands.includes(name);
             }
+        });
 
-            // Ajout de la commande
-            embed.addFields({
-                name: `${name}`,
-                value: description,
-                inline: false
-            });
+        // 📝 CRÉATION D'UNE LISTE UNIQUE COMPACTE
+        // On génère tout le texte dans une seule variable avec un petit saut de ligne simple
+        let commandListText = "";
 
-            // Espace entre chaque commande (si ce n'est pas la dernière)
-            if (index < availableCommands.length - 1) {
-                embed.addFields({
-                    name: '\u200b',
-                    value: '\u200b',
-                    inline: false
-                });
-            }
+        availableCommands.forEach(([name, cmd]) => {
+            let description = cmd.data.description || (isFrench ? "Aucune description." : "No description.");
+            
+            // Format : `/__nom__` : description avec un saut de ligne simple
+            commandListText += `**/${name}** : ${description}\n`;
+        });
+
+        // On ajoute tout dans un seul champ (ou directement dans la description si tu préfères)
+        embed.addFields({
+            name: '\u200b', // Titre vide
+            value: commandListText,
+            inline: false
         });
 
         await interaction.reply({
