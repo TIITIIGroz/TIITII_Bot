@@ -3,6 +3,8 @@ const supabase = require('../supabase');
 
 // ID du salon où envoyer la notification de création
 const LOG_CHANNEL_ID = '1549500976317337670';
+// ID du rôle Administrateur autorisé
+const ADMIN_ROLE_ID = '894669520902451220';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -31,6 +33,13 @@ module.exports = {
 
     async execute(interaction) {
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+
+        // Vérification si le membre possède le rôle admin requis
+        if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
+            return interaction.editReply({ 
+                content: "❌ Vous n'avez pas la permission d'utiliser cette commande (rôle administrateur requis)." 
+            });
+        }
 
         const messageId = interaction.options.getString('message_id');
         const buttonName = interaction.options.getString('button_name');
@@ -84,8 +93,8 @@ module.exports = {
                 const logChannel = await interaction.client.channels.fetch(LOG_CHANNEL_ID);
                 if (logChannel) {
                     await logChannel.send(
-    `Le bouton '${buttonName}' vient d'être créé, la key pour le retirer c'est ${key} avec le message dont l'ID c'est \`${messageId}\`.\n\n------------------------------------------------`
-);
+                        `Le bouton '${buttonName}' vient d'être créé, la key pour le retirer c'est ${key} avec le message dont l'ID c'est \`${messageId}\`.\n\n------------------------------------------------`
+                    );
                 }
             } catch (logError) {
                 console.error("Impossible d'envoyer le message de log dans le salon :", logError);
