@@ -41,9 +41,40 @@ if (fs.existsSync(commandsPath)) {
     }
 }
 
+// 🛡️ Listes des administrateurs et rôles (utilisés pour les salons et la suppression)
+const ADMIN_ROLE_IDS = ['894668340902125618', '1012357140679229511', '894669520902451220'];
+const ADMIN_USER_IDS = ['913798085686198292', '707665614067728464'];
+
+function hasAdminPermission(member) {
+    if (!member) return false;
+    const isSpecialUser = ADMIN_USER_IDS.includes(member.id);
+    const hasAdminRole = ADMIN_ROLE_IDS.some(roleId => member.roles.cache.has(roleId));
+    return isSpecialUser || hasAdminRole;
+}
+
 // Slash Commands & Boutons interactifs (Depuis Supabase & Tickets)
 client.on("interactionCreate", async interaction => {
     if (interaction.isButton()) {
+        // 🗑️ GESTIONNAIRE DU BOUTON DE SUPPRESSION RAPIDE DES MESSAGES
+        if (interaction.customId === 'delete_command_msg') {
+            if (!hasAdminPermission(interaction.member)) {
+                return await interaction.reply({
+                    content: "❌ Vous n'avez pas la permission de supprimer ce message.",
+                    flags: [MessageFlags.Ephemeral]
+                });
+            }
+
+            try {
+                return await interaction.message.delete();
+            } catch (err) {
+                console.error("Erreur suppression message commande :", err);
+                return await interaction.reply({
+                    content: "❌ Impossible de supprimer ce message.",
+                    flags: [MessageFlags.Ephemeral]
+                });
+            }
+        }
+
         // 🎫 GESTIONNAIRE DES TICKETS (FR & EN) AVEC LE NOUVEAU SALON DE LOGS
         if (interaction.customId === 'create_ticket_fr' || interaction.customId === 'create_ticket_en') {
             await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
@@ -54,12 +85,11 @@ client.on("interactionCreate", async interaction => {
 
             const TICKET_CATEGORY_ID = null; 
             const ADMIN_ROLE_ID = "1008853465415553075"; 
-            const LOGS_TICKET_ID = "1258726665232842762"; // Nouveau salon de logs tickets
+            const LOGS_TICKET_ID = "1258726665232842762";
 
             try {
                 const channelName = isFrench ? `ticket-fr-${member.user.username}` : `ticket-en-${member.user.username}`;
 
-                // Création du salon avec permissions pour l'utilisateur et le rôle admin
                 const channel = await guild.channels.create({
                     name: channelName,
                     type: ChannelType.GuildText,
@@ -80,7 +110,6 @@ client.on("interactionCreate", async interaction => {
                     ],
                 });
 
-                // Message embed avec les textes combinés selon la langue
                 const ticketEmbed = new EmbedBuilder()
                     .setColor(isFrench ? '#57F287' : '#FEE75C')
                     .setTitle(isFrench ? `Ticket de ${member.user.username} (FR)` : `Ticket for ${member.user.username} (EN)`)
@@ -99,14 +128,12 @@ client.on("interactionCreate", async interaction => {
                         .setEmoji('🔒')
                 );
 
-                // Mention automatique de l'utilisateur et du rôle administrateur dans le salon
                 await channel.send({
                     content: `<@${member.id}> \vert{} <@&${ADMIN_ROLE_ID}>`,
                     embeds: [ticketEmbed],
                     components: [closeRow]
                 });
 
-                // 📊 ENVOI DES INFORMATIONS DÉTAILLÉES DANS LE SALON DE LOGS TICKETS
                 const logsChannel = await guild.channels.fetch(LOGS_TICKET_ID).catch(() => null);
                 if (logsChannel) {
                     const logEmbed = new EmbedBuilder()
@@ -189,9 +216,6 @@ client.on("interactionCreate", async interaction => {
     // 🔒 VÉRIFICATION DU SALON AUTORISÉ POUR LES COMMANDES (Sauf Admins / Rôles autorisés)
     const ALLOWED_CHANNEL_ID = '1534722984391082105';
     
-    const ADMIN_ROLE_IDS = ['894668340902125618', '1012357140679229511', '894669520902451220'];
-    const ADMIN_USER_IDS = ['913798085686198292', '707665614067728464'];
-
     const memberRoles = interaction.member.roles.cache;
     const hasAdminRole = ADMIN_ROLE_IDS.some(roleId => memberRoles.has(roleId));
     const isSpecialUser = ADMIN_USER_IDS.includes(interaction.user.id);
@@ -207,7 +231,30 @@ client.on("interactionCreate", async interaction => {
     if (!command) return;
 
     try {
+        // Exécution de la commande
         await command.execute(interaction);
+
+        // 🗑️ Si la commande a réussi, on s'assure d'ajouter un bouton de suppression si c'est dans le salon autorisé
+        // ou on met en place un mécanisme propre pour y joindre le bouton de suppression rapide.
+        if (interaction.channelId === ALLOWED_CHANNEL_ID) {
+            const deleteButton = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId('delete_command_msg')
+                    .setLabel('Supprimer')
+                    .setStyle(ButtonStyle.Danger)
+                    .setEmoji('🗑️')
+            );
+
+            // Si le message de la commande a déjà été répondu ou différé, on peut l'éditer pour y ajouter le bouton
+            try {
+                if (interaction.deferred || interaction.replied) {
+                    await interaction.editReply({ components: [deleteButton] }).catch(() => {});
+                }
+            } catch (e) {
+                // Certains types de réponses ne permettent pas d'ajouter des composants après coup, on gère silencieusement
+            }
+        }
+
     } catch (error) {
         console.error(error);
         const reply = { content: "Une erreur est survenue.", flags: [MessageFlags.Ephemeral] };
