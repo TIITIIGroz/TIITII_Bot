@@ -21,7 +21,7 @@ module.exports = {
         // 🔒 COMMANDES CACHÉES (Admin)
         const hiddenCommands = ['add-button', 'dt-button','embed-edit','embed', 'set-level','take-xp','give-xp','admin-anniv','insta','ticket-setup'];
 
-        // 🌐 TES 3 COMMANDES FRANÇAISES ET TES 3 ANGLAISES (Remplace par les vrais noms)
+        // 🌐 TES 3 COMMANDES FRANÇAISES ET TES 3 ANGLAISES
         const frenchOnlyCommands = ['anniv-aj', 'anniv-rt', 'anniv-list'];
         const englishOnlyCommands = ['bday-add', 'bday-rm', 'bday-list'];
 
@@ -46,7 +46,7 @@ module.exports = {
             }
         });
 
-        // 📝 CRÉATION DE LA LISTE COMPACTE
+        // 📝 CRÉATION DE LA LISTE AVEC ESPACE LÉGER
         let commandListText = "";
 
         availableCommands.forEach(([name, cmd]) => {
@@ -66,11 +66,11 @@ module.exports = {
                 description += '.';
             }
             
-            // Format : /nom : description
-            commandListText += `**/${name}** : ${description}\n`;
+            // Format : /nom : description (avec DEUX retours à la ligne pour faire un espace aéré)
+            commandListText += `**/${name}** : ${description}\n\n`;
         });
 
-        // Ajout du texte dans un champ unique pour éviter les gros espaces
+        // Ajout du texte dans un champ unique
         embed.addFields({
             name: '\u200b',
             value: commandListText,
