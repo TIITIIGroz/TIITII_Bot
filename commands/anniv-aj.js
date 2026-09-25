@@ -4,7 +4,7 @@ const supabase = require('../supabase');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('anniv-aj')
-        .setDescription('Enregistre ta date d\'anniversaire')
+        .setDescription('Enregistre ta date d\'anniversaire ou re écris ta date pour la modifier')
         .addStringOption(option =>
             option.setName('date')
                 .setDescription('Ta date d\'anniversaire au format JJ/MM (ex: 25/12) ou modifie la en remettant la bonne date')
