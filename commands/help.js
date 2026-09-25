@@ -32,9 +32,23 @@ module.exports = {
                 fr: "Affiche le classement des 10 premiers membres (XP).",
                 en: "Displays the leaderboard of the 10 first members(XP)."
             },
-            anniv: {
+            'anniv-js': {
                 fr: "Ajout de VOTRE anniversaire, vous pouvez le modifier en refaisant la commande.",
+            },
+            'anniv-list': {
+                fr: "Affiche l'anniversaire de TOUT le monde ayant mis leur anniversaire.",
+            },
+            'anniv-rt': {
+                fr: "Retire votre anniversaire des données du bot.",
+            },
+            'bday-add': {
                 en: "Adding YOUR birthday, you can change it by reordering."
+            },
+            'bday-list': {
+                en: "Display the birthday of ALL the people who put on their birthdays."
+            },
+            'bday-rm': {
+                en: "Remove your birthday from the bot’s data."
             },
         };
 
