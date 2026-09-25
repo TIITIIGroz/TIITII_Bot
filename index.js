@@ -213,7 +213,7 @@ client.on(Events.MessageCreate, async (message) => {
 });
 
 // 🎙️ GESTIONNAIRE DES SALONS VOCAUX TEMPORAIRES (CHANNEL MANAGER)
-const temporaryVoiceChannels = new Map(); // Stocke l'association ID du salon vocal -> ID du propriétaire
+const temporaryVoiceChannels = new Map();
 
 client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
     const PILOT_CHANNEL_ID = "1533281900318167060";
@@ -221,13 +221,11 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
     const guild = newState.guild;
     const member = newState.member;
 
-    // 1. Un utilisateur rejoint le salon pilote
     if (newState.channelId === PILOT_CHANNEL_ID) {
         try {
             const channelName = `Voc ${member.user.username}`;
-            const parentCategory = newState.channel?.parent; // Garde la même catégorie si le salon pilote y est
+            const parentCategory = newState.channel?.parent;
 
-            // Création du salon temporaire avec permissions de gestion totale pour le membre
             const tempChannel = await guild.channels.create({
                 name: channelName,
                 type: ChannelType.GuildVoice,
@@ -251,13 +249,9 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                 ],
             });
 
-            // Déplacement immédiat du membre dans son nouveau salon
             await member.voice.setChannel(tempChannel);
-
-            // Enregistrement du propriétaire du salon
             temporaryVoiceChannels.set(tempChannel.id, member.id);
 
-            // Log de création dans le salon dédié
             const logsChannel = await guild.channels.fetch(LOGS_VOICE_ID).catch(() => null);
             if (logsChannel) {
                 const voiceLogEmbed = new EmbedBuilder()
@@ -275,7 +269,6 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
         }
     }
 
-    // 2. Suppression automatique d'un salon temporaire lorsqu'il est vide
     if (oldState.channel && temporaryVoiceChannels.has(oldState.channelId)) {
         const emptyChannel = oldState.channel;
         if (emptyChannel.members.size === 0) {
@@ -284,7 +277,6 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                 temporaryVoiceChannels.delete(emptyChannel.id);
                 await emptyChannel.delete();
 
-                // Log de suppression
                 const logsChannel = await guild.channels.fetch(LOGS_VOICE_ID).catch(() => null);
                 if (logsChannel) {
                     const deleteLogEmbed = new EmbedBuilder()
@@ -304,11 +296,9 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
     }
 });
 
-// 📌 GESTION DU DÉPART D'UN MEMBRE : Sauvegarde prison & Reset total de ses données
+// 📌 GESTION DU DÉPART D'UN MEMBRE
 client.on(Events.GuildMemberRemove, async (member) => {
     const PRISON_ROLES = ["1549495761761214484", "913882559363043388"];
-    
-    // 1. Sauvegarde des rôles prison s'il les avait (dans Supabase)
     const hasPrisonRole = member.roles.cache.some(role => PRISON_ROLES.includes(role.id));
     
     if (hasPrisonRole) {
@@ -320,7 +310,6 @@ client.on(Events.GuildMemberRemove, async (member) => {
             .catch(err => console.error("Erreur sauvegarde prison Supabase :", err));
     }
 
-    // 2. NETTOYAGE COMPLET DE SES DONNÉES D'XP (Base PostgreSQL de xp.js)
     try {
         await pool.query(`DELETE FROM users WHERE userid = $1 AND guildid = $2`, [member.id, member.guild.id]);
         console.log(`🧹 Reset complet BDD PostgreSQL effectué pour le départ de ${member.user.tag}`);
@@ -329,7 +318,7 @@ client.on(Events.GuildMemberRemove, async (member) => {
     }
 });
 
-// 📌 GESTION DE L'ARRIVÉE D'UN MEMBRE : Restauration des rôles prison uniquement
+// 📌 GESTION DE L'ARRIVÉE D'UN MEMBRE
 client.on(Events.GuildMemberAdd, async (member) => {
     try {
         const { data } = await supabase
@@ -343,35 +332,15 @@ client.on(Events.GuildMemberAdd, async (member) => {
             await supabase.from('prison_escapes').delete().eq('user_id', member.id);
             console.log(`🔒 Rôles prison restitués pour ${member.user.tag}`);
         }
-    } catch (err) {
-        // S'il n'était pas en prison, il arrive totalement vierge de 0
-    }
+    } catch (err) {}
 });
 
 // Bot prêt
 client.once(Events.ClientReady, async () => {
     console.log(`✅ Connecté en tant que ${client.user.tag}`);
-    
     console.log(`📋 Commandes enregistrées en mémoire : ${client.commands.size}`);
     client.commands.forEach((cmd, name) => {
         console.log(` - /${name}`);
-    });
-
-    // 🔍 VÉRIFICATION DES COMMANDES POUR LE HELP.JS ET ALERTE DANS LE SALON 1552184275309297675
-    const ALERT_CHANNEL_ID = "1552184275309297675";
-    const documentedCommands = ['help', 'leaderboard', 'rank', 'links', 'anniv', 'anniv-aj', 'add-button', 'dt-button']; // Liste de toutes tes commandes actuelles
-
-    client.commands.forEach(async (cmd, name) => {
-        if (!documentedCommands.includes(name)) {
-            try {
-                const alertChannel = await client.channels.fetch(ALERT_CHANNEL_ID).catch(() => null);
-                if (alertChannel) {
-                    await alertChannel.send(`Cette commande '/${name}' doit être rajouté dans ton fichier help.js`);
-                }
-            } catch (err) {
-                console.error("Erreur lors de l'envoi de l'alerte help :", err);
-            }
-        }
     });
 
     client.user.setPresence({
@@ -390,7 +359,7 @@ client.once(Events.ClientReady, async () => {
         console.error("Erreur lors de l'envoi du message 'Je suis en ligne' :", err);
     }
 
-    // 🎂 SYSTÈME AUTOMATIQUE DES ANNIVERSAIRES (Vérification chaque jour à minuit)
+    // 🎂 SYSTÈME AUTOMATIQUE DES ANNIVERSAIRES
     setInterval(async () => {
         const now = new Date();
         if (now.getHours() === 0 && now.getMinutes() === 0) {
@@ -409,7 +378,6 @@ client.once(Events.ClientReady, async () => {
             const PING_ROLE_ID = "864898646343811077";
 
             try {
-                // 1. RETIRER LE RÔLE DE CEUX DONT C'ÉTAIT L'ANNIVERSAIRE HIER
                 const { data: oldBirthdays } = await supabase
                     .from('birthdays')
                     .select('*')
@@ -426,7 +394,6 @@ client.once(Events.ClientReady, async () => {
                     }
                 }
 
-                // 2. AJOUTER LE RÔLE ET ENVOYER LE MESSAGE POUR CEUX DONT C'EST L'ANNIVERSAIRE AUJOURD'HUI
                 const { data: birthdays, error } = await supabase
                     .from('birthdays')
                     .select('*')
