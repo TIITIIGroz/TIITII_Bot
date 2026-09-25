@@ -19,7 +19,7 @@ module.exports = {
         const isFrench = lang === 'fr';
 
         // 🔒 LISTE DES COMMANDES SECRETES - ADMIN À NE PAS AFFICHER DANS LE /HELP
-        const hiddenCommands = ['add-button', 'dt-button','embed-edit','embed', 'set-level','take-xp','give-xp','admin-anniv','insta','ticket-setup']; // Mets ici le nom de tes commandes admin
+        const hiddenCommands = ['add-button', 'dt-button','embed-edit','embed', 'set-level','take-xp','give-xp','admin-anniv','insta','ticket-setup'];
 
         const embed = new EmbedBuilder()
             .setColor(isFrench ? '#57F287' : '#FEE75C')
@@ -31,18 +31,29 @@ module.exports = {
             )
             .setTimestamp();
 
-        // Récupération dynamique de toutes les commandes SAUF les cachées
-        interaction.client.commands.forEach((cmd, name) => {
-            // Si la commande est dans la liste des cachées, on l'ignore complètement
-            if (hiddenCommands.includes(name)) return;
+        // Filtrer d'abord les commandes valides pour savoir combien il y en a
+        const availableCommands = Array.from(interaction.client.commands.entries())
+            .filter(([name]) => !hiddenCommands.includes(name));
 
+        // Récupération dynamique et ajout avec espace
+        availableCommands.forEach(([name, cmd], index) => {
             let description = cmd.data.description || (isFrench ? "Aucune description." : "No description.");
 
+            // Ajout de la commande
             embed.addFields({
                 name: `/${name}`,
                 value: description,
                 inline: false
             });
+
+            // Si ce n'est PAS la dernière commande, on ajoute un champ vide pour faire un espace
+            if (index < availableCommands.length - 1) {
+                embed.addFields({
+                    name: '\u200b', // Caractère espace invisible
+                    value: '\u200b',
+                    inline: false
+                });
+            }
         });
 
         await interaction.reply({
