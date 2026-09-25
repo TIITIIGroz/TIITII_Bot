@@ -186,9 +186,17 @@ client.on("interactionCreate", async interaction => {
 
     if (!interaction.isChatInputCommand()) return;
 
-    // 🔒 VÉRIFICATION DU SALON AUTORISÉ POUR LES COMMANDES
+    // 🔒 VÉRIFICATION DU SALON AUTORISÉ POUR LES COMMANDES (Sauf Admins / Rôles autorisés)
     const ALLOWED_CHANNEL_ID = '1534722984391082105';
-    if (interaction.channelId !== ALLOWED_CHANNEL_ID) {
+    
+    const ADMIN_ROLE_IDS = ['894668340902125618', '1012357140679229511', '894669520902451220'];
+    const ADMIN_USER_IDS = ['913798085686198292', '707665614067728464'];
+
+    const memberRoles = interaction.member.roles.cache;
+    const hasAdminRole = ADMIN_ROLE_IDS.some(roleId => memberRoles.has(roleId));
+    const isSpecialUser = ADMIN_USER_IDS.includes(interaction.user.id);
+
+    if (interaction.channelId !== ALLOWED_CHANNEL_ID && !hasAdminRole && !isSpecialUser) {
         return interaction.reply({
             content: `❌ Vous n'avez pas les permissions pour faire les commandes dans ce salon, écrivez votre commande dans le salon <#${ALLOWED_CHANNEL_ID}>`,
             flags: [MessageFlags.Ephemeral]
