@@ -3,7 +3,7 @@ const { SlashCommandBuilder, MessageFlags, PermissionFlagsBits } = require('disc
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('voice-hide')
-        .setDescription('Cache ton salon vocal personnalisé à tout le monde (sauf les admins) / Hides your custom voice channel')
+        .setDescription('Cache ton salon vocal aux autres membres')
         .setDescriptionLocalizations({
             fr: "Cache ton salon vocal personnalisé à tout le monde (sauf les admins). Tu dois être dans ton salon vocal ou dans le salon <#1533281900318167060>",
             en: "Hides your custom voice channel from everyone (except admins). You must be in your voice channel or in <#1533281900318167060>"
