@@ -22,8 +22,8 @@ module.exports = {
         const hiddenCommands = ['add-button', 'dt-button','embed-edit','embed', 'set-level','take-xp','give-xp','admin-anniv','insta','ticket-setup'];
 
         // 🌐 TES 3 COMMANDES FRANÇAISES ET TES 3 ANGLAISES (Remplace par les vrais noms)
-        const frenchOnlyCommands = ['commande_fr_1', 'commande_fr_2', 'commande_fr_3'];
-        const englishOnlyCommands = ['commande_en_1', 'commande_en_2', 'commande_en_3'];
+        const frenchOnlyCommands = ['anniv-aj', 'anniv-rt', 'anniv-list'];
+        const englishOnlyCommands = ['bday-add', 'bday-rm', 'bday-list'];
 
         const embed = new EmbedBuilder()
             .setColor(isFrench ? '#57F287' : '#FEE75C')
