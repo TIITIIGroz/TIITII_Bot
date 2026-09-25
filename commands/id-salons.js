@@ -14,17 +14,17 @@ module.exports = {
         let salonListText = "";
 
         channels.forEach(channel => {
-            // Déterminer une petite icône selon le type de salon
+            // Déterminer une icône selon le type de salon
             let icon = "💬";
             if (channel.isVoiceBased()) icon = "🔊";
             else if (channel.isThread()) icon = "🧵";
             else if (channel.isDMBased()) icon = "👥";
 
+            // Format propre : Icône Nom du salon -> `ID`
             const line = `${icon} **${channel.name}** : \`${channel.id}\`\n`;
 
-            // Discord limite la taille d'un champ d'embed à 1024 caractères. 
-            // Si la liste devient trop longue, on gère la sécurité pour éviter de dépasser.
-            if (salonListText.length + line.length > 1024) return;
+            // Sécurité pour ne pas dépasser la limite globale de la description (4096 caractères)
+            if (salonListText.length + line.length > 4000) return;
 
             salonListText += line;
         });
@@ -36,12 +36,7 @@ module.exports = {
         const embed = new EmbedBuilder()
             .setColor('#57F287')
             .setTitle('📋 Identifiants des salons du serveur')
-            .setDescription("Voici la liste de tous les salons avec leur nom à gauche et leur identifiant (`ID`) à droite :")
-            .addFields({
-                name: '\u200b',
-                value: salonListText,
-                inline: false
-            })
+            .setDescription(`Voici la liste de tous les salons (clique ou sélectionne l'identifiant pour le copier) :\n\n${salonListText}`)
             .setTimestamp();
 
         await interaction.reply({
