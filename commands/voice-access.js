@@ -6,7 +6,7 @@ module.exports = {
         .setDescription('Autorise une ou plusieurs personnes à accéder à ton salon vocal caché')
         .setDescriptionLocalizations({
             fr: "Autorise une ou plusieurs personnes à accéder à ton salon vocal caché",
-            en: "Grants one or more people access to your hidden voice channel"
+            "en-US": "Grants one or more people access to your hidden voice channel"
         })
         .addUserOption(option =>
             option.setName('ami1')
