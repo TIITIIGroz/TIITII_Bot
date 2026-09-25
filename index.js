@@ -185,6 +185,16 @@ client.on("interactionCreate", async interaction => {
     }
 
     if (!interaction.isChatInputCommand()) return;
+
+    // 🔒 VÉRIFICATION DU SALON AUTORISÉ POUR LES COMMANDES
+    const ALLOWED_CHANNEL_ID = '1534722984391082105';
+    if (interaction.channelId !== ALLOWED_CHANNEL_ID) {
+        return interaction.reply({
+            content: `❌ Vous n'avez pas les permissions pour faire les commandes dans ce salon, écrivez votre commande dans le salon <#${ALLOWED_CHANNEL_ID}>`,
+            flags: [MessageFlags.Ephemeral]
+        });
+    }
+
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
 
@@ -345,6 +355,23 @@ client.once(Events.ClientReady, async () => {
     console.log(`📋 Commandes enregistrées en mémoire : ${client.commands.size}`);
     client.commands.forEach((cmd, name) => {
         console.log(` - /${name}`);
+    });
+
+    // 🔍 VÉRIFICATION DES COMMANDES POUR LE HELP.JS ET ALERTE DANS LE SALON 1552184275309297675
+    const ALERT_CHANNEL_ID = "1552184275309297675";
+    const documentedCommands = ['help', 'leaderboard', 'rank', 'links', 'anniv', 'anniv-aj', 'add-button', 'dt-button']; // Liste de toutes tes commandes actuelles
+
+    client.commands.forEach(async (cmd, name) => {
+        if (!documentedCommands.includes(name)) {
+            try {
+                const alertChannel = await client.channels.fetch(ALERT_CHANNEL_ID).catch(() => null);
+                if (alertChannel) {
+                    await alertChannel.send(`Cette commande '/${name}' doit être rajouté dans ton fichier help.js`);
+                }
+            } catch (err) {
+                console.error("Erreur lors de l'envoi de l'alerte help :", err);
+            }
+        }
     });
 
     client.user.setPresence({
