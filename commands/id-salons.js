@@ -8,8 +8,14 @@ module.exports = {
     async execute(interaction) {
         const guild = interaction.guild;
 
-        // Récupérer tous les salons du serveur et les trier par position
-        const channels = guild.channels.cache.sort((a, b) => a.position - b.position);
+        // Récupérer tous les salons, filtrer pour enlever les catégories (GuildCategory), et trier par position
+        const channels = guild.channels.cache
+            .filter(channel => channel.type !== 4) // Type 4 correspond aux catégories dans Discord
+            .sort((a, b) => {
+                // Tri par position de salon, puis par position de position brute si besoin
+                if (a.rawPosition !== b.rawPosition) return a.rawPosition - b.rawPosition;
+                return a.position - b.position;
+            });
 
         let salonListText = "";
 
@@ -18,12 +24,11 @@ module.exports = {
             let icon = "💬";
             if (channel.isVoiceBased()) icon = "🔊";
             else if (channel.isThread()) icon = "🧵";
-            else if (channel.isDMBased()) icon = "👥";
 
             // Format propre : Icône Nom du salon -> `ID`
             const line = `${icon} **${channel.name}** : \`${channel.id}\`\n`;
 
-            // Sécurité pour ne pas dépasser la limite globale de la description (4096 caractères)
+            // Sécurité pour ne pas dépasser la limite globale de la description (4000 caractères)
             if (salonListText.length + line.length > 4000) return;
 
             salonListText += line;
@@ -36,7 +41,7 @@ module.exports = {
         const embed = new EmbedBuilder()
             .setColor('#57F287')
             .setTitle('📋 Identifiants des salons du serveur')
-            .setDescription(`Voici la liste de tous les salons (clique ou sélectionne l'identifiant pour le copier) :\n\n${salonListText}`)
+            .setDescription(`Voici la liste de tous les salons dans l'ordre du serveur (clique ou sélectionne l'identifiant pour le copier) :\n\n${salonListText}`)
             .setTimestamp();
 
         await interaction.reply({
