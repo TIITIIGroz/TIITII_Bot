@@ -23,7 +23,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setColor(isFrench ? '#57F287' : '#FEE75C')
-            .setTitle(isFrench ? '📖 Liste des commandes / Command List' : '📖 Command List / Liste des commandes')
+            .setTitle(isFrench ? '📖 Liste des commandes' : '📖 Command List')
             .setDescription(
                 isFrench 
                     ? "Voici la liste des commandes disponibles sur le serveur :" 
@@ -31,25 +31,44 @@ module.exports = {
             )
             .setTimestamp();
 
-        // Filtrer d'abord les commandes valides pour savoir combien il y en a
+        // Filtrer d'abord les commandes valides
         const availableCommands = Array.from(interaction.client.commands.entries())
             .filter(([name]) => !hiddenCommands.includes(name));
 
-        // Récupération dynamique et ajout avec espace
         availableCommands.forEach(([name, cmd], index) => {
-            let description = cmd.data.description || (isFrench ? "Aucune description." : "No description.");
+            // 🌐 GESTION DE LA LANGUE POUR LA DESCRIPTION
+            // Si ta commande possède une description gérée en objet (ex: { fr: "...", en: "..." }) 
+            // ou si tu veux adapter selon la description native :
+            let description = cmd.data.description;
+
+            // Astuce : Si tes descriptions nativaux sont en français, tu peux soit :
+            // 1. Traduire directement ici avec un dictionnaire/switch si tu as peu de commandes
+            // 2. Ou utiliser la propriété description de la commande si elle est déjà bilingue.
+            
+            // Exemple simple de traduction manuelle propre pour le /help si tu veux forcer l'anglais :
+            if (!isFrench) {
+                // Tu peux mapper l'anglais ici si tu veux des textes spécifiques en anglais :
+                const englishDescriptions = {
+                    'ping': 'Displays the bot latency',
+                    'help': 'Displays the list of commands',
+                    // Ajoute tes autres commandes ici si besoin, sinon la description par défaut s'affichera
+                };
+                description = englishDescriptions[name] || cmd.data.description || "No description.";
+            } else {
+                description = cmd.data.description || "Aucune description.";
+            }
 
             // Ajout de la commande
             embed.addFields({
-                name: `/${name}`,
+                name: `${name}`,
                 value: description,
                 inline: false
             });
 
-            // Si ce n'est PAS la dernière commande, on ajoute un champ vide pour faire un espace
+            // Espace entre chaque commande (si ce n'est pas la dernière)
             if (index < availableCommands.length - 1) {
                 embed.addFields({
-                    name: '\u200b', // Caractère espace invisible
+                    name: '\u200b',
                     value: '\u200b',
                     inline: false
                 });
