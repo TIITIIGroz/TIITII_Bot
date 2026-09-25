@@ -19,7 +19,7 @@ module.exports = {
         const isFrench = lang === 'fr';
 
         // 🔒 LISTE DES COMMANDES SECRETES - ADMIN À NE PAS AFFICHER DANS LE /HELP
-        const hiddenCommands = ['add-button', 'dt-button','embed-edit','embed', 'set-levels','take-xp','give-xp','admin-anniv','insta']; // Mets ici le nom de tes commandes admin
+        const hiddenCommands = ['add-button', 'dt-button','embed-edit','embed', 'set-level','take-xp','give-xp','admin-anniv','insta','ticket-setup']; // Mets ici le nom de tes commandes admin
 
         const embed = new EmbedBuilder()
             .setColor(isFrench ? '#57F287' : '#FEE75C')
