@@ -3,10 +3,10 @@ const { SlashCommandBuilder, MessageFlags, PermissionFlagsBits } = require('disc
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('voice-hide')
-        .setDescription('Cache ton salon vocal aux autres membres')
+        .setDescription('Cache ton salon vocal aux autres membres.')
         .setDescriptionLocalizations({
-            fr: "Cache ton salon vocal aux autres membres (sauf les admins).",
-            en: "Hides your voice channel from members (except admins)."
+            fr: "Cache ton salon vocal aux autres membres.",
+            "en-US": "Hides your voice channel from members."
         }),
 
     async execute(interaction) {
@@ -14,12 +14,7 @@ module.exports = {
         const guild = interaction.guild;
         const PILOT_CHANNEL_ID = "1533281900318167060";
         
-        // ID des rôles/utilisateurs qui doivent continuer à voir le salon
-        // (Tu as mentionné les admins, adapte si besoin avec tes ID admin ou PermissionFlagsBits.Administrator)
-        const ADMIN_ROLE_IDS = ['894668340902125618', '1012357140679229511', '894669520902451220'];
-        const ADMIN_USER_IDS = ['913798085686198292', '707665614067728464'];
-
-        // Rôles/groupes à masquer (que tu as listés)
+        // Rôles/groupes à masquer
         const rolesToHide = [
             "1094758180938067989", // EN
             "1094758355085574204", // FR
@@ -40,8 +35,6 @@ module.exports = {
 
         try {
             // Modification des permissions du salon vocal actuel de l'utilisateur
-            // On cache le salon pour les rôles spécifiés, tout en s'assurant que le propriétaire et les admins gardent l'accès
-            
             for (const roleId of rolesToHide) {
                 await userVoiceChannel.permissionOverwrites.edit(roleId, {
                     [PermissionFlagsBits.ViewChannel]: false
