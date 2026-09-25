@@ -25,8 +25,11 @@ module.exports = {
             if (channel.isVoiceBased()) icon = "🔊";
             else if (channel.isThread()) icon = "🧵";
 
-            // Format propre : Icône Nom du salon -> `ID`
-            const line = `${icon} **${channel.name}** : \`${channel.id}\`\n`;
+            // Récupérer uniquement le premier caractère du nom du salon
+            const firstChar = channel.name.charAt(0);
+
+            // Format propre : Icône Premier caractère -> `ID`
+            const line = `${icon} **${firstChar}** : \`${channel.id}\`\n`;
 
             // Sécurité pour ne pas dépasser la limite globale de la description (4000 caractères)
             if (salonListText.length + line.length > 4000) return;
@@ -40,9 +43,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setColor('#57F287')
-            .setTitle('📋 Identifiants des salons du serveur')
-            .setDescription(`Voici la liste de tous les salons dans l'ordre du serveur (clique ou sélectionne l'identifiant pour le copier) :\n\n${salonListText}`)
-            .setTimestamp();
+            .setDescription(salonListText);
 
         await interaction.reply({
             embeds: [embed],
