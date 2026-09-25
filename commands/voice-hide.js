@@ -5,8 +5,8 @@ module.exports = {
         .setName('voice-hide')
         .setDescription('Cache ton salon vocal aux autres membres')
         .setDescriptionLocalizations({
-            fr: "Cache ton salon vocal aux autres membres (sauf les admins). Tu dois être dans ton salon vocal ou dans le salon <#1533281900318167060>",
-            en: "Hides your voice channel from members (except admins). You must be in your voice channel or in <#1533281900318167060>"
+            fr: "Cache ton salon vocal aux autres membres (sauf les admins).",
+            en: "Hides your voice channel from members (except admins)."
         }),
 
     async execute(interaction) {
