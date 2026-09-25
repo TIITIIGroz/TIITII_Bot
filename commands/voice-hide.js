@@ -3,32 +3,23 @@ const { SlashCommandBuilder, MessageFlags, PermissionFlagsBits } = require('disc
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('voice-hide')
-        .setDescription('Cache ton salon vocal et autorise des personnes spécifiques')
+        .setDescription('Cache ton salon vocal personnalisé à tout le monde (sauf les admins) / Hides your custom voice channel')
         .setDescriptionLocalizations({
-            fr: "Cache ton salon vocal à tout le monde et l'autorise aux personnes mentionnées. Tu dois être dans ton salon ou dans le salon <#1533281900318167060>",
-            en: "Hides your custom voice channel and allows specified users. You must be in your voice channel or in <#1533281900318167060>"
-        })
-        .addUserOption(option =>
-            option.setName('utilisateur1')
-                .setDescription('La première personne à autoriser / The first user to allow')
-                .setRequired(true)
-        )
-        .addUserOption(option =>
-            option.setName('utilisateur2')
-                .setDescription('Une deuxième personne (optionnel)')
-                .setRequired(false)
-        )
-        .addUserOption(option =>
-            option.setName('utilisateur3')
-                .setDescription('Une troisième personne (optionnel)')
-                .setRequired(false)
-        ),
+            fr: "Cache ton salon vocal personnalisé à tout le monde (sauf les admins). Tu dois être dans ton salon vocal ou dans le salon <#1533281900318167060>",
+            en: "Hides your custom voice channel from everyone (except admins). You must be in your voice channel or in <#1533281900318167060>"
+        }),
 
     async execute(interaction) {
         const member = interaction.member;
+        const guild = interaction.guild;
         const PILOT_CHANNEL_ID = "1533281900318167060";
+        
+        // ID des rôles/utilisateurs qui doivent continuer à voir le salon
+        // (Tu as mentionné les admins, adapte si besoin avec tes ID admin ou PermissionFlagsBits.Administrator)
+        const ADMIN_ROLE_IDS = ['894668340902125618', '1012357140679229511', '894669520902451220'];
+        const ADMIN_USER_IDS = ['913798085686198292', '707665614067728464'];
 
-        // Rôles/groupes à masquer
+        // Rôles/groupes à masquer (que tu as listés)
         const rolesToHide = [
             "1094758180938067989", // EN
             "1094758355085574204", // FR
@@ -47,41 +38,25 @@ module.exports = {
             });
         }
 
-        // Récupérer les utilisateurs mentionnés via les options
-        const targetUsers = [
-            interaction.options.getUser('utilisateur1'),
-            interaction.options.getUser('utilisateur2'),
-            interaction.options.getUser('utilisateur3')
-        ].filter(Boolean); // Retire les valeurs "null" si elles n'ont pas été remplies
-
         try {
-            // 2. Cacher le salon pour les rôles de base
+            // Modification des permissions du salon vocal actuel de l'utilisateur
+            // On cache le salon pour les rôles spécifiés, tout en s'assurant que le propriétaire et les admins gardent l'accès
+            
             for (const roleId of rolesToHide) {
                 await userVoiceChannel.permissionOverwrites.edit(roleId, {
                     [PermissionFlagsBits.ViewChannel]: false
                 });
             }
 
-            // 3. S'assurer que le créateur garde l'accès total
+            // S'assurer que le créateur garde l'accès total
             await userVoiceChannel.permissionOverwrites.edit(member.id, {
                 [PermissionFlagsBits.ViewChannel]: true,
                 [PermissionFlagsBits.Connect]: true,
                 [PermissionFlagsBits.Speak]: true
             });
 
-            // 4. Donner l'accès aux utilisateurs mentionnés
-            for (const targetUser of targetUsers) {
-                await userVoiceChannel.permissionOverwrites.edit(targetUser.id, {
-                    [PermissionFlagsBits.ViewChannel]: true,
-                    [PermissionFlagsBits.Connect]: true,
-                    [PermissionFlagsBits.Speak]: true
-                });
-            }
-
-            const allowedNames = targetUsers.map(u => u.toString()).join(', ');
-
             return await interaction.reply({
-                content: `🔒 Ton salon vocal a été masqué ! Accès accordé à : ${allowedNames}. (Les administrateurs conservent également l'accès).`,
+                content: "🔒 Ton salon vocal a été masqué avec succès ! Seuls les administrateurs et toi-même pouvez le voir.",
                 flags: [MessageFlags.Ephemeral]
             });
 
