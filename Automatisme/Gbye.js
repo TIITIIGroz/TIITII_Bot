@@ -18,7 +18,7 @@ module.exports = (client) => {
             // Création de l'Embed de départ
             const goodbyeEmbed = new EmbedBuilder()
                 .setColor('#FF0000') // Rouge pour les départs (ou une autre couleur de ton choix)
-                .setDescription(`**${username}** a quitté le serveur. On espère te revoir bientôt ! - **${username}** left the server. I hope we see you soon :`)
+                .setDescription(`**${username}** a quitté le serveur. On espère te revoir bientôt !  **${username}** left the server. I hope we see you soon !`)
                 .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
                 .setTimestamp();
 
