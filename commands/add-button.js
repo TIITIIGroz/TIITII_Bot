@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, PermissionFlagsBits } = require('discord.js');
 const supabase = require('../supabase');
 
 // ID du salon où envoyer la notification de création
@@ -10,6 +10,8 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('add-button')
         .setDescription('Ajoute un bouton interactif avec une clé unique')
+        // 🔒 Ceci masque et réserve la commande aux administrateurs sur Discord
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addStringOption(option =>
             option.setName('message_id')
                 .setDescription('ID du message cible')
@@ -34,7 +36,7 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
-        // Vérification si le membre possède le rôle admin requis
+        // Vérification si le membre possède le rôle admin requis (double sécurité)
         if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
             return interaction.editReply({ 
                 content: "❌ Vous n'avez pas la permission d'utiliser cette commande (rôle administrateur requis)." 
