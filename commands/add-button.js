@@ -1,16 +1,13 @@
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, PermissionFlagsBits } = require('discord.js');
 const supabase = require('../supabase');
 
-// ID du salon où envoyer la notification de création mis à jour
+// ID du salon où envoyer la notification de création
 const LOG_CHANNEL_ID = '1553085810369237132';
-// ID du rôle Administrateur autorisé
-const ADMIN_ROLE_ID = '894669520902451220';
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('add-button')
         .setDescription('Ajoute un bouton interactif avec une clé unique')
-        // 🔒 Ceci masque et réserve la commande aux administrateurs sur Discord
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addStringOption(option =>
             option.setName('message_id')
@@ -36,13 +33,6 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
-        // Vérification si le membre possède le rôle admin requis (double sécurité)
-        if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
-            return interaction.editReply({ 
-                content: "❌ Vous n'avez pas la permission d'utiliser cette commande (rôle administrateur requis)." 
-            });
-        }
-
         const messageId = interaction.options.getString('message_id');
         const buttonName = interaction.options.getString('button_name');
         const key = interaction.options.getString('key').trim().toLowerCase();
@@ -55,7 +45,6 @@ module.exports = {
                 return interaction.editReply({ content: "❌ Impossible de trouver un message avec cet ID." });
             }
 
-            // Enregistrement dans Supabase avec la clé unique
             const { error: dbError } = await supabase
                 .from('button_translations')
                 .upsert({ key: key, response_text: responseText });
@@ -91,7 +80,6 @@ module.exports = {
 
             await message.edit({ components: rows });
 
-            // Envoi de la notification détaillée dans le nouveau salon de log
             try {
                 const logChannel = await interaction.client.channels.fetch(LOG_CHANNEL_ID);
                 if (logChannel) {
@@ -105,7 +93,7 @@ module.exports = {
                     );
                 }
             } catch (logError) {
-                console.error("Impossible d'envoyer le message de log dans le salon :", logError);
+                console.error("Impossible d'envoyer le message de log :", logError);
             }
 
             await interaction.editReply({ content: `✅ Succès ! Le bouton **"${buttonName}"** a bien été ajouté.` });
