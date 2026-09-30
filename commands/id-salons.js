@@ -3,7 +3,7 @@ const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js'
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('id-salons')
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
         .setDescription('Affiche la liste de tous les identifiants des salons du serveur.'),
 
     async execute(interaction) {
