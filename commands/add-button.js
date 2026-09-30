@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, PermissionFlagsBits, Locale } = require('discord.js');
 const supabase = require('../supabase');
 
 // ID du salon où envoyer la notification de création
@@ -7,26 +7,46 @@ const LOG_CHANNEL_ID = '1553085810369237132';
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('add-button')
-        .setDescription('Ajoute un bouton interactif avec une clé unique')
+        .setDescription('Adds an interactive button with a unique key')
+        .setDescriptionLocalizations({
+            [Locale.French]: 'Ajoute un bouton interactif avec une clé unique',
+            [Locale.EnglishUS]: 'Adds an interactive button with a unique key',
+        })
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addStringOption(option =>
             option.setName('message_id')
-                .setDescription('ID du message cible')
+                .setDescription('Target message ID')
+                .setDescriptionLocalizations({
+                    [Locale.French]: 'ID du message cible',
+                    [Locale.EnglishUS]: 'Target message ID',
+                })
                 .setRequired(true)
         )
         .addStringOption(option =>
             option.setName('button_name')
-                .setDescription('Le nom affiché sur le bouton')
+                .setDescription('The name displayed on the button')
+                .setDescriptionLocalizations({
+                    [Locale.French]: 'Le nom affiché sur le bouton',
+                    [Locale.EnglishUS]: 'The name displayed on the button',
+                })
                 .setRequired(true)
         )
         .addStringOption(option =>
             option.setName('key')
-                .setDescription('Une clé unique (ex: regles_en, regles_fr)')
+                .setDescription('A unique key (e.g., regles_en, regles_fr)')
+                .setDescriptionLocalizations({
+                    [Locale.French]: 'Une clé unique (ex: regles_en, regles_fr)',
+                    [Locale.EnglishUS]: 'A unique key (e.g., regles_en, regles_fr)',
+                })
                 .setRequired(true)
         )
         .addStringOption(option =>
             option.setName('response_text')
-                .setDescription('Le texte secret affiché en éphémère')
+                .setDescription('The secret text displayed ephemerally')
+                .setDescriptionLocalizations({
+                    [Locale.French]: 'Le texte secret affiché en éphémère',
+                    [Locale.EnglishUS]: 'The secret text displayed ephemerally',
+                })
                 .setRequired(true)
         ),
 
