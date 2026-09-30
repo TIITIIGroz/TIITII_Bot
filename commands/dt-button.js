@@ -1,7 +1,7 @@
-const { SlashCommandBuilder, ActionRowBuilder, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, ActionRowBuilder, MessageFlags, PermissionFlagsBits } = require('discord.js');
 const supabase = require('../supabase');
 
-// ID du rôle Administrateur autorisé
+// ID du rôle Administrateur autorisé (double sécurité)
 const ADMIN_ROLE_ID = '894669520902451220';
 
 module.exports = {
@@ -23,7 +23,7 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
-        // Vérification si le membre possède le rôle admin requis
+        // Vérification si le membre possède le rôle admin requis (double sécurité)
         if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
             return interaction.editReply({ 
                 content: "❌ Vous n'avez pas la permission d'utiliser cette commande (rôle administrateur requis)." 
