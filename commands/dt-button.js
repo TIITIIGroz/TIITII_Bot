@@ -1,10 +1,8 @@
 const { SlashCommandBuilder, ActionRowBuilder, MessageFlags, PermissionFlagsBits } = require('discord.js');
 const supabase = require('../supabase');
 
-// ID du salon où envoyer les notifications de suppression (le même que pour l'ajout)
+// ID du salon où envoyer les notifications de suppression
 const LOG_CHANNEL_ID = '1553085810369237132';
-// ID du rôle Administrateur autorisé (double sécurité)
-const ADMIN_ROLE_ID = '894669520902451220';
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -30,20 +28,12 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
-        // Vérification si le membre possède le rôle admin requis (double sécurité)
-        if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
-            return interaction.editReply({ 
-                content: "❌ Vous n'avez pas la permission d'utiliser cette commande (rôle administrateur requis)." 
-            });
-        }
-
         const targetChannel = interaction.options.getChannel('channel');
         const messageId = interaction.options.getString('message_id');
         const keyToRemove = interaction.options.getString('key').trim().toLowerCase();
         const targetCustomId = `translate_${keyToRemove}`;
 
         try {
-            // Vérifier si c'est bien un salon textuel
             if (!targetChannel.isTextBased()) {
                 return interaction.editReply({ content: "❌ Le salon sélectionné doit être un salon textuel." });
             }
@@ -67,7 +57,6 @@ module.exports = {
                 let filteredComponents = actionRow.components.filter(component => {
                     if (component.data.custom_id === targetCustomId) {
                         buttonFound = true;
-                        // On récupère le label du bouton s'il existe pour les logs
                         if (component.data.label) {
                             buttonName = component.data.label;
                         }
@@ -90,7 +79,6 @@ module.exports = {
                 components: newRows.length > 0 ? newRows : []
             });
 
-            // Suppression de la ligne correspondante dans Supabase
             const { error: dbError } = await supabase
                 .from('button_translations')
                 .delete()
@@ -100,12 +88,11 @@ module.exports = {
                 console.error("Erreur Supabase delete :", dbError);
             }
 
-            // Envoi de la notification de suppression dans le salon de log (1553085810369237132)
             try {
                 const logChannel = await interaction.client.channels.fetch(LOG_CHANNEL_ID);
                 if (logChannel) {
                     await logChannel.send(
-                        `🗑️ **Supprime le bouton :**\n` +
+                        `🗑️ **Suppression d'un bouton :**\n` +
                         `> **Nom du bouton :** ${buttonName}\n` +
                         `> **Key :** \`${keyToRemove}\`\n` +
                         `> **Salon :** #${targetChannel.name} (\`${targetChannel.id}\`)\n` +
