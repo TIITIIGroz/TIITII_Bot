@@ -1,6 +1,8 @@
 const { SlashCommandBuilder, ActionRowBuilder, MessageFlags, PermissionFlagsBits } = require('discord.js');
 const supabase = require('../supabase');
 
+// ID du salon où envoyer les notifications de suppression (le même que pour l'ajout)
+const LOG_CHANNEL_ID = '1553085810369237132';
 // ID du rôle Administrateur autorisé (double sécurité)
 const ADMIN_ROLE_ID = '894669520902451220';
 
@@ -9,6 +11,11 @@ module.exports = {
         .setName('dt-button')
         .setDescription('Retire un bouton d\'un message grâce à sa key unique')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .addChannelOption(option =>
+            option.setName('channel')
+                .setDescription('Le salon où se trouve le message contenant le bouton')
+                .setRequired(true)
+        )
         .addStringOption(option =>
             option.setName('message_id')
                 .setDescription('ID du message contenant le bouton')
@@ -30,14 +37,20 @@ module.exports = {
             });
         }
 
+        const targetChannel = interaction.options.getChannel('channel');
         const messageId = interaction.options.getString('message_id');
         const keyToRemove = interaction.options.getString('key').trim().toLowerCase();
         const targetCustomId = `translate_${keyToRemove}`;
 
         try {
-            const message = await interaction.channel.messages.fetch(messageId);
+            // Vérifier si c'est bien un salon textuel
+            if (!targetChannel.isTextBased()) {
+                return interaction.editReply({ content: "❌ Le salon sélectionné doit être un salon textuel." });
+            }
+
+            const message = await targetChannel.messages.fetch(messageId);
             if (!message) {
-                return interaction.editReply({ content: "❌ Impossible de trouver un message avec cet ID." });
+                return interaction.editReply({ content: "❌ Impossible de trouver un message avec cet ID dans ce salon." });
             }
 
             if (!message.components || message.components.length === 0) {
@@ -45,6 +58,7 @@ module.exports = {
             }
 
             let buttonFound = false;
+            let buttonName = "Inconnu";
             let newRows = [];
 
             for (let row of message.components) {
@@ -53,6 +67,10 @@ module.exports = {
                 let filteredComponents = actionRow.components.filter(component => {
                     if (component.data.custom_id === targetCustomId) {
                         buttonFound = true;
+                        // On récupère le label du bouton s'il existe pour les logs
+                        if (component.data.label) {
+                            buttonName = component.data.label;
+                        }
                         return false;
                     }
                     return true;
@@ -82,10 +100,27 @@ module.exports = {
                 console.error("Erreur Supabase delete :", dbError);
             }
 
-            await interaction.editReply({ content: `✅ Succès ! Le bouton associé à la key **"${keyToRemove}"** a bien été supprimé.` });
+            // Envoi de la notification de suppression dans le salon de log (1553085810369237132)
+            try {
+                const logChannel = await interaction.client.channels.fetch(LOG_CHANNEL_ID);
+                if (logChannel) {
+                    await logChannel.send(
+                        `🗑️ **Supprime le bouton :**\n` +
+                        `> **Nom du bouton :** ${buttonName}\n` +
+                        `> **Key :** \`${keyToRemove}\`\n` +
+                        `> **Salon :** #${targetChannel.name} (\`${targetChannel.id}\`)\n` +
+                        `> **ID du message :** \`${messageId}\`\n\n` +
+                        `------------------------------------------------`
+                    );
+                }
+            } catch (logError) {
+                console.error("Impossible d'envoyer le message de log de suppression :", logError);
+            }
+
+            await interaction.editReply({ content: `✅ Succès ! Le bouton associé à la key **"${keyToRemove}"** a bien été supprimé du salon #${targetChannel.name}.` });
         } catch (error) {
             console.error("Erreur lors de la suppression du bouton :", error);
-            await interaction.editReply({ content: "❌ Une erreur est survenue." });
+            await interaction.editReply({ content: "❌ Une erreur est survenue (vérifie l'ID du message et les permissions du bot)." });
         }
     },
 };
