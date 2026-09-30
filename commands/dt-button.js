@@ -8,6 +8,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('dt-button')
         .setDescription('Retire un bouton d\'un message grâce à sa key unique')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addStringOption(option =>
             option.setName('message_id')
                 .setDescription('ID du message contenant le bouton')
