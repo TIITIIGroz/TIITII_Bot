@@ -52,29 +52,6 @@ function hasAdminPermission(member) {
     return isSpecialUser || hasAdminRole;
 }
 
-// Slash Commands & Boutons interactifs (Depuis Supabase & Tickets)
-client.on("interactionCreate", async interaction => {
-    if (interaction.isButton()) {
-        // 🗑️ GESTIONNAIRE DU BOUTON DE SUPPRESSION RAPIDE DES MESSAGES
-        if (interaction.customId === 'delete_command_msg') {
-            if (!hasAdminPermission(interaction.member)) {
-                return await interaction.reply({
-                    content: "❌ Vous n'avez pas la permission de supprimer ce message.",
-                    flags: [MessageFlags.Ephemeral]
-                });
-            }
-
-            try {
-                return await interaction.message.delete();
-            } catch (err) {
-                console.error("Erreur suppression message commande :", err);
-                return await interaction.reply({
-                    content: "❌ Impossible de supprimer ce message.",
-                    flags: [MessageFlags.Ephemeral]
-                });
-            }
-        }
-
         // 🎫 GESTIONNAIRE DES TICKETS (FR & EN) AVEC LE NOUVEAU SALON DE LOGS
         if (interaction.customId === 'create_ticket_fr' || interaction.customId === 'create_ticket_en') {
             await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
