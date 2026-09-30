@@ -52,6 +52,8 @@ function hasAdminPermission(member) {
     return isSpecialUser || hasAdminRole;
 }
 
+client.on(Events.InteractionCreate, async interaction => {
+    if (interaction.isButton()) {
         // 🎫 GESTIONNAIRE DES TICKETS (FR & EN) AVEC LE NOUVEAU SALON DE LOGS
         if (interaction.customId === 'create_ticket_fr' || interaction.customId === 'create_ticket_en') {
             await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
@@ -210,28 +212,6 @@ function hasAdminPermission(member) {
     try {
         // Exécution de la commande
         await command.execute(interaction);
-
-        // 🗑️ Si la commande a réussi, on s'assure d'ajouter un bouton de suppression si c'est dans le salon autorisé
-        // ou on met en place un mécanisme propre pour y joindre le bouton de suppression rapide.
-        if (interaction.channelId === ALLOWED_CHANNEL_ID) {
-            const deleteButton = new ActionRowBuilder().addComponents(
-                new ButtonBuilder()
-                    .setCustomId('delete_command_msg')
-                    .setLabel('Supprimer')
-                    .setStyle(ButtonStyle.Danger)
-                    .setEmoji('🗑️')
-            );
-
-            // Si le message de la commande a déjà été répondu ou différé, on peut l'éditer pour y ajouter le bouton
-            try {
-                if (interaction.deferred || interaction.replied) {
-                    await interaction.editReply({ components: [deleteButton] }).catch(() => {});
-                }
-            } catch (e) {
-                // Certains types de réponses ne permettent pas d'ajouter des composants après coup, on gère silencieusement
-            }
-        }
-
     } catch (error) {
         console.error(error);
         const reply = { content: "Une erreur est survenue.", flags: [MessageFlags.Ephemeral] };
