@@ -1,8 +1,8 @@
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, PermissionFlagsBits } = require('discord.js');
 const supabase = require('../supabase');
 
-// ID du salon où envoyer la notification de création
-const LOG_CHANNEL_ID = '1549500976317337670';
+// ID du salon où envoyer la notification de création mis à jour
+const LOG_CHANNEL_ID = '1553085810369237132';
 // ID du rôle Administrateur autorisé
 const ADMIN_ROLE_ID = '894669520902451220';
 
@@ -47,6 +47,7 @@ module.exports = {
         const buttonName = interaction.options.getString('button_name');
         const key = interaction.options.getString('key').trim().toLowerCase();
         const responseText = interaction.options.getString('response_text');
+        const channelName = interaction.channel.name;
 
         try {
             const message = await interaction.channel.messages.fetch(messageId);
@@ -90,12 +91,17 @@ module.exports = {
 
             await message.edit({ components: rows });
 
-            // Envoi de la notification dans le salon cible spécifié
+            // Envoi de la notification détaillée dans le nouveau salon de log
             try {
                 const logChannel = await interaction.client.channels.fetch(LOG_CHANNEL_ID);
                 if (logChannel) {
                     await logChannel.send(
-                        `Le bouton '${buttonName}' vient d'être créé, la key pour le retirer c'est ${key} avec le message dont l'ID c'est \`${messageId}\`.\n\n------------------------------------------------`
+                        `📥 **Création d'un nouveau bouton :**\n` +
+                        `> **Nom du bouton :** ${buttonName}\n` +
+                        `> **Key :** \`${key}\`\n` +
+                        `> **Salon :** #${channelName} (\`${interaction.channel.id}\`)\n` +
+                        `> **ID du message :** \`${messageId}\`\n\n` +
+                        `------------------------------------------------`
                     );
                 }
             } catch (logError) {
