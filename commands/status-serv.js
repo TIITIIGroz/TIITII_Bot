@@ -23,7 +23,7 @@ module.exports = {
         const createdAt = Math.floor(guild.createdTimestamp / 1000);
 
         // Comptage des membres ayant le rôle spécifique
-        const targetRoleId = '1492064548101034076';
+        const targetRoleId = '894668498180124703';
         const roleMemberCount = guild.members.cache.filter(member => member.roles.cache.has(targetRoleId)).size;
 
         // Construction de l'embed d'informations
