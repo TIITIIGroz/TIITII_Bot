@@ -5,6 +5,9 @@ module.exports = {
         .setName('status-me')
         .setDescription('Affiche un récapitulatif complet de tes informations sur le serveur'),
     
+    async execute(interaction) {
+        await interaction.deferReply(); // Devient public pour tout le salon
+
         const member = interaction.member;
         const user = interaction.user;
 
@@ -33,6 +36,7 @@ module.exports = {
                 { name: '📥 Arrivé sur le serveur le', value: `<t:${joinedAt}:D> (<t:${joinedAt}:R>)`, inline: false },
                 { name: `🛡️ Rôles (${roles.length})`, value: rolesList.length > 1024 ? 'Trop de rôles pour être affichés' : rolesList, inline: false }
             )
+            .setTimestamp()
             .setFooter({ text: `Demandé par ${user.username}`, iconURL: user.displayAvatarURL() });
 
         await interaction.editReply({ embeds: [statusEmbed] });
