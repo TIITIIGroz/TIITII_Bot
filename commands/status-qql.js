@@ -7,13 +7,16 @@ module.exports = {
         .addUserOption(option => 
             option.setName('membre')
                 .setDescription('Le membre dont tu veux voir les informations')
-                .setRequired(true) // Mis à true pour obliger à cibler quelqu'un
+                .setRequired(true)
         ),
+
+    async execute(interaction) {
+        await interaction.deferReply();
 
         const targetUser = interaction.options.getUser('membre');
         const member = interaction.guild.members.cache.get(targetUser.id) || await interaction.guild.members.fetch(targetUser.id).catch(() => null);
 
-        // Si le membre n'est pas sur le serveur (cas rare si l'option est bien gérée)
+        // Si le membre n'est pas sur le serveur
         if (!member) {
             return interaction.editReply({ content: "❌ Impossible de trouver ce membre sur le serveur." });
         }
