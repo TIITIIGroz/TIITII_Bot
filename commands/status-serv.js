@@ -37,7 +37,6 @@ module.exports = {
             if (topUserQuery.rows.length > 0) {
                 const topUserId = topUserQuery.rows[0].userid;
                 const topUserTotalXp = topUserQuery.rows[0].totalxp;
-                // Calcul du niveau approximatif ou affichage direct
                 topUserText = `<@${topUserId}> (${topUserTotalXp} XP)`;
             }
         } catch (err) {
@@ -48,7 +47,6 @@ module.exports = {
         let oldestMemberText = "Inconnu";
         let newestMemberText = "Inconnu";
         try {
-            // S'assurer que les membres sont chargés
             await guild.members.fetch();
             
             const sortedByJoin = guild.members.cache.sorted((a, b) => a.joinedTimestamp - b.joinedTimestamp);
@@ -67,7 +65,7 @@ module.exports = {
             .setTitle(`📊 Informations de ${guild.name}`)
             .setThumbnail(guild.iconURL({ dynamic: true, size: 512 }))
             .addFields(
-                { name: '👑 Propriétaire', value: owner ? `${owner.user.tag}` : 'Inconnu', inline: true },
+                { name: '👑 Propriétaire', value: owner ? `<@${913798085686198292}>` : 'Inconnu', inline: true },
                 { name: '🆔 ID du serveur', value: `\`${guild.id}\``, inline: true },
                 { name: '📅 Créé le', value: `<t:${createdAt}:D> (<t:${createdAt}:R>)`, inline: false },
                 
@@ -75,14 +73,12 @@ module.exports = {
                 { name: '💬 Salons', value: `Texte : **${textChannels}** | Vocaux : **${voiceChannels}** | Catégories : **${categoryChannels}**`, inline: true },
                 { name: '💎 Boosts', value: `Niveau **${guild.premiumTier}** (**${guild.premiumSubscriptionCount || 0}** boosts)`, inline: true },
 
-                // Nouveaux champs ajoutés
                 { name: '🏆 Top Niveau (XP)', value: topUserText, inline: false },
                 { name: '📜 Plus ancien membre', value: oldestMemberText, inline: true },
                 { name: '🆕 Plus récent membre', value: newestMemberText, inline: true }
             )
             .setFooter({ text: `Demandé par ${interaction.user.username} / Ask by ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
 
-        // Si le serveur a une bannière, on l'ajoute à l'embed
         if (guild.bannerURL()) {
             serverEmbed.setImage(guild.bannerURL({ size: 1024 }));
         }
