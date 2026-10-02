@@ -5,9 +5,6 @@ module.exports = {
         .setName('status-me')
         .setDescription('Affiche un récapitulatif complet de tes informations sur le serveur'),
     
-    async execute(interaction) {
-        await interaction.deferReply({ flags: [6] }); // Message éphémère (visible par toi seul, change ou retire si tu veux que tout le monde le voie)
-
         const member = interaction.member;
         const user = interaction.user;
 
