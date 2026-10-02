@@ -65,7 +65,7 @@ module.exports = {
             .setTitle(`📊 Informations de ${guild.name}`)
             .setThumbnail(guild.iconURL({ dynamic: true, size: 512 }))
             .addFields(
-                { name: '👑 Propriétaire', value: owner ? `<@${913798085686198292}>` : 'Inconnu', inline: true },
+                { name: '👑 Propriétaire', value: owner ? `${owner}` : 'Inconnu', inline: true },
                 { name: '🆔 ID du serveur', value: `\`${guild.id}\``, inline: true },
                 { name: '📅 Créé le', value: `<t:${createdAt}:D> (<t:${createdAt}:R>)`, inline: false },
                 
