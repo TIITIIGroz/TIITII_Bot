@@ -22,14 +22,9 @@ module.exports = {
         // Date de création du serveur
         const createdAt = Math.floor(guild.createdTimestamp / 1000);
 
-        // Niveau de vérification
-        const verificationLevels = {
-            0: 'Aucun',
-            1: 'Faible (Email vérifié)',
-            2: 'Moyen (Inscrit depuis > 5 min)',
-            3: 'Élevé (Membre du serveur depuis > 10 min)',
-            4: 'Très élevé (Téléphone vérifié)'
-        };
+        // Comptage des membres ayant le rôle spécifique
+        const targetRoleId = '894668498180124703';
+        const roleMemberCount = guild.members.cache.filter(member => member.roles.cache.has(targetRoleId)).size;
 
         // Construction de l'embed d'informations
         const serverEmbed = new EmbedBuilder()
@@ -41,12 +36,11 @@ module.exports = {
                 { name: '🆔 ID du serveur', value: `\`${guild.id}\``, inline: true },
                 { name: '📅 Créé le', value: `<t:${createdAt}:D> (<t:${createdAt}:R>)`, inline: false },
                 
-                { name: '👥 Membres', value: `Total : **${guild.memberCount}**`, inline: true },
+                { name: '👥 Membres', value: `Total : **${roleMemberCount}**`, inline: true },
                 { name: '💬 Salons', value: `Texte : **${textChannels}** | Vocaux : **${voiceChannels}** | Catégories : **${categoryChannels}**`, inline: true },
-                { name: '💎 Boosts', value: `Niveau **${guild.premiumTier}** (**${guild.premiumSubscriptionCount || 0}** boosts)`, inline: true },
-
+                { name: '💎 Boosts', value: `Niveau **${guild.premiumTier}** (**${guild.premiumSubscriptionCount || 0}** boosts)`, inline: true }
             )
-            .setFooter({ text: `Demandé par ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
+            .setFooter({ text: `Demandé par ${interaction.user.username} / Ask by ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
 
         // Si le serveur a une bannière, on l'ajoute à l'embed
         if (guild.bannerURL()) {
