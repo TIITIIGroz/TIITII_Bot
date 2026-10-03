@@ -6,7 +6,6 @@ const { checkAndReward } = require('./rewards');
 const { EmbedBuilder } = require('discord.js');
 
 async function handleXpMessage(message, client) {
-    // 🔍 TEST BRUT : S'affiche dès qu'un message passe par l'événement
     console.log(`🔍 [TEST BRUT] Message capté de ${message.author?.tag} (Bot: ${message.author?.bot}) dans le salon ${message.channel?.id}`);
 
     if (!isValidMessage(message)) {
@@ -28,6 +27,12 @@ async function handleXpMessage(message, client) {
     console.log(`💬 [DEBUG XP] Message valide de ${message.author.tag} dans la guilde ${guildId}`);
 
     try {
+        // 📊 ENREGISTREMENT DU MESSAGE POUR LES STATS DU SERVEUR
+        await pool.query(
+            `INSERT INTO server_messages (guildid, userid, channelid) VALUES ($1, $2, $3)`,
+            [guildId, userId, message.channel.id]
+        );
+
         console.log(`💬 [DEBUG XP] Étape 1 : Requête SELECT dans la BDD...`);
         const res = await pool.query(
             `SELECT * FROM users WHERE userId = $1 AND guildId = $2`,
