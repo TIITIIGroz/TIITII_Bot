@@ -17,14 +17,14 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
 
-        // Utilise l'option choisie, ou détecte la langue de l'utilisateur sur Discord par défaut ('en-US', 'en-GB' -> 'en')
         const userLang = interaction.options.getString('lang');
+        // Force le français par défaut, passe en anglais uniquement si l'utilisateur choisit 'en' explicitement
         const isFrench = userLang ? userLang === 'fr' : true;
 
         // 🔒 COMMANDES CACHÉES (Admin)
-        const hiddenCommands = ['add-button', 'dt-button','embed-edit','embed', 'set-level','take-xp','give-xp','admin-anniv','insta','ticket-setup'];
+        const hiddenCommands = ['add-button', 'dt-button', 'embed-edit', 'embed', 'set-level', 'take-xp', 'give-xp', 'admin-anniv', 'insta', 'ticket-setup'];
 
-        // 🌐 TES COMMANDES FRANÇAISES ET ANGLAISES
+        // 🌐 COMMANDES PAR LANGUE
         const frenchOnlyCommands = ['anniv-aj', 'anniv-rt', 'anniv-list'];
         const englishOnlyCommands = ['bday-add', 'bday-rm', 'bday-list'];
 
@@ -49,7 +49,7 @@ module.exports = {
             }
         });
 
-        // 📝 TRADUCTIONS DESCRIPTIVES CORRIGÉES (sans les $ superflus en anglais)
+        // 📝 TRADUCTIONS DESCRIPTIVES PROPRES
         const descriptions = {
             fr: {
                 help: "Affiche la liste des commandes.",
@@ -75,36 +75,31 @@ module.exports = {
             }
         };
 
-        // 📝 CRÉATION DE LA LISTE AVEC ESPACE LÉGER
         let commandListText = "";
 
         availableCommands.forEach(([name, cmd]) => {
             let description = "";
+            const langKey = isFrench ? 'fr' : 'en';
 
-            // Récupère la description traduite si elle existe, sinon prend celle par défaut du fichier de la commande
-            if (descriptions[isFrench ? 'fr' : 'en'][name]) {
-                description = descriptions[isFrench ? 'fr' : 'en'][name];
+            if (descriptions[langKey] && descriptions[langKey][name]) {
+                description = descriptions[langKey][name];
             } else {
                 description = cmd.data.description || (isFrench ? "Aucune description." : "No description.");
             }
 
-            // S'assure qu'il y a bien un point à la fin de la description
             if (!description.endsWith('.')) {
                 description += '.';
             }
             
-            // Format : /nom : description
             commandListText += `**/${name}** : ${description}\n\n`;
         });
 
-        // Ajout du texte dans un champ unique
         embed.addFields({
             name: '\u200b',
             value: commandListText || (isFrench ? "Aucune commande disponible." : "No commands available."),
             inline: false
         });
 
-        // Envoi effectif de la réponse (qui manquait à la fin)
         await interaction.editReply({ embeds: [embed] });
     },
 };
