@@ -1,0 +1,96 @@
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+
+module.exports = {
+    data: new SlashCommandBuilder()
+        .setName('stats-serv')
+        .setDescription('Affiche des statistiques globales et détaillées sur le serveur'),
+    
+    async execute(interaction) {
+        await interaction.deferReply();
+
+        const { guild } = interaction;
+        const { database: pool } = require('../systems/levels'); // Ajuste selon ton chemin de base de données
+
+        // --- Récupérations basiques du serveur ---
+        const serverName = guild.name;
+        const serverId = guild.id;
+        const createdAt = Math.floor(guild.createdTimestamp / 1000);
+
+        // Membres actifs actuels (approximation rapide basée sur le cache ou présence)
+        const onlineMembers = guild.members.cache.filter(member => member.presence && member.presence.status !== 'offline').size;
+        
+        // Membres en vocal (comptage de tous les membres connectés dans un salon vocal)
+        const voiceMembers = guild.channels.cache
+            .filter(channel => channel.isVoiceBased())
+            .reduce((acc, channel) => acc + channel.members.size, 0);
+
+        // Variables pour les statistiques avancées (à connecter à tes tables de logs/stats)
+        let membersMonth = "Données non dispo";
+        let members15Days = "Données non dispo";
+        let membersToday = guild.memberCount; // Total actuel ou entrées du jour
+
+        let msgMonth = 0, msg15Days = 0, msgWeek = 0, msg24h = 0;
+        let bestTextChannel = "Aucun";
+        let bestTextMember = "Aucun";
+
+        let voiceMonthDays = 0, voiceMonthHours = 0, voiceMonthMinutes = 0;
+        let voice15Days = "0h 0min";
+        let voiceWeek = "0h 0min";
+        let voice24h = "0h 0min";
+        let bestVoiceChannel = "Aucun";
+        let bestVoiceMember = "Aucun";
+
+        try {
+            // Exemple de requête potentielle pour récupérer le meilleur salon textuel si tu as une table dédiée :
+            /*
+            const topTextChan = await pool.query(`SELECT channelid, COUNT(*) as count FROM messages WHERE guildid = $1 GROUP BY channelid ORDER BY count DESC LIMIT 1`, [guild.id]);
+            if (topTextChan.rows.length > 0) {
+                bestTextChannel = `<#${topTextChan.rows[0].channelid}>`;
+            }
+            */
+        } catch (err) {
+            console.error("Erreur lors de la récupération des stats du serveur :", err);
+        }
+
+        // Formatage du texte avec le titre souligné et en gras en Markdown (utilisant l'effet souligné sous Discord : __**...**__)
+        const embedDescription = `__**Statistiques du serveur:**__\n\n` +
+            `**Nom du serveur**\n` +
+            `${serverName}\n\n` +
+            
+            `**Infos de base**\n` +
+            `• Membres actifs à l'écrit : \`${onlineMembers}\`\n` +
+            `• Membres actifs en vocal : \`${voiceMembers}\`\n` +
+            `• ID du serveur : \`${serverId}\`\n` +
+            `• Serveur créé le : <t:${createdAt}:D> (<t:${createdAt}:R>)\n\n` +
+            
+            `**Membres**\n` +
+            `• Il y a un mois : \`${membersMonth}\`\n` +
+            `• Il y a 15 jours : \`${members15Days}\`\n` +
+            `• Aujourd'hui : \`${membersToday}\`\n\n` +
+            
+            `**Messages**\n` +
+            `• Durant le mois : \`${msgMonth} messages\`\n` +
+            `• Les 15 derniers jours : \`${msg15Days} messages\`\n` +
+            `• Durant la semaine : \`${msgWeek} messages\`\n` +
+            `• Durant les dernières 24h : \`${msg24h} messages\`\n` +
+            `• Meilleur salon : ${bestTextChannel}\n` +
+            `• Meilleur(e) membre : **${bestTextMember}**\n\n` +
+            
+            `**Vocal**\n` +
+            `• Durant le mois : \`${voiceMonthDays} jours, ${voiceMonthHours} heures et ${voiceMonthMinutes} minutes\`\n` +
+            `• Les 15 derniers jours : \`${voice15Days}\`\n` +
+            `• Durant la semaine : \`${voiceWeek}\`\n` +
+            `• Durant les dernières 24h : \`${voice24h}\`\n` +
+            `• Meilleur salon : ${bestVoiceChannel}\n` +
+            `• Meilleur(e) membre : **${bestVoiceMember}**`;
+
+        const statsEmbed = new EmbedBuilder()
+            .setColor('#5865F2')
+            .setThumbnail(guild.iconURL({ dynamic: true, size: 512 }))
+            .setDescription(embedDescription)
+            .setTimestamp()
+            .setFooter({ text: `Demandé par ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
+
+        await interaction.editReply({ embeds: [statsEmbed] });
+    },
+};
