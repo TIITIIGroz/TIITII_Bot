@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -15,6 +15,8 @@ module.exports = {
         ),
 
     async execute(interaction) {
+        await interaction.deferReply();
+
         // Utilise l'option choisie, ou détecte la langue de l'utilisateur sur Discord par défaut ('en-US', 'en-GB' -> 'en')
         const userLang = interaction.options.getString('lang');
         const isFrench = userLang ? userLang === 'fr' : interaction.locale === 'fr';
@@ -22,7 +24,7 @@ module.exports = {
         // 🔒 COMMANDES CACHÉES (Admin)
         const hiddenCommands = ['add-button', 'dt-button','embed-edit','embed', 'set-level','take-xp','give-xp','admin-anniv','insta','ticket-setup'];
 
-        // 🌐 TES 3 COMMANDES FRANÇAISES ET TES 3 ANGLAISES
+        // 🌐 TES COMMANDES FRANÇAISES ET ANGLAISES
         const frenchOnlyCommands = ['anniv-aj', 'anniv-rt', 'anniv-list'];
         const englishOnlyCommands = ['bday-add', 'bday-rm', 'bday-list'];
 
@@ -47,7 +49,7 @@ module.exports = {
             }
         });
 
-        // 📝 TRADUCTIONS DESCRIPTIVES EN DUR POUR UNE QUALITÉ PARFAITE
+        // 📝 TRADUCTIONS DESCRIPTIVES CORRIGÉES (sans les $ superflus en anglais)
         const descriptions = {
             fr: {
                 help: "Affiche la liste des commandes.",
@@ -61,15 +63,15 @@ module.exports = {
                 "bday-rm": "Supprime ta date d'anniversaire enregistrée."
             },
             en: {
-                '/$help': "Displays the list of commands.",
-                "/$leaderboard": "Displays the top 10 most active members on the server.",
-                "/$links": "Displays all links of TIITII_Groz.",
-                "/$rank": "Displays your current level and XP (or another member's).",
-                "/$voice-access": "Allows one or more people to access your hidden voice channel.",
-                "/$voice-hide": "Hides your voice channel from other members.",
-                "/$bday-add": "Register your birthday date.",
-                "/$bday-list": "Displays the list of all server birthdays.",
-                "/$bday-rm": "Remove your registered birthday date."
+                help: "Displays the list of commands.",
+                leaderboard: "Displays the top 10 most active members on the server.",
+                links: "Displays all links of TIITII_Groz.",
+                rank: "Displays your current level and XP (or another member's).",
+                "voice-access": "Allows one or more people to access your hidden voice channel.",
+                "voice-hide": "Hides your voice channel from other members.",
+                "bday-add": "Register your birthday date.",
+                "bday-list": "Displays the list of all server birthdays.",
+                "bday-rm": "Remove your registered birthday date."
             }
         };
 
@@ -98,13 +100,11 @@ module.exports = {
         // Ajout du texte dans un champ unique
         embed.addFields({
             name: '\u200b',
-            value: commandListText,
+            value: commandListText || (isFrench ? "Aucune commande disponible." : "No commands available."),
             inline: false
         });
 
-        await interaction.reply({
-            embeds: [embed],
-            flags: [MessageFlags.Ephemeral]
-        });
+        // Envoi effectif de la réponse (qui manquait à la fin)
+        await interaction.editReply({ embeds: [embed] });
     },
 };
