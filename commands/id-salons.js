@@ -9,12 +9,19 @@ module.exports = {
     async execute(interaction) {
         const guild = interaction.guild;
 
-        // Récupérer tous les salons, filtrer pour enlever les catégories (GuildCategory), et trier par position
+        // Récupérer et trier les salons en fonction de leur position réelle visible sur le serveur
         const channels = Array.from(guild.channels.cache
-            .filter(channel => channel.type !== 4) // Type 4 correspond aux catégories
+            .filter(channel => channel.type !== 4) // Exclure les catégories elles-mêmes
             .sort((a, b) => {
-                if (a.rawPosition !== b.rawPosition) return a.rawPosition - b.rawPosition;
-                return a.position - b.position;
+                // Tri par position dans la catégorie / le serveur
+                if (a.parentID !== b.parentID) {
+                    const parentA = guild.channels.cache.get(a.parentID);
+                    const parentB = guild.channels.cache.get(b.parentID);
+                    if (parentA && parentB) {
+                        return parentA.position - parentB.position;
+                    }
+                }
+                return a.rawPosition - b.rawPosition;
             }).values());
 
         if (channels.length === 0) {
@@ -24,7 +31,6 @@ module.exports = {
             });
         }
 
-        // Configuration de la pagination (par exemple 10 salons par page)
         const ITEMS_PER_PAGE = 10;
         const totalPages = Math.ceil(channels.length / ITEMS_PER_PAGE);
         let page = 1;
@@ -41,7 +47,7 @@ module.exports = {
                 if (channel.isVoiceBased()) icon = "🔊";
                 else if (channel.isThread()) icon = "🧵";
 
-                // Affiche le nom complet du salon
+                // Affiche le nom complet du salon dans l'ordre exact du serveur
                 salonListText += `${icon} **${channel.name}** : \`${channel.id}\`\n`;
             });
 
@@ -65,33 +71,30 @@ module.exports = {
             );
         };
 
-        // Réponse initiale (Éphémère car réservée aux admins)
         await interaction.reply({
             embeds: [generateEmbed(page)],
             components: [generateRow(page)],
             flags: [MessageFlags.Ephemeral]
         });
 
-        // Collecteur pour les boutons de pagination
         const filter = i => i.customId.startsWith('salons_prev_') || i.customId.startsWith('salons_next_');
-        const collector = interaction.channel.createMessageComponentCollector({ filter, time: 900000 }); // 15 minutes d'expiration
+        const collector = interaction.channel.createMessageComponentCollector({ filter, time: 900000 });
 
         collector.on('collect', async i => {
-            // Vérification de sécurité : seul l'auteur de la commande peut cliquer
             if (i.user.id !== interaction.user.id) {
                 return i.reply({ content: "Vous ne pouvez pas utiliser ces boutons.", flags: [MessageFlags.Ephemeral] });
             }
 
             const parts = i.customId.split('_');
-            const action = parts[1]; // prev ou next
+            const action = parts[1];
             let currentPage = parseInt(parts[2]);
 
             if (action === 'next') {
                 currentPage++;
-                if (currentPage > totalPages) currentPage = 1; // Boucle au début
+                if (currentPage > totalPages) currentPage = 1;
             } else if (action === 'prev') {
                 currentPage--;
-                if (currentPage < 1) currentPage = totalPages; // Boucle à la fin
+                if (currentPage < 1) currentPage = totalPages;
             }
 
             await i.update({
