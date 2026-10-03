@@ -40,7 +40,7 @@ module.exports = {
         let bestVoiceMember = "Aucun";
 
         try {
-            // 1. Messages des dernières 24h
+            // 1. Messages des dernières 24h (utilise server_messages ou messages_stats selon ton choix)
             const query24h = await pool.query(
                 `SELECT COUNT(*) as count FROM server_messages WHERE guildid = $1 AND created_at >= NOW() - INTERVAL '24 hours'`,
                 [guild.id]
