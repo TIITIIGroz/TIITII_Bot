@@ -15,13 +15,12 @@ module.exports = {
         ),
 
     async execute(interaction) {
-        // La page 1 est publique (pas de deferReply éphémère)
         await interaction.deferReply();
 
         const userLang = interaction.options.getString('lang');
         const isFrench = userLang ? userLang === 'fr' : true;
 
-        const hiddenCommands = ['add-button', 'dt-button', 'embed-edit', 'embed', 'set-level', 'take-xp', 'give-xp', 'admin-anniv', 'insta', 'ticket-setup', 'id-salons'];
+        const hiddenCommands = ['add-button', 'dt-button', 'embed-edit', 'embed', 'set-level', 'take-xp', 'give-xp', 'admin-anniv', 'insta', 'ticket-setup'];
         const frenchOnlyCommands = ['anniv-aj', 'anniv-rt', 'anniv-list'];
         const englishOnlyCommands = ['bday-add', 'bday-rm', 'bday-list'];
 
@@ -29,14 +28,48 @@ module.exports = {
             return interaction.editReply("Erreur : collection des commandes introuvable.");
         }
 
-        const availableCommands = Array.from(interaction.client.commands.entries()).filter(([name]) => {
-            if (hiddenCommands.includes(name)) return false;
-            if (isFrench) {
-                return !englishOnlyCommands.includes(name);
-            } else {
-                return !frenchOnlyCommands.includes(name);
-            }
-        });
+        // 📝 TON ORDRE PERSONNALISÉ STRICT (Modifie l'ordre ici comme tu veux)
+        const customOrder = [
+            'help',
+            'statut',
+            'stats-serv',
+            'rank',
+            'leaderboard',
+            'links',
+            'id-salons',
+            'voice-access',
+            'voice-hide',
+            'bday-add',
+            'bday-list',
+            'bday-rm',
+            'anniv-aj',
+            'anniv-rt',
+            'anniv-list'
+        ];
+
+        // Filtrer et trier strictement selon ton tableau customOrder
+        const availableCommands = Array.from(interaction.client.commands.entries())
+            .filter(([name]) => {
+                if (hiddenCommands.includes(name)) return false;
+                if (isFrench) {
+                    return !englishOnlyCommands.includes(name);
+                } else {
+                    return !frenchOnlyCommands.includes(name);
+                }
+            })
+            .sort(([a], [b]) => {
+                const indexA = customOrder.indexOf(a);
+                const indexB = customOrder.indexOf(b);
+                
+                // Si les deux sont dans la liste, on respecte l'index
+                if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                // Si seulement A y est, il passe avant
+                if (indexA !== -1) return -1;
+                // Si seulement B y est, il passe avant
+                if (indexB !== -1) return 1;
+                // Si aucune des deux n'est dans la liste, elles gardent leur ordre d'origine
+                return 0;
+            });
 
         const descriptions = {
             fr: {
@@ -63,10 +96,9 @@ module.exports = {
             }
         };
 
-        // Découpage des commandes par pages (par exemple, 6 commandes max par page pour garder de la place)
         const ITEMS_PER_PAGE = 6;
         const totalPages = Math.ceil(availableCommands.length / ITEMS_PER_PAGE);
-        const page = 1; // Page initiale
+        let page = 1;
 
         const generateHelpEmbed = (pageNum) => {
             const start = (pageNum - 1) * ITEMS_PER_PAGE;
@@ -93,57 +125,51 @@ module.exports = {
                 commandListText += `**/${name}** : ${description}\n\n`;
             });
 
-            const embed = new EmbedBuilder()
+            return new EmbedBuilder()
                 .setColor(isFrench ? '#57F287' : '#FEE75C')
                 .setTitle(isFrench ? `📖 Liste des commandes (Page ${pageNum}/${totalPages})` : `📖 Command List (Page ${pageNum}/${totalPages})`)
                 .setDescription(isFrench ? "Voici la liste des commandes disponibles :" : "Here is the list of available commands:")
                 .addFields({ name: '\u200b', value: commandListText || "Aucune commande.", inline: false })
                 .setTimestamp();
-
-            return embed;
         };
 
+        // Boutons minimalistes : uniquement les flèches (◀ et ▶)
         const generateRow = (currentPage) => {
             return new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId(`help_prev_${currentPage}_${isFrench ? 'fr' : 'en'}`)
-                    .setLabel(isFrench ? '◀ Précédent' : '◀ Previous')
+                    .setLabel('◀')
                     .setStyle(ButtonStyle.Primary),
                 new ButtonBuilder()
                     .setCustomId(`help_next_${currentPage}_${isFrench ? 'fr' : 'en'}`)
-                    .setLabel(isFrench ? 'Suivant ▶' : 'Next ▶')
+                    .setLabel('▶')
                     .setStyle(ButtonStyle.Primary)
             );
         };
 
-        // Envoi de la Page 1 (publique)
         await interaction.editReply({
             embeds: [generateHelpEmbed(page)],
             components: [generateRow(page)]
         });
 
-        // Collecteur persistant pour gérer les boutons de pagination
-        // (S'assure que le collecteur tourne en arrière-plan sans s'arrêter au bout de 15 minutes)
         const filter = i => i.customId.startsWith('help_prev_') || i.customId.startsWith('help_next_');
         const collector = interaction.channel.createMessageComponentCollector({ filter });
 
         collector.on('collect', async i => {
-            // On extrait les infos du customId (ex: help_next_1_fr)
             const parts = i.customId.split('_');
-            const action = parts[1]; // prev ou next
+            const action = parts[1];
             let currentPage = parseInt(parts[2]);
             const btnLang = parts[3];
             const isFr = btnLang === 'fr';
 
             if (action === 'next') {
                 currentPage++;
-                if (currentPage > totalPages) currentPage = 1; // Boucle au début
+                if (currentPage > totalPages) currentPage = 1;
             } else if (action === 'prev') {
                 currentPage--;
-                if (currentPage < 1) currentPage = totalPages; // Boucle à la fin
+                if (currentPage < 1) currentPage = totalPages;
             }
 
-            // Recalcul des commandes pour la nouvelle page
             const start = (currentPage - 1) * ITEMS_PER_PAGE;
             const end = start + ITEMS_PER_PAGE;
             const currentCommands = availableCommands.slice(start, end);
@@ -175,18 +201,15 @@ module.exports = {
             const newRow = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId(`help_prev_${currentPage}_${btnLang}`)
-                    .setLabel(isFr ? '◀' : '◀')
+                    .setLabel('◀')
                     .setStyle(ButtonStyle.Primary),
                 new ButtonBuilder()
                     .setCustomId(`help_next_${currentPage}_${btnLang}`)
-                    .setLabel(isFr ? '▶' : '▶')
+                    .setLabel('▶')
                     .setStyle(ButtonStyle.Primary)
             );
 
-            // Si c'est la page 1, on met à jour le message d'origine (pour qu'il reste visible à tout le monde)
-            // Si c'est une autre page (>1), on répond en éphémère (invisible pour les autres)
             if (currentPage === 1) {
-                // Si l'utilisateur était sur une page éphémère et revient à la 1, on met à jour le message public principal
                 await i.update({
                     embeds: [newEmbed],
                     components: [newRow]
