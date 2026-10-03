@@ -16,18 +16,17 @@ module.exports = {
         const serverId = guild.id;
         const createdAt = Math.floor(guild.createdTimestamp / 1000);
 
-        // Membres actifs actuels (approximation rapide basée sur le cache ou présence)
+        // Membres actifs actuels
         const onlineMembers = guild.members.cache.filter(member => member.presence && member.presence.status !== 'offline').size;
         
-        // Membres en vocal (comptage de tous les membres connectés dans un salon vocal)
+        // Membres en vocal
         const voiceMembers = guild.channels.cache
             .filter(channel => channel.isVoiceBased())
             .reduce((acc, channel) => acc + channel.members.size, 0);
 
-        // Variables pour les statistiques avancées (à connecter à tes tables de logs/stats)
         let membersMonth = "Données non dispo";
         let members15Days = "Données non dispo";
-        let membersToday = guild.memberCount; // Total actuel ou entrées du jour
+        let membersToday = guild.memberCount;
 
         let msgMonth = 0, msg15Days = 0, msgWeek = 0, msg24h = 0;
         let bestTextChannel = "Aucun";
@@ -41,18 +40,57 @@ module.exports = {
         let bestVoiceMember = "Aucun";
 
         try {
-            // Exemple de requête potentielle pour récupérer le meilleur salon textuel si tu as une table dédiée :
-            /*
-            const topTextChan = await pool.query(`SELECT channelid, COUNT(*) as count FROM messages WHERE guildid = $1 GROUP BY channelid ORDER BY count DESC LIMIT 1`, [guild.id]);
-            if (topTextChan.rows.length > 0) {
-                bestTextChannel = `<#${topTextChan.rows[0].channelid}>`;
+            // 1. Messages des dernières 24h
+            const query24h = await pool.query(
+                `SELECT COUNT(*) as count FROM server_messages WHERE guildid = $1 AND created_at >= NOW() - INTERVAL '24 hours'`,
+                [guild.id]
+            );
+            msg24h = parseInt(query24h.rows[0]?.count) || 0;
+
+            // 2. Messages des 15 derniers jours
+            const query15d = await pool.query(
+                `SELECT COUNT(*) as count FROM server_messages WHERE guildid = $1 AND created_at >= NOW() - INTERVAL '15 days'`,
+                [guild.id]
+            );
+            msg15Days = parseInt(query15d.rows[0]?.count) || 0;
+
+            // 3. Messages du mois (30 derniers jours)
+            const queryMonth = await pool.query(
+                `SELECT COUNT(*) as count FROM server_messages WHERE guildid = $1 AND created_at >= NOW() - INTERVAL '30 days'`,
+                [guild.id]
+            );
+            msgMonth = parseInt(queryMonth.rows[0]?.count) || 0;
+
+            // 4. Messages de la semaine (7 derniers jours)
+            const queryWeek = await pool.query(
+                `SELECT COUNT(*) as count FROM server_messages WHERE guildid = $1 AND created_at >= NOW() - INTERVAL '7 days'`,
+                [guild.id]
+            );
+            msgWeek = parseInt(queryWeek.rows[0]?.count) || 0;
+
+            // 5. Meilleur salon textuel (sur le mois)
+            const topChan = await pool.query(
+                `SELECT channelid, COUNT(*) as count FROM server_messages WHERE guildid = $1 AND created_at >= NOW() - INTERVAL '30 days' GROUP BY channelid ORDER BY count DESC LIMIT 1`,
+                [guild.id]
+            );
+            if (topChan.rows.length > 0) {
+                bestTextChannel = `<#${topChan.rows[0].channelid}>`;
             }
-            */
+
+            // 6. Meilleur(e) membre textuel (sur le mois)
+            const topMember = await pool.query(
+                `SELECT userid, COUNT(*) as count FROM server_messages WHERE guildid = $1 AND created_at >= NOW() - INTERVAL '30 days' GROUP BY userid ORDER BY count DESC LIMIT 1`,
+                [guild.id]
+            );
+            if (topMember.rows.length > 0) {
+                bestTextMember = `<@${topMember.rows[0].userid}>`;
+            }
+
         } catch (err) {
-            console.error("Erreur lors de la récupération des stats du serveur :", err);
+            console.error("Erreur lors de la récupération des stats Supabase :", err);
         }
 
-        // Formatage du texte avec le titre souligné et en gras en Markdown (utilisant l'effet souligné sous Discord : __**...**__)
+        // Formatage du texte
         const embedDescription = `__**Statistiques du serveur:**__\n\n` +
             `**Nom du serveur**\n` +
             `${serverName}\n\n` +
@@ -74,10 +112,10 @@ module.exports = {
             `• Durant la semaine : \`${msgWeek} messages\`\n` +
             `• Durant les dernières 24h : \`${msg24h} messages\`\n` +
             `• Meilleur salon : ${bestTextChannel}\n` +
-            `• Meilleur(e) membre : **${bestTextMember}**\n\n` +
+            `• Meilleur(e) membre : ${bestTextMember}\n\n` +
             
             `**Vocal**\n` +
-            `• Durant le mois : \`${voiceMonthDays} jours, ${voiceMonthHours} heures et ${voiceMonthMinutes} minutes\`\n` +
+            `• Durant le mois : \`${voiceMonthDays} jours, ${voiceMonthHours} heures et${voiceMonthMinutes} minutes\`\n` +
             `• Les 15 derniers jours : \`${voice15Days}\`\n` +
             `• Durant la semaine : \`${voiceWeek}\`\n` +
             `• Durant les dernières 24h : \`${voice24h}\`\n` +
