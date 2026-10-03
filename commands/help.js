@@ -19,7 +19,7 @@ module.exports = {
 
         // Utilise l'option choisie, ou détecte la langue de l'utilisateur sur Discord par défaut ('en-US', 'en-GB' -> 'en')
         const userLang = interaction.options.getString('lang');
-        const isFrench = userLang ? userLang === 'fr' : interaction.locale === 'fr';
+        const isFrench = userLang ? userLang === 'fr' : true;
 
         // 🔒 COMMANDES CACHÉES (Admin)
         const hiddenCommands = ['add-button', 'dt-button','embed-edit','embed', 'set-level','take-xp','give-xp','admin-anniv','insta','ticket-setup'];
