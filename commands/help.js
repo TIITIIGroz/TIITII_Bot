@@ -175,11 +175,11 @@ module.exports = {
             const newRow = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId(`help_prev_${currentPage}_${btnLang}`)
-                    .setLabel(isFr ? '◀ Précédent' : '◀ Previous')
+                    .setLabel(isFr ? '◀' : '◀')
                     .setStyle(ButtonStyle.Primary),
                 new ButtonBuilder()
                     .setCustomId(`help_next_${currentPage}_${btnLang}`)
-                    .setLabel(isFr ? 'Suivant ▶' : 'Next ▶')
+                    .setLabel(isFr ? '▶' : '▶')
                     .setStyle(ButtonStyle.Primary)
             );
 
