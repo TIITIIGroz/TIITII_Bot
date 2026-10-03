@@ -9,20 +9,35 @@ module.exports = {
     async execute(interaction) {
         const guild = interaction.guild;
 
-        // Récupérer et trier les salons en fonction de leur position réelle visible sur le serveur
-        const channels = Array.from(guild.channels.cache
-            .filter(channel => channel.type !== 4) // Exclure les catégories elles-mêmes
-            .sort((a, b) => {
-                // Tri par position dans la catégorie / le serveur
-                if (a.parentID !== b.parentID) {
-                    const parentA = guild.channels.cache.get(a.parentID);
-                    const parentB = guild.channels.cache.get(b.parentID);
-                    if (parentA && parentB) {
-                        return parentA.position - parentB.position;
-                    }
-                }
-                return a.rawPosition - b.rawPosition;
-            }).values());
+        // Récupérer toutes les catégories triées par leur position
+        const categories = guild.channels.cache
+            .filter(c => c.type === 4) // Type 4 = GuildCategory
+            .sort((a, b) => a.position - b.position);
+
+        const channels = [];
+
+        // 1. Ajouter d'abord les salons qui sont en dehors de toute catégorie (si il y en a en haut)
+        const uncategorizedChannels = guild.channels.cache
+            .filter(c => c.type !== 4 && !c.parentId)
+            .sort((a, b) => a.position - b.position);
+        
+        channels.push(...uncategorizedChannels.values());
+
+        // 2. Parcourir chaque catégorie dans l'ordre et récupérer ses salons triés par position
+        categories.forEach(category => {
+            const categoryChannels = guild.channels.cache
+                .filter(c => c.type !== 4 && c.parentId === category.id)
+                .sort((a, b) => a.position - b.position);
+
+            channels.push(...categoryChannels.values());
+        });
+
+        // 3. Ajouter les éventuels salons restants par sécurité
+        const remainingChannels = guild.channels.cache
+            .filter(c => c.type !== 4 && !channels.includes(c))
+            .sort((a, b) => a.position - b.position);
+        
+        channels.push(...remainingChannels.values());
 
         if (channels.length === 0) {
             return interaction.reply({
@@ -47,7 +62,6 @@ module.exports = {
                 if (channel.isVoiceBased()) icon = "🔊";
                 else if (channel.isThread()) icon = "🧵";
 
-                // Affiche le nom complet du salon dans l'ordre exact du serveur
                 salonListText += `${icon} **${channel.name}** : \`${channel.id}\`\n`;
             });
 
@@ -105,8 +119,8 @@ module.exports = {
 
         collector.on('end', () => {
             const disabledRow = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId('salons_prev_expired').setLabel('◀').setStyle(ButtonStyle.Primary).setDisabled(true),
-                new ButtonBuilder().setCustomId('salons_next_expired').setLabel('▶').setStyle(ButtonStyle.Primary).setDisabled(true)
+                new ButtonBuilder().setCustomId('salons_prev_expired').setLabel('◀ Précédent').setStyle(ButtonStyle.Primary).setDisabled(true),
+                new ButtonBuilder().setCustomId('salons_next_expired').setLabel('Suivant ▶').setStyle(ButtonStyle.Primary).setDisabled(true)
             );
             interaction.editReply({ components: [disabledRow] }).catch(() => {});
         });
