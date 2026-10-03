@@ -3,10 +3,10 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('statut')
-        .setDescription('Affiche un récapitulatif complet des informations d’un membre sur le serveur')
+        .setDescription('Affiche un récapitulatif complet de tes informations (ou celui d\'un autre membre)')
         .addUserOption(option => 
             option.setName('membre')
-                .setDescription('Le membre dont tu veux voir les informations (optionnel)')
+                .setDescription('Voir tes informations (ou celui d\'un membre  optionnel)')
                 .setRequired(false)
         ),
     
