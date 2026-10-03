@@ -61,15 +61,15 @@ module.exports = {
                 "bday-rm": "Supprime ta date d'anniversaire enregistrée."
             },
             en: {
-                help: "Displays the list of commands.",
-                leaderboard: "Displays the top 10 most active members on the server.",
-                links: "Displays all links of TIITII_Groz.",
-                rank: "Displays your current level and XP (or another member's).",
-                "voice-access": "Allows one or more people to access your hidden voice channel.",
-                "voice-hide": "Hides your voice channel from other members.",
-                "bday-add": "Register your birthday date.",
-                "bday-list": "Displays the list of all server birthdays.",
-                "bday-rm": "Remove your registered birthday date."
+                '/$help': "Displays the list of commands.",
+                "/$leaderboard": "Displays the top 10 most active members on the server.",
+                "/$links": "Displays all links of TIITII_Groz.",
+                "/$rank": "Displays your current level and XP (or another member's).",
+                "/$voice-access": "Allows one or more people to access your hidden voice channel.",
+                "/$voice-hide": "Hides your voice channel from other members.",
+                "/$bday-add": "Register your birthday date.",
+                "/$bday-list": "Displays the list of all server birthdays.",
+                "/$bday-rm": "Remove your registered birthday date."
             }
         };
 
