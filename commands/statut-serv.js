@@ -3,7 +3,7 @@ const { SlashCommandBuilder, EmbedBuilder, ChannelType } = require('discord.js')
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('statut-serv')
-        .setDescription('Affiche toutes les informations et statistiques du serveur'),
+        .setDescription('Affiche toutes les informations du serveur'),
     
     async execute(interaction) {
         await interaction.deferReply();
