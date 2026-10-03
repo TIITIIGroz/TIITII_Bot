@@ -105,8 +105,8 @@ module.exports = {
 
         collector.on('end', () => {
             const disabledRow = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId('salons_prev_expired').setLabel('◀ Précédent').setStyle(ButtonStyle.Primary).setDisabled(true),
-                new ButtonBuilder().setCustomId('salons_next_expired').setLabel('Suivant ▶').setStyle(ButtonStyle.Primary).setDisabled(true)
+                new ButtonBuilder().setCustomId('salons_prev_expired').setLabel('◀').setStyle(ButtonStyle.Primary).setDisabled(true),
+                new ButtonBuilder().setCustomId('salons_next_expired').setLabel('▶').setStyle(ButtonStyle.Primary).setDisabled(true)
             );
             interaction.editReply({ components: [disabledRow] }).catch(() => {});
         });
