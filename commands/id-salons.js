@@ -16,7 +16,7 @@ module.exports = {
 
         const channels = [];
 
-        // 1. Ajouter d'abord les salons qui sont en dehors de toute catégorie (si il y en a en haut)
+        // 1. Ajouter d'abord les salons en dehors de toute catégorie
         const uncategorizedChannels = guild.channels.cache
             .filter(c => c.type !== 4 && !c.parentId)
             .sort((a, b) => a.position - b.position);
@@ -72,15 +72,16 @@ module.exports = {
                 .setTimestamp();
         };
 
+        // Boutons minimalistes : uniquement les flèches
         const generateRow = (currentPage) => {
             return new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId(`salons_prev_${currentPage}`)
-                    .setLabel('◀ Précédent')
+                    .setLabel('◀')
                     .setStyle(ButtonStyle.Primary),
                 new ButtonBuilder()
                     .setCustomId(`salons_next_${currentPage}`)
-                    .setLabel('Suivant ▶')
+                    .setLabel('▶')
                     .setStyle(ButtonStyle.Primary)
             );
         };
@@ -119,8 +120,8 @@ module.exports = {
 
         collector.on('end', () => {
             const disabledRow = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId('salons_prev_expired').setLabel('◀ Précédent').setStyle(ButtonStyle.Primary).setDisabled(true),
-                new ButtonBuilder().setCustomId('salons_next_expired').setLabel('Suivant ▶').setStyle(ButtonStyle.Primary).setDisabled(true)
+                new ButtonBuilder().setCustomId('salons_prev_expired').setLabel('◀').setStyle(ButtonStyle.Primary).setDisabled(true),
+                new ButtonBuilder().setCustomId('salons_next_expired').setLabel('▶').setStyle(ButtonStyle.Primary).setDisabled(true)
             );
             interaction.editReply({ components: [disabledRow] }).catch(() => {});
         });
