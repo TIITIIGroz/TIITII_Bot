@@ -126,8 +126,7 @@ module.exports = {
             .setColor('#5865F2')
             .setThumbnail(guild.iconURL({ dynamic: true, size: 512 }))
             .setDescription(embedDescription)
-            .setTimestamp()
-            .setFooter({ text: `Demandé par ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
+            .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻II_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` });
 
         await interaction.editReply({ embeds: [statsEmbed] });
     },
