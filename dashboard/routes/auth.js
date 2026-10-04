@@ -1,8 +1,78 @@
 const express = require('express');
 const router = express.Router();
 
+// 1. Redirection vers la page de connexion Discord OAuth2
 router.get('/discord', (req, res) => {
-    // Code de redirection vers l'API Discord OAuth2
+    const clientId = process.env.CLIENT_ID;
+    
+    // Détecte automatiquement l'URL de base (Render ou Localhost)
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const host = req.get('host');
+    const redirectUri = `${protocol}://${host}/auth/discord/callback`;
+
+    const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=identify guilds.members.read`;
+    
+    res.redirect(discordAuthUrl);
+});
+
+// 2. Callback de retour après acceptation sur Discord
+router.get('/discord/callback', async (req, res) => {
+    const client = req.app.locals.client;
+    const code = req.query.code;
+    if (!code) return res.redirect('/?error=no_code');
+
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const host = req.get('host');
+    const redirectUri = `${protocol}://${host}/auth/discord/callback`;
+
+    try {
+        // Échange du code contre un token d'accès
+        const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
+            method: 'POST',
+            body: new URLSearchParams({
+                client_id: process.env.CLIENT_ID,
+                client_secret: process.env.CLIENT_SECRET,
+                grant_type: 'authorization_code',
+                code: code,
+                redirect_uri: redirectUri,
+            }),
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        });
+
+        const oauthData = await tokenResponse.json();
+        if (!oauthData.access_token) return res.redirect('/?error=bad_token');
+
+        // Récupération des infos de l'utilisateur connecté
+        const userResponse = await fetch('https://discord.com/api/users/@me', {
+            headers: { authorization: `Bearer ${oauthData.access_token}` },
+        });
+        const user = await userResponse.json();
+
+        // Listes de tes administrateurs (identiques à ton bot)
+        const ADMIN_ROLE_IDS = ['894668340902125618', '1012357140679229511', '894669520902451220'];
+        const ADMIN_USER_IDS = ['913798085686198292', '707665614067728464'];
+
+        let isAdmin = ADMIN_USER_IDS.includes(user.id);
+        if (!isAdmin && client.guilds.cache.size > 0) {
+            const guild = client.guilds.cache.first();
+            const member = await guild.members.fetch(user.id).catch(() => null);
+            if (member) {
+                const hasAdminRole = ADMIN_ROLE_IDS.some(roleId => member.roles.cache.has(roleId));
+                if (hasAdminRole) isAdmin = true;
+            }
+        }
+
+        if (isAdmin) {
+            req.session.isAdmin = true;
+            req.session.user = user;
+            res.redirect('/dashboard');
+        } else {
+            res.send(`<!DOCTYPE html><html><head><link rel="stylesheet" href="/style.css"></head><body class="login-body"><div class="login-card"><h1>❌ Accès refusé</h1><p>Tu n'es pas administrateur de ce bot.</p><a href="/" style="color:#57F287;">Retour</a></div></body></html>`);
+        }
+    } catch (err) {
+        console.error("Erreur OAuth2 Discord:", err);
+        res.redirect('/?error=server_error');
+    }
 });
 
 module.exports = router;
