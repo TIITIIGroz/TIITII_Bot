@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>TIITII_Bot - Dashboard Admin</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 Panneau d'Administration - TIITII_Bot</h1>
+            <div>
+                <span style="margin-right: 15px;">Connecté en tant que <strong><%= username %></strong></span>
+                <a href="/logout" class="btn-logout">Déconnexion</a>
+            </div>
+        </header>
+
+        <div class="grid">
+            <div class="card">
+                <h2>📊 Stats Serveur</h2>
+                <p>Membres : <strong><%= memberCount %></strong></p>
+                <p>Statut du Bot : <strong style="color: #57F287;">En ligne 🟢</strong></p>
+                <p>Uptime : <strong><%= hours %>h<%= minutes %>m</strong></p>
+            </div>
+            <div class="card">
+                <h2>📢 Envoyer une Annonce</h2>
+                <form action="/api/announcement" method="POST">
+                    <select name="channelId"><%- channelsHtml %></select>
+                    <input type="text" name="title" placeholder="Titre de l'annonce..." required>
+                    <textarea name="message" placeholder="Contenu du message..." rows="3" required></textarea>
+                    <button type="submit">Envoyer sur Discord</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🖥️ Terminal de Logs en Direct</h2>
+            <div class="terminal" id="terminalBox">Chargement des logs...</div>
+        </div>
+    </div>
+
+    <script>
+        setInterval(async () => {
+            const res = await fetch('/api/logs');
+            const logs = await res.json();
+            const box = document.getElementById('terminalBox');
+            box.innerHTML = logs.join('<br>');
+            box.scrollTop = box.scrollHeight;
+        }, 3000);
+    </script>
+</body>
+</html>
