@@ -39,9 +39,13 @@ function startDashboard(client) {
     app.locals.client = client;
     app.locals.liveLogs = liveLogs;
 
-    // Charger les routes web
+    // Charger les routes web principales (/)
     const webRoutes = require("./routes/web");
     app.use("/", webRoutes);
+
+    // 🚀 Charger et brancher les routes d'authentification (/auth/discord, etc.)
+    const authRoutes = require("./routes/auth");
+    app.use("/auth", authRoutes);
 
     app.listen(PORT, () => {
         console.log(`🌐 Dashboard web sécurisé actif sur le port ${PORT}`);
