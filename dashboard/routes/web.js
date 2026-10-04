@@ -1,9 +1,21 @@
+const express = require('express');
+const router = express.Router();
+const { ChannelType } = require('discord.js');
+
+// Middleware pour vérifier l'authentification (si tu l'as défini ici ou importé)
+function checkAuth(req, res, next) {
+    if (req.session && req.session.isAdmin) {
+        return next();
+    }
+    res.redirect('/');
+}
+
 // Page d'accueil / Connexion
 router.get('/', (req, res) => {
     if (req.session && req.session.isAdmin) {
         return res.redirect('/dashboard');
     }
-    res.render('index'); // Va chercher views/index.html
+    res.render('index'); // Va chercher views/index.html (ou ejs)
 });
 
 // Dashboard Admin
@@ -26,10 +38,12 @@ router.get('/dashboard', checkAuth, async (req, res) => {
 
     // Va chercher views/dashboard.html en lui injectant les variables
     res.render('dashboard', {
-        username: req.session.user.username,
+        username: req.session.user ? req.session.user.username : 'Admin',
         memberCount,
         hours,
         minutes,
         channelsHtml
     });
 });
+
+module.exports = router;
