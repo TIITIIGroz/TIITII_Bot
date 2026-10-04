@@ -69,7 +69,7 @@ module.exports = {
                 .setColor('#57F287')
                 .setTitle(`📋 Identifiants des salons (Page ${pageNum}/${totalPages})`)
                 .setDescription(salonListText)
-                .setTimestamp();
+                .setFooter({ text: "Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛" })
         };
 
         // Boutons minimalistes : uniquement les flèches
