@@ -19,12 +19,6 @@ router.get('/discord/callback', async (req, res) => {
     const client = req.app.locals.client;
     const code = req.query.code;
 
-    // 🔍 VÉRIFICATION DES VARIABLES D'ENVIRONNEMENT DANS LES LOGS
-    console.log("=== TEST OAUTH2 ===");
-    console.log("CLIENT_ID présent :", process.env.CLIENT_ID ? "OUI (" + process.env.CLIENT_ID + ")" : "NON ❌");
-    console.log("CLIENT_SECRET présent :", process.env.CLIENT_SECRET ? "OUI" : "NON ❌");
-    console.log("Code reçu de Discord :", code ? "OUI" : "NON ❌");
-
     if (!code) return res.redirect('/?error=no_code');
 
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
@@ -32,6 +26,7 @@ router.get('/discord/callback', async (req, res) => {
     const redirectUri = `${protocol}://${host}/auth/discord/callback`;
 
     try {
+        // Requête vers l'API Discord avec un User-Agent obligatoire pour éviter les blocages
         const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
             method: 'POST',
             body: new URLSearchParams({
@@ -41,19 +36,24 @@ router.get('/discord/callback', async (req, res) => {
                 code: code,
                 redirect_uri: redirectUri,
             }),
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            headers: { 
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'User-Agent': 'TIITII_Bot (https://tiitii-bot.onrender.com, 1.0.0)'
+            },
         });
 
         const oauthData = await tokenResponse.json();
         
-        console.log("Réponse de l'API Discord Token :", oauthData);
-
         if (!oauthData.access_token) {
+            console.error("❌ Erreur Discord Token Response :", oauthData);
             return res.redirect('/?error=bad_token');
         }
 
         const userResponse = await fetch('https://discord.com/api/users/@me', {
-            headers: { authorization: `Bearer ${oauthData.access_token}` },
+            headers: { 
+                authorization: `Bearer ${oauthData.access_token}`,
+                'User-Agent': 'TIITII_Bot (https://tiitii-bot.onrender.com, 1.0.0)'
+            },
         });
         const user = await userResponse.json();
 
