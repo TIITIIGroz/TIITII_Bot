@@ -11,7 +11,7 @@ const { handleXpMessage } = require("./systems/levels/xp");
 const supabase = require("./supabase"); 
 const pool = require("./systems/levels/database");
 
-// Importer et lancer le dashboard web depuis le dossier dashboard
+// Importer et lancer le dashboard web IMMÉDIATEMENT (pour ouvrir le port Render tout de suite)
 const { startDashboard } = require("./dashboard/dashboard.js");
 
 console.log("TEST TOKEN :", process.env.TOKEN ? "Le token est bien lu !" : "ATTENTION : Le token est VIDE !");
@@ -27,6 +27,9 @@ const client = new Client({
 });
 
 client.commands = new Collection();
+
+// 🚀 LANCE LE DASHBOARD WEB ICI DIRECTEMENT (indépendamment de l'état de connexion de Discord)
+startDashboard(client);
 
 // Charger les commandes
 const commandsPath = path.join(__dirname, "commands");
@@ -153,9 +156,6 @@ client.once(Events.ClientReady, async () => {
         activities: [{ name: "TIITII_Groz sur/on Twitch", type: ActivityType.Streaming, url: "https://www.twitch.tv/TIITII_Groz" }],
         status: "online",
     });
-
-    // Lancer le dashboard web en lui passant le client Discord
-    startDashboard(client);
 });
 
 client.login(process.env.TOKEN).catch(err => {
