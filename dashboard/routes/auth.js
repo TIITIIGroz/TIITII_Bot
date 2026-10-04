@@ -5,7 +5,6 @@ const router = express.Router();
 router.get('/discord', (req, res) => {
     const clientId = process.env.CLIENT_ID;
     
-    // Détecte automatiquement l'URL de base (Render ou Localhost)
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
     const host = req.get('host');
     const redirectUri = `${protocol}://${host}/auth/discord/callback`;
@@ -26,7 +25,6 @@ router.get('/discord/callback', async (req, res) => {
     const redirectUri = `${protocol}://${host}/auth/discord/callback`;
 
     try {
-        // Échange du code contre un token d'accès
         const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
             method: 'POST',
             body: new URLSearchParams({
@@ -40,15 +38,18 @@ router.get('/discord/callback', async (req, res) => {
         });
 
         const oauthData = await tokenResponse.json();
-        if (!oauthData.access_token) return res.redirect('/?error=bad_token');
+        
+        // 🔍 LOGUE L'ERREUR EXACTE DE DISCORD SI ÇA ÉCHOUE
+        if (!oauthData.access_token) {
+            console.error("❌ Erreur Discord Token Response :", oauthData);
+            return res.redirect('/?error=bad_token');
+        }
 
-        // Récupération des infos de l'utilisateur connecté
         const userResponse = await fetch('https://discord.com/api/users/@me', {
             headers: { authorization: `Bearer ${oauthData.access_token}` },
         });
         const user = await userResponse.json();
 
-        // Listes de tes administrateurs (identiques à ton bot)
         const ADMIN_ROLE_IDS = ['894668340902125618', '1012357140679229511', '894669520902451220'];
         const ADMIN_USER_IDS = ['913798085686198292', '707665614067728464'];
 
@@ -70,7 +71,7 @@ router.get('/discord/callback', async (req, res) => {
             res.send(`<!DOCTYPE html><html><head><link rel="stylesheet" href="/style.css"></head><body class="login-body"><div class="login-card"><h1>❌ Accès refusé</h1><p>Tu n'es pas administrateur de ce bot.</p><a href="/" style="color:#57F287;">Retour</a></div></body></html>`);
         }
     } catch (err) {
-        console.error("Erreur OAuth2 Discord:", err);
+        console.error("❌ Exception attrapée dans OAuth2:", err);
         res.redirect('/?error=server_error');
     }
 });
