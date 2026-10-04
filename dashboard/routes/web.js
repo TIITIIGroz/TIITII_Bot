@@ -30,17 +30,11 @@ router.get('/', (req, res) => {
         <html lang="fr">
         <head>
             <meta charset="UTF-8">
-            <title>TIITII_Bot - Connexion Requise</title>
-            <style>
-                body { font-family: Arial, sans-serif; background: #0f172a; color: #f8fafc; text-align: center; padding-top: 100px; }
-                .card { background: #1e293b; display: inline-block; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.5); }
-                .btn-discord { background: #5865F2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin-top: 20px; }
-                .btn-discord:hover { background: #4752C4; }
-                h1 { color: #57F287; }
-            </style>
+            <title>TIITII_Bot - Connexion</title>
+            <link rel="stylesheet" href="/style.css">
         </head>
-        <body>
-            <div class="card">
+        <body class="login-body">
+            <div class="login-card">
                 <h1>🤖 TIITII_Bot Dashboard</h1>
                 <p>Accès restreint aux administrateurs du serveur.</p>
                 <a href="/auth/discord" class="btn-discord">Se connecter avec Discord</a>
@@ -101,7 +95,7 @@ router.get('/auth/discord/callback', async (req, res) => {
             req.session.user = user;
             res.redirect('/dashboard');
         } else {
-            res.send(`<!DOCTYPE html><html><body style="background:#0f172a;color:white;text-align:center;padding-top:100px;font-family:sans-serif;"><h1>❌ Accès refusé</h1><p>Tu n'es pas administrateur de ce bot.</p><a href="/" style="color:#57F287;">Retour</a></body></html>`);
+            res.send(`<!DOCTYPE html><html><head><link rel="stylesheet" href="/style.css"></head><body class="login-body"><div class="login-card"><h1>❌ Accès refusé</h1><p>Tu n'es pas administrateur de ce bot.</p><a href="/" style="color:#57F287;">Retour</a></div></body></html>`);
         }
     } catch (err) {
         console.error("Erreur OAuth2:", err);
@@ -139,19 +133,7 @@ router.get('/dashboard', checkAuth, async (req, res) => {
         <head>
             <meta charset="UTF-8">
             <title>TIITII_Bot - Dashboard Admin</title>
-            <style>
-                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
-                .container { max-width: 1100px; margin: 0 auto; }
-                header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 15px; margin-bottom: 20px; }
-                .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 20px; }
-                .card { background: #1e293b; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-                h2 { color: #57F287; margin-top: 0; }
-                .terminal { background: #090d16; color: #38ef7d; font-family: monospace; padding: 15px; border-radius: 6px; height: 200px; overflow-y: scroll; font-size: 13px; }
-                input, select, textarea { width: 100%; padding: 10px; margin: 8px 0; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 5px; box-sizing: border-box; }
-                button { background: #57F287; color: #0f172a; border: none; padding: 10px 20px; font-weight: bold; border-radius: 5px; cursor: pointer; }
-                button:hover { background: #4ade80; }
-                .btn-logout { background: #ef4444; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; font-size: 14px; }
-            </style>
+            <link rel="stylesheet" href="/style.css">
         </head>
         <body>
             <div class="container">
