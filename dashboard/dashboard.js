@@ -1,11 +1,21 @@
 const express = require("express");
 const session = require("express-session");
+const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+// Indiquer à Express où trouver les fichiers CSS/images
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Configuration des vues HTML
+app.engine('html', require('ejs').renderFile);
+app.set('view engine', 'html');
+app.set('views', path.join(__dirname, 'views'));
+
 app.use(
     session({
         secret: process.env.SESSION_SECRET || "tiitii_super_secret_key_999",
@@ -26,7 +36,6 @@ console.log = function (...args) {
 };
 
 function startDashboard(client) {
-    // Rendre le client accessible dans les routes
     app.locals.client = client;
     app.locals.liveLogs = liveLogs;
 
