@@ -1,44 +1,41 @@
-const express = require('express');
+const express = require("express");
+const session = require("express-session");
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Si tu utilises Supabase dans ton projet, importe ton client ici :
-// const supabase = require('./path-to-your-supabase-client');
-
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(
+    session({
+        secret: process.env.SESSION_SECRET || "tiitii_super_secret_key_999",
+        resave: false,
+        saveUninitialized: false,
+        cookie: { secure: false },
+    })
+);
 
-// Page d'accueil simple du dashboard
-app.get('/', async (req, res) => {
-    // Exemple : tu pourras récupérer des stats depuis Supabase
-    // const { count } = await supabase.from('users').select('*', { count: 'exact', head: true });
+// Capture des logs en direct pour le Dashboard
+const liveLogs = [];
+const originalConsoleLog = console.log;
+console.log = function (...args) {
+    const timestamp = new Date().toLocaleTimeString();
+    liveLogs.push(`[${timestamp}] ` + args.join(" "));
+    if (liveLogs.length > 100) liveLogs.shift();
+    originalConsoleLog.apply(console, args);
+};
 
-    res.send(`
-        <!DOCTYPE html>
-        <html lang="fr">
-        <head>
-            <meta charset="UTF-8">
-            <title>TIITII_Bot - Dashboard</title>
-            <style>
-                body { font-family: Arial, sans-serif; background: #0f172a; color: #f8fafc; text-align: center; padding-top: 50px; }
-                .card { background: #1e293b; display: inline-block; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-                h1 { color: #57F287; }
-            </style>
-        </head>
-        <body>
-            <div class="card">
-                <h1>🤖 TIITII_Bot Dashboard</h1>
-                <p>Statut : <strong style="color: #57F287;">En ligne 🟢</strong></p>
-                <p>Bienvenue sur le panneau d'administration de ton serveur.</p>
-            </div>
-        </body>
-        </html>
-    `);
-});
+function startDashboard(client) {
+    // Rendre le client accessible dans les routes
+    app.locals.client = client;
+    app.locals.liveLogs = liveLogs;
 
-// Fonction pour démarrer le serveur web en même temps que ton bot
-function startDashboard() {
+    // Charger les routes web
+    const webRoutes = require("./routes/web");
+    app.use("/", webRoutes);
+
     app.listen(PORT, () => {
-        console.log(`🌐 Dashboard web actif sur le port ${PORT}`);
+        console.log(`🌐 Dashboard web sécurisé actif sur le port ${PORT}`);
     });
 }
 
