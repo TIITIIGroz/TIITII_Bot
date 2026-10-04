@@ -47,8 +47,7 @@ module.exports = {
                 { name: '📥 Arrivé sur le serveur le', value: `<t:${joinedAt}:D> (<t:${joinedAt}:R>)`, inline: false },
                 { name: `🛡️ Rôles (${roles.length})`, value: rolesList.length > 1024 ? 'Trop de rôles pour être affichés' : rolesList, inline: false }
             )
-            .setTimestamp()
-            .setFooter({ text: `Demandé par ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
+            .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻II_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` })
 
         await interaction.editReply({ embeds: [statusEmbed] });
     },
