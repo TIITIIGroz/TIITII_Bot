@@ -44,7 +44,7 @@ module.exports = {
                 .setColor('#FF69B4')
                 .setTitle('🎂 Liste des Anniversaires du Serveur 🎉')
                 .setDescription(listText)
-                .setTimestamp();
+                .setFooter({ text: "Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛" })
 
             await interaction.reply({ embeds: [embed] });
         } catch (err) {
