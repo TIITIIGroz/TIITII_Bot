@@ -18,6 +18,13 @@ router.get('/discord', (req, res) => {
 router.get('/discord/callback', async (req, res) => {
     const client = req.app.locals.client;
     const code = req.query.code;
+
+    // 🔍 VÉRIFICATION DES VARIABLES D'ENVIRONNEMENT DANS LES LOGS
+    console.log("=== TEST OAUTH2 ===");
+    console.log("CLIENT_ID présent :", process.env.CLIENT_ID ? "OUI (" + process.env.CLIENT_ID + ")" : "NON ❌");
+    console.log("CLIENT_SECRET présent :", process.env.CLIENT_SECRET ? "OUI" : "NON ❌");
+    console.log("Code reçu de Discord :", code ? "OUI" : "NON ❌");
+
     if (!code) return res.redirect('/?error=no_code');
 
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
@@ -39,9 +46,9 @@ router.get('/discord/callback', async (req, res) => {
 
         const oauthData = await tokenResponse.json();
         
-        // 🔍 LOGUE L'ERREUR EXACTE DE DISCORD SI ÇA ÉCHOUE
+        console.log("Réponse de l'API Discord Token :", oauthData);
+
         if (!oauthData.access_token) {
-            console.error("❌ Erreur Discord Token Response :", oauthData);
             return res.redirect('/?error=bad_token');
         }
 
