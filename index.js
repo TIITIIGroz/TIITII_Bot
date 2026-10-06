@@ -118,7 +118,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                     .setColor('#2ECC71')
                     .setTitle('Salon vocal temporaire créé !🔊')
                     .addFields({ name: '👤 Propriétaire', value: `${member.user.tag} (<@${member.id}>)`, inline: true }, { name: '📂 Salon', value: `${tempChannel} (\`${tempChannel.name}\`)`, inline: true })
-                    .setFooter({ text: 'Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛' })
+                    .setFooter({ text: '\/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛\\' })
                     .setTimestamp();
                 await logsChannel.send({ embeds: [voiceLogEmbed] });
             }
@@ -139,7 +139,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                         .setColor('#E74C3C')
                         .setTitle('Salon vocal temporaire supprimé !🔇')
                         .addFields({ name: '📂 Salon', value: `\`${emptyChannel.name}\``, inline: true }, { name: '👤 Propriétaire initial', value: `<@${ownerId}>`, inline: true })
-                        .setFooter({ text: 'Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛' })
+                        .setFooter({ text: '\/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛\\' })
                         .setTimestamp();
                     await logsChannel.send({ embeds: [deleteLogEmbed] });
                 }
@@ -187,7 +187,7 @@ client.once(Events.ClientReady, async () => {
         const channel = await client.channels.fetch(ONLINE_CHANNEL_ID).catch(() => null);
         if (channel) {
             const timestamp = Math.floor(Date.now() / 1000);
-            await channel.send(`Je suis en ligne depuis <t:${timestamp}:T> ! \n ----------------------------------------------`);
+            await channel.send(`Je suis en ligne depuis <t:${timestamp}:T> !\n----------------------------------------------`);
         }
     } catch (err) { console.error("Erreur message en ligne :", err); }
 
