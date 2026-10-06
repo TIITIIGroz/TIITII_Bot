@@ -3,34 +3,33 @@ const session = require('express-session');
 const path = require('path');
 const app = express();
 
-// Configuration du moteur de template et des fichiers statiques (pour le dossier public/images)
+// Configuration du moteur de template EJS et du dossier des vues
 app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views')); // Dossier contenant tes fichiers .ejs
+
+// Dossier public pour les fichiers statiques (CSS, images...)
 app.use(express.static(path.join(__dirname, 'public'))); 
-// Si ton dossier d'images est dans public/images/Bannière.jpg, express.static('public') le rend accessible via /images/Bannière.jpg
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Configuration de la session
+// Configuration de la session pour ne pas perdre la connexion au rafraîchissement
 app.use(session({
-    secret: 'mon_secret_super_securise', // Remplace par une chaîne secrète de ton choix
+    secret: 'mon_secret_super_securise',
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        secure: false, // Mettre à true si tu forces le HTTPS strictement, false fonctionne avec le proxy Render
-        maxAge: 24 * 60 * 60 * 1000 // La session expire au bout de 24 heures
+        secure: false, 
+        maxAge: 24 * 60 * 60 * 1000 // 24 heures
     }
 }));
 
-// Import de tes routes de dashboard et d'auth
+// Import des routes d'authentification
 const authRoutes = require('./dashboard/routes/auth');
-// const dashboardRoutes = require('./dashboard/routes/dashboard'); // Décommente selon ton arborescence
-
 app.use('/auth', authRoutes);
 
 // Route d'accueil
 app.get('/', (req, res) => {
-    // Si l'utilisateur est déjà connecté, on le redirige directement vers le dashboard au lieu de l'embêter
     if (req.session && req.session.isAdmin) {
         return res.redirect('/dashboard');
     }
@@ -42,7 +41,6 @@ app.get('/dashboard', (req, res) => {
     if (!req.session || !req.session.isAdmin) {
         return res.redirect('/?error=bad_token');
     }
-    // Rendu de ta page dashboard (ex: dashboard.ejs)
     res.render('dashboard', { user: req.session.user });
 });
 
