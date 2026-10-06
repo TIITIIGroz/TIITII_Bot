@@ -1,9 +1,13 @@
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #0f172a;
-    color: #f8fafc;
+    background-image: url('/images/Bannière.jpg');
+    background-size: cover;          /* L'image s'étire pour couvrir tout l'écran */
+    background-position: center;     /* L'image est centrée */
+    background-repeat: no-repeat;    /* L'image ne se répète pas en mosaïque */
+    background-attachment: fixed;    /* Le fond reste fixe quand on scroll */
+    font-family: Arial, sans-serif;
+    color: #ffffff;                  /* Texte en blanc pour bien contraster avec l'image */
     margin: 0;
-    padding: 20px;
+    padding: 0;
 }
 
 .container {
