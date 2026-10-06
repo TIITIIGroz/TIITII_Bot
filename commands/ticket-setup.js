@@ -93,6 +93,7 @@ module.exports = {
                             { name: '📂 Salon créé', value: `${channel} (\`${channel.name}\`)`, inline: false },
                             { name: '🆔 ID du membre', value: `\`${member.id}\``, inline: true }
                         )
+                        .setFooter({ text: 'Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛\\' })
                         .setTimestamp();
                     await logsChannel.send({ embeds: [logEmbed] });
                 }
