@@ -238,8 +238,7 @@ client.once(Events.ClientReady, async () => {
                         .setColor('#FF69B4')
                         .setTitle('🎉 Joyeux Anniversaire ! 🎂')
                         .setDescription(`Tout le monde souhaite un excellent anniversaire à <@${b.user_id}> ! Passe une merveilleuse journée ! 🎈`)
-                        .setFooter({ text: '\/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛\\' })
-                        .setTimestamp();
+                        .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` });
 
                     await channel.send({ content: `<@&${PING_ROLE_ID}>`, embeds: [bdayEmbed] });
                 }
