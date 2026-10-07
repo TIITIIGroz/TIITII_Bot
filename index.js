@@ -307,3 +307,16 @@ require('./systems/levels/voiceXp')(client);
 client.login(process.env.TOKEN).catch(err => {
     console.error("❌ ERREUR FATALE DE CONNEXION DISCORD :", err);
 });
+
+// Mini serveur HTTP pour satisfaire le port scan de Render (Web Service)
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+    res.send('Le bot Discord est bien en ligne ! 🚀');
+});
+
+app.listen(PORT, () => {
+    console.log(`Serveur web en écoute sur le port ${PORT}`);
+});
