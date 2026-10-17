@@ -127,7 +127,7 @@ module.exports = (client) => {
 
                 const inputRef = new TextInputBuilder()
                     .setCustomId('reply_ref')
-                    .setLabel('Répondre à la Confession / Answer to Confession')
+                    .setLabel('Réponse Confession / Answer to Confession')
                     .setStyle(TextInputStyle.Short)
                     .setValue(`#${confessionId}`)
                     .setRequired(false);
