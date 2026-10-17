@@ -45,7 +45,7 @@ module.exports = (client) => {
             if (interaction.customId === 'btn_open_confession') {
                 const modal = new ModalBuilder()
                     .setCustomId('modal_submit_confession')
-                    .setTitle('Soumettre une confession / Submit a confession');
+                    .setTitle('Nouvelle confession / New confession');
 
                 const inputContent = new TextInputBuilder()
                     .setCustomId('confession_content')
@@ -75,7 +75,7 @@ module.exports = (client) => {
 
                 const modal = new ModalBuilder()
                     .setCustomId(`modal_submit_reply_${confessionId}`)
-                    .setTitle('Soumettre une réponse / Submit an answer');
+                    .setTitle('Réponse / Answer');
 
                 const inputReply = new TextInputBuilder()
                     .setCustomId('reply_content')
