@@ -26,6 +26,13 @@ module.exports = (client) => {
                 await notificationChannel.send(`${member} vient d'arriver dans le royaume !`);
             }
 
+            // Salon de notification EN
+            const EN_NOTIFICATION_CHANNEL_ID = "1026121915951230987";
+            const enNotificationChannel = await member.guild.channels.fetch(EN_NOTIFICATION_CHANNEL_ID).catch(() => null);
+            if (enNotificationChannel) {
+                await enNotificationChannel.send(`${member} just joined the Kingdom !`);
+            }
+
             // 3. Envoi du message de présentation en Message Privé (DM) à l'utilisateur
             try {
                 const dmMessage = 
