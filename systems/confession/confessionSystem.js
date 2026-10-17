@@ -13,7 +13,7 @@ const crypto = require('crypto');
 const CONFESSION_CHANNEL_ID = "1561085138350383185";
 const LOGS_CONFESSION_CHANNEL_ID = "1552573413850218587";
 
-const SECRET_PASSWORD = process.env.CONFESSION_PASSWORD || "TON_MOT_DE_PASSE_SECRET";
+const SECRET_PASSWORD = process.env.CONFESSION_PASSWORD || "4321confession";
 
 let confessionCounter = 1;
 let replyCounter = 1;
