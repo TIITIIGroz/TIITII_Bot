@@ -11,7 +11,7 @@ const {
 const crypto = require('crypto');
 
 const CONFESSION_CHANNEL_ID = "1561085138350383185";
-const LOGS_CONFESSION_CHANNEL_ID = "1552573413850218587";
+const LOGS_CONFESSION_CHANNEL_ID = "1561152254520590449";
 
 const SECRET_PASSWORD = process.env.CONFESSION_PASSWORD || "4321confession";
 
@@ -33,6 +33,38 @@ function encryptUserId(userId, password) {
     const authTag = cipher.getAuthTag().toString('hex');
     
     return `${iv.toString('hex')}:${authTag}:${encrypted}`;
+}
+
+// Convertisseur de couleurs basiques (hex ou noms)
+function parseColor(inputColor) {
+    if (!inputColor) return '#2ECC71';
+    const colorLower = inputColor.trim().toLowerCase();
+    const colorMap = {
+        'red': '#FF0000',
+        'rouge': '#FF0000',
+        'blue': '#0000FF',
+        'bleu': '#0000FF',
+        'green': '#00FF00',
+        'vert': '#00FF00',
+        'yellow': '#FFFF00',
+        'jaune': '#FFFF00',
+        'purple': '#800080',
+        'violet': '#800080',
+        'pink': '#FFC0CB',
+        'rose': '#FFC0CB',
+        'black': '#000001',
+        'noir': '#000001',
+        'white': '#FFFFFF',
+        'blanc': '#FFFFFF',
+        'orange': '#FFA500',
+        'cyan': '#00FFFF'
+    };
+
+    if (colorMap[colorLower]) return colorMap[colorLower];
+    if (/^#?[0-9A-Fa-f]{6}$/.test(colorLower)) {
+        return colorLower.startsWith('#') ? colorLower : `#${colorLower}`;
+    }
+    return '#2ECC71';
 }
 
 module.exports = (client) => {
@@ -57,14 +89,22 @@ module.exports = (client) => {
 
                 const inputColor = new TextInputBuilder()
                     .setCustomId('confession_color')
-                    .setLabel('Custom Color (user premium only)')
+                    .setLabel('Custom Color')
                     .setStyle(TextInputStyle.Short)
-                    .setPlaceholder('Ex: ff0000, #ff0000, or red')
+                    .setPlaceholder('Ex: ff0000, #ff0000, red, bleu, etc.')
+                    .setRequired(false);
+
+                const inputMedia = new TextInputBuilder()
+                    .setCustomId('confession_media')
+                    .setLabel('Lien Fichier / Media Link (Optionnel)')
+                    .setStyle(TextInputStyle.Short)
+                    .setPlaceholder('Lien direct image/vidéo (https://...)')
                     .setRequired(false);
 
                 modal.addComponents(
                     new ActionRowBuilder().addComponents(inputContent),
-                    new ActionRowBuilder().addComponents(inputColor)
+                    new ActionRowBuilder().addComponents(inputColor),
+                    new ActionRowBuilder().addComponents(inputMedia)
                 );
 
                 return await interaction.showModal(modal);
@@ -110,11 +150,9 @@ module.exports = (client) => {
 
                 const content = interaction.fields.getTextInputValue('confession_content');
                 const rawColor = interaction.fields.getTextInputValue('confession_color');
+                const mediaUrl = interaction.fields.getTextInputValue('confession_media');
                 
-                let embedColor = '#2ECC71';
-                if (rawColor && /^#?[0-9A-FA-f]{6}$/.test(rawColor)) {
-                    embedColor = rawColor.startsWith('#') ? rawColor : `#${rawColor}`;
-                }
+                const embedColor = parseColor(rawColor);
 
                 const currentNum = confessionCounter++;
                 const codeName = `confess-${currentNum}`;
@@ -123,8 +161,12 @@ module.exports = (client) => {
                     .setColor(embedColor)
                     .setTitle(`🤫 Confession #${currentNum}`)
                     .setDescription(content)
-                    .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` })
+                    .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` })
                     .setTimestamp();
+
+                if (mediaUrl && (mediaUrl.startsWith('http://') || mediaUrl.startsWith('https://'))) {
+                    confessionEmbed.setImage(mediaUrl);
+                }
 
                 const buttonsRow = new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
@@ -147,7 +189,7 @@ module.exports = (client) => {
                     autoArchiveDuration: 1440
                 }).catch(() => null);
 
-                // Enregistrement chiffré + métadonnées (contenu et URL)
+                // Enregistrement chiffré + métadonnées
                 const encryptedUserId = encryptUserId(interaction.user.id, SECRET_PASSWORD);
                 global.confessionStorage.set(codeName, {
                     encryptedUserId: encryptedUserId,
@@ -156,7 +198,7 @@ module.exports = (client) => {
                 });
 
                 // Log dans le salon privé
-                await logConfessionEncrypted(client, codeName, content, sentMsg.url);
+                await logConfessionEncrypted(client, codeName, content, sentMsg.url, mediaUrl);
 
                 return await interaction.editReply({ content: "✅ Ta confession anonyme a été publiée avec succès ! / Your confession has been published!" });
             }
@@ -175,7 +217,7 @@ module.exports = (client) => {
                     .setColor('#3498DB')
                     .setTitle(`💬 Réponse Anonyme à la Confession #${confessionNum}`)
                     .setDescription(replyContent)
-                    .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛\\` })
+                    .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛` })
                     .setTimestamp();
 
                 const channel = interaction.guild.channels.cache.get(CONFESSION_CHANNEL_ID);
@@ -208,7 +250,7 @@ module.exports = (client) => {
     });
 };
 
-async function logConfessionEncrypted(client, codeName, content, messageUrl) {
+async function logConfessionEncrypted(client, codeName, content, messageUrl, mediaUrl) {
     try {
         const logChannel = await client.channels.fetch(LOGS_CONFESSION_CHANNEL_ID).catch(() => null);
         if (!logChannel) return;
@@ -223,6 +265,10 @@ async function logConfessionEncrypted(client, codeName, content, messageUrl) {
             )
             .setFooter({ text: 'Utilisez /reveal avec ce code et le mot de passe secret pour voir l\'auteur.' })
             .setTimestamp();
+
+        if (mediaUrl) {
+            logEmbed.addFields({ name: '📎 Fichier / Média joint', value: mediaUrl });
+        }
 
         await logChannel.send({ embeds: [logEmbed] });
     } catch (err) {
