@@ -89,20 +89,20 @@ client.on(Events.InteractionCreate, async interaction => {
 client.on(Events.MessageCreate, async (message) => {
     // Transférer les messages reçus en MP vers le salon spécifié
     if (message.guild === null && !message.author.bot) {
-    const LOG_DM_CHANNEL_ID = "1552184275309297675";
-    try {
-        const targetChannel = await client.channels.fetch(LOG_DM_CHANNEL_ID).catch(() => null);
-        if (targetChannel) {
-            const timestamp = Math.floor(Date.now() / 1000);
-            await targetChannel.send(
-                `📥 **Nouveau MP reçu le <t:${timestamp}:F> (<t:${timestamp}:R>) de** ${message.author.tag} (\`${message.author.id}\`) :\n> ${message.content}`
-            );
+        const LOG_DM_CHANNEL_ID = "1552184275309297675";
+        try {
+            const targetChannel = await client.channels.fetch(LOG_DM_CHANNEL_ID).catch(() => null);
+            if (targetChannel) {
+                const timestamp = Math.floor(Date.now() / 1000);
+                await targetChannel.send(
+                    `📥 **Nouveau MP reçu le <t:${timestamp}:F> (<t:${timestamp}:R>) de** ${message.author.tag} (\`${message.author.id}\`) :\n> ${message.content}`
+                );
+            }
+        } catch (err) {
+            console.error("Erreur transfert MP :", err);
         }
-    } catch (err) {
-        console.error("Erreur transfert MP :", err);
+        return;
     }
-    return;
-}
 
     await handleXpMessage(message, client);
 });
@@ -231,120 +231,4 @@ client.once(Events.ClientReady, async () => {
             yesterdayDate.setDate(now.getDate() - 1);
             const yDay = String(yesterdayDate.getDate()).padStart(2, '0');
             const yMonth = String(yesterdayDate.getMonth() + 1).padStart(2, '0');
-            const yesterdayFormatted = `${yDay}/${yMonth}`;
-
-            const BIRTHDAY_ROLE_ID = "1011652804269580389";
-            const BIRTHDAY_CHANNEL_ID = "1011649291124744212"; 
-            const PING_ROLE_ID = "864898646343811077";
-
-            try {
-                const { data: oldBirthdays } = await supabase.from('birthdays').select('*').like('birth_date', `${yesterdayFormatted}%`);
-                if (oldBirthdays) {
-                    for (const b of oldBirthdays) {
-                        const guild = client.guilds.cache.get(b.guild_id);
-                        if (!guild) continue;
-                        const member = await guild.members.fetch(b.user_id).catch(() => null);
-                        if (member && member.roles.cache.has(BIRTHDAY_ROLE_ID)) {
-                            await member.roles.remove(BIRTHDAY_ROLE_ID).catch(() => {});
-                        }
-                    }
-                }
-
-                const { data: birthdays } = await supabase.from('birthdays').select('*').like('birth_date', `${todayFormatted}%`);
-                if (!birthdays || birthdays.length === 0) return;
-
-                for (const b of birthdays) {
-                    const guild = client.guilds.cache.get(b.guild_id);
-                    if (!guild) continue;
-                    const member = await guild.members.fetch(b.user_id).catch(() => null);
-                    if (member) await member.roles.add(BIRTHDAY_ROLE_ID).catch(() => {});
-
-                    const channel = guild.channels.cache.get(BIRTHDAY_CHANNEL_ID);
-                    if (!channel) continue;
-
-                    const bdayEmbed = new EmbedBuilder()
-                        .setColor('#FF69B4')
-                        .setTitle('🎉 Joyeux Anniversaire ! 🎂')
-                        .setDescription(`Tout le monde souhaite un excellent anniversaire à <@${b.user_id}> ! Passe une merveilleuse journée ! 🎈`)
-                        .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` });
-
-                    await channel.send({ content: `<@&${PING_ROLE_ID}>`, embeds: [bdayEmbed] });
-                }
-            } catch (err) { console.error("Erreur anniversaires :", err); }
-        }
-    }, 60000);
-});
-
-// Événement : Gestion des rôles d'accès
-client.on("guildMemberUpdate", async (oldMember, newMember) => {
-    const ACCESS_ROLE = "1509584318203433001";
-    const TRIGGER_ROLES = ["1269778023826067699", "1533558027825840218"];
-    const hasTriggerRole = TRIGGER_ROLES.some(roleId => newMember.roles.cache.has(roleId));
-    const hasAccessRole = newMember.roles.cache.has(ACCESS_ROLE);
-
-    try {
-        if (hasTriggerRole && !hasAccessRole) await newMember.roles.add(ACCESS_ROLE);
-        if (!hasTriggerRole && hasAccessRole) await newMember.roles.remove(ACCESS_ROLE);
-    } catch (err) { console.error("Erreur rôle d'accès :", err); }
-});
-
-// Événement : Gestion des boosts serveur
-client.on("guildMemberUpdate", async (oldMember, newMember) => {
-    const BOOST_ROLE_ID = "1547695661435195424";
-    const LOG_CHANNEL_ID = "1534224381109076172";
-    const wasBoosting = oldMember.premiumSinceTimestamp !== null;
-    const isBoosting = newMember.premiumSinceTimestamp !== null;
-
-    try {
-        if (!wasBoosting && isBoosting) {
-            if (!newMember.roles.cache.has(BOOST_ROLE_ID)) await newMember.roles.add(BOOST_ROLE_ID);
-            const channel = await client.channels.fetch(LOG_CHANNEL_ID).catch(() => null);
-            if (channel) await channel.send(`Le propriétaire et le staff te remerci beaucoup ${newMember} pour le boost du serveur ! Le rôle de soutien t'a été attribué.`);
-        }
-        if (wasBoosting && !isBoosting) {
-            if (newMember.roles.cache.has(BOOST_ROLE_ID)) await newMember.roles.remove(BOOST_ROLE_ID);
-        }
-    } catch (err) { console.error("Erreur boost :", err); }
-});
-
-// Événement : Gestion du pseudo/tag personnalisé ("GROZ")
-client.on("guildMemberUpdate", async (oldMember, newMember) => {
-    const TAG_ROLE_ID = "1547699213700309072";
-    const TARGET_TAG = "GROZ"; 
-    const oldName = oldMember.nickname || oldMember.user.username;
-    const newName = newMember.nickname || newMember.user.username;
-    const hadTag = oldName.includes(TARGET_TAG);
-    const hasTag = newName.includes(TARGET_TAG);
-
-    try {
-        if (!hadTag && hasTag) {
-            if (!newMember.roles.cache.has(TAG_ROLE_ID)) await newMember.roles.add(TAG_ROLE_ID);
-        }
-        if (hadTag && !hasTag) {
-            if (newMember.roles.cache.has(TAG_ROLE_ID)) await newMember.roles.remove(TAG_ROLE_ID);
-        }
-    } catch (err) { console.error("Erreur tag :", err); }
-});
-
-// Chargement des automatismes externes
-require('./Automatisme/ConfigReminder')(client);
-require('./Automatisme/WelcomeSystem')(client);
-require('./Automatisme/Gbye.js')(client);
-require('./systems/levels/voiceXp')(client);
-
-client.login(process.env.TOKEN).catch(err => {
-    console.error("❌ ERREUR FATALE DE CONNEXION DISCORD :", err);
-});
-
-// Mini serveur HTTP pour satisfaire le port scan de Render (Web Service)
-const express = require('express');
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-app.get('/', (req, res) => {
-    res.send('Le bot Discord est bien en ligne ! 🚀');
-});
-
-app.listen(PORT, () => {
-    console.log(`Serveur web en écoute sur le port ${PORT}`);
-});
+            const yesterdayFormatted = `${y
