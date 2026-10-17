@@ -16,7 +16,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setColor('#2ECC71')
-            .setTitle('🤫 Confessions Anonymes')
+            .setTitle('🤫 Confessions Anonymes / Anonymous Confessions')
             .setDescription(
                 "C'est ici que seront montré les confessions ***__Anonyme__*** ! Ecrivez ce que vous voulez tant que c'est dans le respect. Appuyez sur le bouton 'Confession' pour créer un message en bas du message !\n\n" +
                 "----------------------------------------------\n\n" +
@@ -28,7 +28,7 @@ module.exports = {
             new ButtonBuilder()
                 .setCustomId('btn_open_confession')
                 .setLabel('Confession')
-                .setStyle(ButtonStyle.Success) // Bouton Vert (Success)
+                .setStyle(ButtonStyle.Success)
         );
 
         await channel.send({ embeds: [embed], components: [row] });
