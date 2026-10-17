@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, Collection, ActivityType, Events, MessageFlags, EmbedBuilder, PermissionFlagsBits, ChannelType } = require("discord.js");
+const { Client, GatewayIntentBits, Partials, Collection, ActivityType, Events, MessageFlags, EmbedBuilder, PermissionFlagsBits, ChannelType } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 
@@ -21,6 +21,10 @@ const client = new Client({
         GatewayIntentBits.MessageContent, 
         GatewayIntentBits.GuildVoiceStates,
         GatewayIntentBits.DirectMessages
+    ],
+    partials: [
+        Partials.Channel,  // 👈 OBLIGATOIRE POUR DÉTECTER LES MP D'UTILISATEURS
+        Partials.Message
     ]
 });
 
@@ -132,8 +136,11 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                 const voiceLogEmbed = new EmbedBuilder()
                     .setColor('#2ECC71')
                     .setTitle('Salon vocal temporaire créé !🔊')
-                    .addFields({ name: '👤 Propriétaire', value: `${member.user.tag} (<@${member.id}>)`, inline: true }, { name: '📂 Salon', value: `${tempChannel} (\`${tempChannel.name}\`)`, inline: true })
-                    .setFooter({ text: '\/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛\\' })
+                    .addFields(
+                        { name: '👤 Propriétaire', value: `${member.user.tag} (<@${member.id}>)`, inline: true },
+                        { name: '📂 Salon', value: `${tempChannel} (\`${tempChannel.name}\`)`, inline: true }
+                    )
+                    .setFooter({ text: '/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛\\' })
                     .setTimestamp();
                 await logsChannel.send({ embeds: [voiceLogEmbed] });
             }
@@ -153,8 +160,11 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                     const deleteLogEmbed = new EmbedBuilder()
                         .setColor('#E74C3C')
                         .setTitle('Salon vocal temporaire supprimé !🔇')
-                        .addFields({ name: '📂 Salon', value: `\`${emptyChannel.name}\``, inline: true }, { name: '👤 Propriétaire initial', value: `<@${ownerId}>`, inline: true })
-                        .setFooter({ text: '\/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛\\' })
+                        .addFields(
+                            { name: '📂 Salon', value: `\`${emptyChannel.name}\``, inline: true },
+                            { name: '👤 Propriétaire initial', value: `<@${ownerId}>`, inline: true }
+                        )
+                        .setFooter({ text: '/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛\\' })
                         .setTimestamp();
                     await logsChannel.send({ embeds: [deleteLogEmbed] });
                 }
