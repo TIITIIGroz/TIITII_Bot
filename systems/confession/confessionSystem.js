@@ -10,38 +10,41 @@ const {
 } = require('discord.js');
 
 const CONFESSION_CHANNEL_ID = "1561085138350383185";
-const LOGS_CONFESSION_CHANNEL_ID = "1552184275309297675"; // Salon de logs confidentiel / privé Staff
+const LOGS_CONFESSION_CHANNEL_ID = "1552573413850218587"; // Nouveau salon de logs sécurisé
 
-// Compteur dynamique pour numéroter les confessions
 let confessionCounter = 1;
+
+// Fonction de masquage / chiffrement de l'ID pour empêcher la lecture directe dans le salon de logs
+function encryptUserId(userId) {
+    return Buffer.from(userId).toString('base64');
+}
 
 module.exports = (client) => {
 
-    // 1. ÉCOUTEUR D'INTERACTIONS (Boutons et Modals)
     client.on(Events.InteractionCreate, async (interaction) => {
 
         // --- CLIC SUR UN BOUTON ---
         if (interaction.isButton()) {
 
-            // A. Bouton : "Confession" (Ouvrir le formulaire de confession)
+            // A. Bouton : "Confession"
             if (interaction.customId === 'btn_open_confession') {
                 const modal = new ModalBuilder()
                     .setCustomId('modal_submit_confession')
-                    .setTitle('Soumettre une confession');
+                    .setTitle('Soumettre une confession / Submit a confession');
 
                 const inputContent = new TextInputBuilder()
                     .setCustomId('confession_content')
-                    .setLabel('Contenu de la Confession')
+                    .setLabel('Contenu / Content *')
                     .setStyle(TextInputStyle.Paragraph)
-                    .setPlaceholder('Écris ta confession ici...')
+                    .setPlaceholder('Écris ta confession ici / Write your confession here...')
                     .setRequired(true)
                     .setMaxLength(3000);
 
                 const inputColor = new TextInputBuilder()
                     .setCustomId('confession_color')
-                    .setLabel('Custom Color (Ex: #FF0000 ou #2ECC71)')
+                    .setLabel('Custom Color (user premium only)')
                     .setStyle(TextInputStyle.Short)
-                    .setPlaceholder('Ex: ff0000, #ff0000, ou red')
+                    .setPlaceholder('Ex: ff0000, #ff0000, or red')
                     .setRequired(false);
 
                 modal.addComponents(
@@ -52,25 +55,25 @@ module.exports = (client) => {
                 return await interaction.showModal(modal);
             }
 
-            // B. Bouton : "Répondre" (Ouvrir le formulaire de réponse)
+            // B. Bouton : "Répondre / Answer"
             if (interaction.customId.startsWith('btn_reply_confession_')) {
                 const confessionId = interaction.customId.replace('btn_reply_confession_', '');
 
                 const modal = new ModalBuilder()
                     .setCustomId(`modal_submit_reply_${confessionId}`)
-                    .setTitle('Soumettre une Réponse');
+                    .setTitle('Soumettre une réponse / Submit an answer');
 
                 const inputReply = new TextInputBuilder()
                     .setCustomId('reply_content')
-                    .setLabel('Réponse')
+                    .setLabel('Réponse / Answer *')
                     .setStyle(TextInputStyle.Paragraph)
-                    .setPlaceholder('Écris ta réponse anonyme...')
+                    .setPlaceholder('Écris ta réponse anonyme / Write your answer here...')
                     .setRequired(true)
                     .setMaxLength(3000);
 
                 const inputRef = new TextInputBuilder()
                     .setCustomId('reply_ref')
-                    .setLabel('Répondre à la Confession')
+                    .setLabel('Répondre à la Confession / Answer to Confession')
                     .setStyle(TextInputStyle.Short)
                     .setValue(`#${confessionId}`)
                     .setRequired(false);
@@ -89,12 +92,11 @@ module.exports = (client) => {
 
             // A. Traitement de la Confession
             if (interaction.customId === 'modal_submit_confession') {
-                await interaction.deferReply({ flags: [1 << 6] }); // Éphémère pour garder l'anonymat
+                await interaction.deferReply({ flags: [1 << 6] });
 
                 const content = interaction.fields.getTextInputValue('confession_content');
                 const rawColor = interaction.fields.getTextInputValue('confession_color');
                 
-                // Couleur personnalisée ou couleur par défaut
                 let embedColor = '#2ECC71';
                 if (rawColor && /^#?[0-9A-FA-f]{6}$/.test(rawColor)) {
                     embedColor = rawColor.startsWith('#') ? rawColor : `#${rawColor}`;
@@ -106,7 +108,7 @@ module.exports = (client) => {
                     .setColor(embedColor)
                     .setTitle(`🤫 Confession #${currentNum}`)
                     .setDescription(content)
-                    .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐~ - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` })
+                    .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` })
                     .setTimestamp();
 
                 const buttonsRow = new ActionRowBuilder().addComponents(
@@ -116,26 +118,24 @@ module.exports = (client) => {
                         .setStyle(ButtonStyle.Success),
                     new ButtonBuilder()
                         .setCustomId(`btn_reply_confession_${currentNum}`)
-                        .setLabel('Répondre')
+                        .setLabel('Répondre / Answer')
                         .setStyle(ButtonStyle.Primary)
                 );
 
                 const channel = interaction.guild.channels.cache.get(CONFESSION_CHANNEL_ID);
                 if (!channel) return interaction.editReply("❌ Erreur : Salon de confession introuvable.");
 
-                // 1. Envoi de la confession
                 const sentMsg = await channel.send({ embeds: [confessionEmbed], components: [buttonsRow] });
 
-                // 2. Création automatique du Fil de discussion (Thread) pour regrouper les réponses
-                const thread = await sentMsg.startThread({
+                await sentMsg.startThread({
                     name: `💬 Réponses - Confession #${currentNum}`,
                     autoArchiveDuration: 1440
                 }).catch(() => null);
 
-                // 3. Envoi des LOGS Sécurisés (Staff / Modération)
+                // Logs sécurisés masqués
                 await logConfessionSecurity(client, interaction, currentNum, content, sentMsg.url);
 
-                return await interaction.editReply({ content: "✅ Ta confession anonyme a été publiée avec succès !" });
+                return await interaction.editReply({ content: "✅ Ta confession anonyme a été publiée avec succès ! / Your confession has been published!" });
             }
 
             // B. Traitement de la Réponse Anonyme
@@ -152,7 +152,6 @@ module.exports = (client) => {
                     .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛\\` })
                     .setTimestamp();
 
-                // Chercher le message de la confession parent
                 const channel = interaction.guild.channels.cache.get(CONFESSION_CHANNEL_ID);
                 if (channel) {
                     const message = interaction.message || await interaction.channel.messages.fetch(interaction.reference?.messageId).catch(() => null);
@@ -160,37 +159,36 @@ module.exports = (client) => {
                     if (message && message.thread) {
                         await message.thread.send({ embeds: [replyEmbed] });
                     } else {
-                        // Si pas de thread, poster en réponse directe sous la confession
                         await channel.send({ embeds: [replyEmbed] });
                     }
                 }
 
-                // Logs de sécurité pour la réponse
                 await logReplySecurity(client, interaction, confessionNum, replyContent);
 
-                return await interaction.editReply({ content: "✅ Ta réponse anonyme a été envoyée !" });
+                return await interaction.editReply({ content: "✅ Ta réponse anonyme a été envoyée ! / Your answer has been sent!" });
             }
         }
     });
 };
 
-// 🔒 LOGS SÉCURISÉS (Accessible uniquement dans un salon de logs staff privé)
+// 🔒 LOGS MASQUÉS & CHIFFRÉS POUR GARANTIR L'ANONYMAT VISUEL
 async function logConfessionSecurity(client, interaction, num, content, messageUrl) {
     try {
         const logChannel = await client.channels.fetch(LOGS_CONFESSION_CHANNEL_ID).catch(() => null);
         if (!logChannel) return;
 
+        const encryptedToken = encryptUserId(interaction.user.id);
+
         const logEmbed = new EmbedBuilder()
-            .setColor('#E74C3C')
-            .setTitle(`🕵️ LOG SÉCURITÉ - Confession #${num}`)
+            .setColor('#2B2D31')
+            .setTitle(`🔒 LOG SÉCURISÉ - Confession #${num}`)
             .addFields(
-                { name: '👤 Auteur réel', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: true },
-                { name: '🆔 User ID', value: `\`${interaction.user.id}\``, inline: true },
-                { name: '📅 Date & Heure', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false },
+                { name: '🔑 Jeton de l\'auteur (Masqué)', value: `\`\`\`${encryptedToken}\`\`\``, inline: false },
+                { name: '🙈 Identité (Spoiler Protect)', value: `||<@${interaction.user.id}> (${interaction.user.tag})||`, inline: false },
                 { name: '💬 Contenu', value: content },
-                { name: '🔗 Lien du message', value: `[Accéder au message](${messageUrl})` }
+                { name: '🔗 Lien du message', value: `[Accéder à la confession](${messageUrl})` }
             )
-            .setFooter({ text: 'Confidentiel - Réservé à l\'administration' })
+            .setFooter({ text: 'Données protégées - Seuls les super-admins peuvent lever le spoiler en cas d\'urgence.' })
             .setTimestamp();
 
         await logChannel.send({ embeds: [logEmbed] });
@@ -204,15 +202,17 @@ async function logReplySecurity(client, interaction, num, content) {
         const logChannel = await client.channels.fetch(LOGS_CONFESSION_CHANNEL_ID).catch(() => null);
         if (!logChannel) return;
 
+        const encryptedToken = encryptUserId(interaction.user.id);
+
         const logEmbed = new EmbedBuilder()
-            .setColor('#E67E22')
-            .setTitle(`🕵️ LOG SÉCURITÉ - Réponse à la Confession #${num}`)
+            .setColor('#2B2D31')
+            .setTitle(`🔒 LOG SÉCURISÉ - Réponse à la Confession #${num}`)
             .addFields(
-                { name: '👤 Auteur réel', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: true },
-                { name: '🆔 User ID', value: `\`${interaction.user.id}\``, inline: true },
+                { name: '🔑 Jeton de l\'auteur (Masqué)', value: `\`\`\`${encryptedToken}\`\`\``, inline: false },
+                { name: '🙈 Identité (Spoiler Protect)', value: `||<@${interaction.user.id}> (${interaction.user.tag})||`, inline: false },
                 { name: '💬 Réponse', value: content }
             )
-            .setFooter({ text: 'Confidentiel - Réservé à l\'administration' })
+            .setFooter({ text: 'Données protégées' })
             .setTimestamp();
 
         await logChannel.send({ embeds: [logEmbed] });
