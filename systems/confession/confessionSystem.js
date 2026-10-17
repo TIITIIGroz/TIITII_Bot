@@ -8,25 +8,40 @@ const {
     ButtonStyle, 
     Events 
 } = require('discord.js');
+const crypto = require('crypto');
 
 const CONFESSION_CHANNEL_ID = "1561085138350383185";
-const LOGS_CONFESSION_CHANNEL_ID = "1552573413850218587"; // Nouveau salon de logs sécurisé
+const LOGS_CONFESSION_CHANNEL_ID = "1552573413850218587";
+
+const SECRET_PASSWORD = process.env.CONFESSION_PASSWORD || "TON_MOT_DE_PASSE_SECRET";
 
 let confessionCounter = 1;
+let replyCounter = 1;
 
-// Fonction de masquage / chiffrement de l'ID pour empêcher la lecture directe dans le salon de logs
-function encryptUserId(userId) {
-    return Buffer.from(userId).toString('base64');
+// Stockage sécurisé en mémoire partagée globale
+if (!global.confessionStorage) {
+    global.confessionStorage = new Map();
+}
+
+function encryptUserId(userId, password) {
+    const key = crypto.scryptSync(password, 'salt', 32);
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+    
+    let encrypted = cipher.update(userId, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    const authTag = cipher.getAuthTag().toString('hex');
+    
+    return `${iv.toString('hex')}:${authTag}:${encrypted}`;
 }
 
 module.exports = (client) => {
 
     client.on(Events.InteractionCreate, async (interaction) => {
 
-        // --- CLIC SUR UN BOUTON ---
+        // --- CLIC SUR BOUTON ---
         if (interaction.isButton()) {
 
-            // A. Bouton : "Confession"
             if (interaction.customId === 'btn_open_confession') {
                 const modal = new ModalBuilder()
                     .setCustomId('modal_submit_confession')
@@ -55,7 +70,6 @@ module.exports = (client) => {
                 return await interaction.showModal(modal);
             }
 
-            // B. Bouton : "Répondre / Answer"
             if (interaction.customId.startsWith('btn_reply_confession_')) {
                 const confessionId = interaction.customId.replace('btn_reply_confession_', '');
 
@@ -87,10 +101,10 @@ module.exports = (client) => {
             }
         }
 
-        // --- SOUMISSION DE FORMULAIRE (MODAL) ---
+        // --- SOUMISSION DU FORMULAIRE ---
         if (interaction.isModalSubmit()) {
 
-            // A. Traitement de la Confession
+            // Confession
             if (interaction.customId === 'modal_submit_confession') {
                 await interaction.deferReply({ flags: [1 << 6] });
 
@@ -103,6 +117,7 @@ module.exports = (client) => {
                 }
 
                 const currentNum = confessionCounter++;
+                const codeName = `confess-${currentNum}`;
 
                 const confessionEmbed = new EmbedBuilder()
                     .setColor(embedColor)
@@ -132,18 +147,29 @@ module.exports = (client) => {
                     autoArchiveDuration: 1440
                 }).catch(() => null);
 
-                // Logs sécurisés masqués
-                await logConfessionSecurity(client, interaction, currentNum, content, sentMsg.url);
+                // Enregistrement chiffré + métadonnées (contenu et URL)
+                const encryptedUserId = encryptUserId(interaction.user.id, SECRET_PASSWORD);
+                global.confessionStorage.set(codeName, {
+                    encryptedUserId: encryptedUserId,
+                    content: content,
+                    url: sentMsg.url
+                });
+
+                // Log dans le salon privé
+                await logConfessionEncrypted(client, codeName, content, sentMsg.url);
 
                 return await interaction.editReply({ content: "✅ Ta confession anonyme a été publiée avec succès ! / Your confession has been published!" });
             }
 
-            // B. Traitement de la Réponse Anonyme
+            // Réponse
             if (interaction.customId.startsWith('modal_submit_reply_')) {
                 await interaction.deferReply({ flags: [1 << 6] });
 
                 const confessionNum = interaction.customId.replace('modal_submit_reply_', '');
                 const replyContent = interaction.fields.getTextInputValue('reply_content');
+
+                const replyNum = replyCounter++;
+                const codeName = `reply-${replyNum}`;
 
                 const replyEmbed = new EmbedBuilder()
                     .setColor('#3498DB')
@@ -153,17 +179,28 @@ module.exports = (client) => {
                     .setTimestamp();
 
                 const channel = interaction.guild.channels.cache.get(CONFESSION_CHANNEL_ID);
+                let replyMsg = null;
                 if (channel) {
                     const message = interaction.message || await interaction.channel.messages.fetch(interaction.reference?.messageId).catch(() => null);
                     
                     if (message && message.thread) {
-                        await message.thread.send({ embeds: [replyEmbed] });
+                        replyMsg = await message.thread.send({ embeds: [replyEmbed] });
                     } else {
-                        await channel.send({ embeds: [replyEmbed] });
+                        replyMsg = await channel.send({ embeds: [replyEmbed] });
                     }
                 }
 
-                await logReplySecurity(client, interaction, confessionNum, replyContent);
+                const replyUrl = replyMsg ? replyMsg.url : null;
+
+                // Enregistrement chiffré + métadonnées
+                const encryptedUserId = encryptUserId(interaction.user.id, SECRET_PASSWORD);
+                global.confessionStorage.set(codeName, {
+                    encryptedUserId: encryptedUserId,
+                    content: replyContent,
+                    url: replyUrl
+                });
+
+                await logReplyEncrypted(client, codeName, confessionNum, replyContent, replyUrl);
 
                 return await interaction.editReply({ content: "✅ Ta réponse anonyme a été envoyée ! / Your answer has been sent!" });
             }
@@ -171,24 +208,20 @@ module.exports = (client) => {
     });
 };
 
-// 🔒 LOGS MASQUÉS & CHIFFRÉS POUR GARANTIR L'ANONYMAT VISUEL
-async function logConfessionSecurity(client, interaction, num, content, messageUrl) {
+async function logConfessionEncrypted(client, codeName, content, messageUrl) {
     try {
         const logChannel = await client.channels.fetch(LOGS_CONFESSION_CHANNEL_ID).catch(() => null);
         if (!logChannel) return;
 
-        const encryptedToken = encryptUserId(interaction.user.id);
-
         const logEmbed = new EmbedBuilder()
             .setColor('#2B2D31')
-            .setTitle(`🔒 LOG SÉCURISÉ - Confession #${num}`)
+            .setTitle(`🔒 LOG SÉCURISÉ - ${codeName}`)
             .addFields(
-                { name: '🔑 Jeton de l\'auteur (Masqué)', value: `\`\`\`${encryptedToken}\`\`\``, inline: false },
-                { name: '🙈 Identité (Spoiler Protect)', value: `||<@${interaction.user.id}> (${interaction.user.tag})||`, inline: false },
                 { name: '💬 Contenu', value: content },
-                { name: '🔗 Lien du message', value: `[Accéder à la confession](${messageUrl})` }
+                { name: '🔗 Lien', value: `[Voir la confession](${messageUrl})` },
+                { name: '🔑 Code d\'identification', value: `\`\`\`${codeName}\`\`\`` }
             )
-            .setFooter({ text: 'Données protégées - Seuls les super-admins peuvent lever le spoiler en cas d\'urgence.' })
+            .setFooter({ text: 'Utilisez /reveal avec ce code et le mot de passe secret pour voir l\'auteur.' })
             .setTimestamp();
 
         await logChannel.send({ embeds: [logEmbed] });
@@ -197,22 +230,20 @@ async function logConfessionSecurity(client, interaction, num, content, messageU
     }
 }
 
-async function logReplySecurity(client, interaction, num, content) {
+async function logReplyEncrypted(client, codeName, confessionNum, content, messageUrl) {
     try {
         const logChannel = await client.channels.fetch(LOGS_CONFESSION_CHANNEL_ID).catch(() => null);
         if (!logChannel) return;
 
-        const encryptedToken = encryptUserId(interaction.user.id);
-
         const logEmbed = new EmbedBuilder()
             .setColor('#2B2D31')
-            .setTitle(`🔒 LOG SÉCURISÉ - Réponse à la Confession #${num}`)
+            .setTitle(`🔒 LOG SÉCURISÉ - ${codeName} (Réponse à #${confessionNum})`)
             .addFields(
-                { name: '🔑 Jeton de l\'auteur (Masqué)', value: `\`\`\`${encryptedToken}\`\`\``, inline: false },
-                { name: '🙈 Identité (Spoiler Protect)', value: `||<@${interaction.user.id}> (${interaction.user.tag})||`, inline: false },
-                { name: '💬 Réponse', value: content }
+                { name: '💬 Réponse', value: content },
+                { name: '🔗 Lien', value: messageUrl ? `[Voir la réponse](${messageUrl})` : "N/A" },
+                { name: '🔑 Code d\'identification', value: `\`\`\`${codeName}\`\`\`` }
             )
-            .setFooter({ text: 'Données protégées' })
+            .setFooter({ text: 'Utilisez /reveal avec ce code et le mot de passe secret pour voir l\'auteur.' })
             .setTimestamp();
 
         await logChannel.send({ embeds: [logEmbed] });
