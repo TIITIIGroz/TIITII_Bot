@@ -89,17 +89,20 @@ client.on(Events.InteractionCreate, async interaction => {
 client.on(Events.MessageCreate, async (message) => {
     // Transférer les messages reçus en MP vers le salon spécifié
     if (message.guild === null && !message.author.bot) {
-        const LOG_DM_CHANNEL_ID = "1552184275309297675";
-        try {
-            const targetChannel = await client.channels.fetch(LOG_DM_CHANNEL_ID).catch(() => null);
-            if (targetChannel) {
-                await targetChannel.send(`📥 **Nouveau MP reçu de** ${message.author.tag} (\`${message.author.id}\`) :\n> ${message.content}`);
-            }
-        } catch (err) {
-            console.error("Erreur transfert MP :", err);
+    const LOG_DM_CHANNEL_ID = "1552184275309297675";
+    try {
+        const targetChannel = await client.channels.fetch(LOG_DM_CHANNEL_ID).catch(() => null);
+        if (targetChannel) {
+            const timestamp = Math.floor(Date.now() / 1000);
+            await targetChannel.send(
+                `📥 **Nouveau MP reçu le <t:${timestamp}:F> (<t:${timestamp}:R>) de** ${message.author.tag} (\`${message.author.id}\`) :\n> ${message.content}`
+            );
         }
-        return;
+    } catch (err) {
+        console.error("Erreur transfert MP :", err);
     }
+    return;
+}
 
     await handleXpMessage(message, client);
 });
