@@ -36,8 +36,8 @@ function encryptUserId(userId, password) {
 }
 
 // Convertisseur de couleurs basiques (hex ou noms)
-function parseColor(inputColor) {
-    if (!inputColor) return '#2ECC71';
+function parseColor(inputColor, defaultColor = '#2ECC71') {
+    if (!inputColor) return defaultColor;
     const colorLower = inputColor.trim().toLowerCase();
     const colorMap = {
         'red': '#FF0000',
@@ -64,7 +64,7 @@ function parseColor(inputColor) {
     if (/^#?[0-9A-Fa-f]{6}$/.test(colorLower)) {
         return colorLower.startsWith('#') ? colorLower : `#${colorLower}`;
     }
-    return '#2ECC71';
+    return defaultColor;
 }
 
 module.exports = (client) => {
@@ -125,16 +125,24 @@ module.exports = (client) => {
                     .setRequired(true)
                     .setMaxLength(3000);
 
-                const inputRef = new TextInputBuilder()
-                    .setCustomId('reply_ref')
-                    .setLabel('Réponse Confession / Answer to Confession')
+                const inputColor = new TextInputBuilder()
+                    .setCustomId('reply_color')
+                    .setLabel('Custom Color')
                     .setStyle(TextInputStyle.Short)
-                    .setValue(`#${confessionId}`)
+                    .setPlaceholder('Ex: ff0000, #ff0000, red, bleu, etc.')
+                    .setRequired(false);
+
+                const inputMedia = new TextInputBuilder()
+                    .setCustomId('reply_media')
+                    .setLabel('Lien Fichier / Media Link (Optionnel)')
+                    .setStyle(TextInputStyle.Short)
+                    .setPlaceholder('Lien direct image/vidéo (https://...)')
                     .setRequired(false);
 
                 modal.addComponents(
                     new ActionRowBuilder().addComponents(inputReply),
-                    new ActionRowBuilder().addComponents(inputRef)
+                    new ActionRowBuilder().addComponents(inputColor),
+                    new ActionRowBuilder().addComponents(inputMedia)
                 );
 
                 return await interaction.showModal(modal);
@@ -152,7 +160,7 @@ module.exports = (client) => {
                 const rawColor = interaction.fields.getTextInputValue('confession_color');
                 const mediaUrl = interaction.fields.getTextInputValue('confession_media');
                 
-                const embedColor = parseColor(rawColor);
+                const embedColor = parseColor(rawColor, '#2ECC71');
 
                 const currentNum = confessionCounter++;
                 const codeName = `confess-${currentNum}`;
@@ -161,8 +169,7 @@ module.exports = (client) => {
                     .setColor(embedColor)
                     .setTitle(`🤫 Confession #${currentNum}`)
                     .setDescription(content)
-                    .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` })
-                    .setTimestamp();
+                    .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` });
 
                 if (mediaUrl && (mediaUrl.startsWith('http://') || mediaUrl.startsWith('https://'))) {
                     confessionEmbed.setImage(mediaUrl);
@@ -209,16 +216,24 @@ module.exports = (client) => {
 
                 const confessionNum = interaction.customId.replace('modal_submit_reply_', '');
                 const replyContent = interaction.fields.getTextInputValue('reply_content');
+                const rawColor = interaction.fields.getTextInputValue('reply_color');
+                const mediaUrl = interaction.fields.getTextInputValue('reply_media');
+
+                const embedColor = parseColor(rawColor, '#3498DB');
 
                 const replyNum = replyCounter++;
                 const codeName = `reply-${replyNum}`;
 
                 const replyEmbed = new EmbedBuilder()
-                    .setColor('#3498DB')
+                    .setColor(embedColor)
                     .setTitle(`💬 Réponse Anonyme à la Confession #${confessionNum}`)
                     .setDescription(replyContent)
                     .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛` })
                     .setTimestamp();
+
+                if (mediaUrl && (mediaUrl.startsWith('http://') || mediaUrl.startsWith('https://'))) {
+                    replyEmbed.setImage(mediaUrl);
+                }
 
                 const channel = interaction.guild.channels.cache.get(CONFESSION_CHANNEL_ID);
                 let replyMsg = null;
@@ -242,7 +257,7 @@ module.exports = (client) => {
                     url: replyUrl
                 });
 
-                await logReplyEncrypted(client, codeName, confessionNum, replyContent, replyUrl);
+                await logReplyEncrypted(client, codeName, confessionNum, replyContent, replyUrl, mediaUrl);
 
                 return await interaction.editReply({ content: "✅ Ta réponse anonyme a été envoyée ! / Your answer has been sent!" });
             }
@@ -276,7 +291,7 @@ async function logConfessionEncrypted(client, codeName, content, messageUrl, med
     }
 }
 
-async function logReplyEncrypted(client, codeName, confessionNum, content, messageUrl) {
+async function logReplyEncrypted(client, codeName, confessionNum, content, messageUrl, mediaUrl) {
     try {
         const logChannel = await client.channels.fetch(LOGS_CONFESSION_CHANNEL_ID).catch(() => null);
         if (!logChannel) return;
@@ -291,6 +306,10 @@ async function logReplyEncrypted(client, codeName, confessionNum, content, messa
             )
             .setFooter({ text: 'Utilisez /reveal avec ce code et le mot de passe secret pour voir l\'auteur.' })
             .setTimestamp();
+
+        if (mediaUrl) {
+            logEmbed.addFields({ name: '📎 Fichier / Média joint', value: mediaUrl });
+        }
 
         await logChannel.send({ embeds: [logEmbed] });
     } catch (err) {
