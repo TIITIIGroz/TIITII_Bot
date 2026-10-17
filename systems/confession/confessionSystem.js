@@ -15,8 +15,13 @@ const LOGS_CONFESSION_CHANNEL_ID = "1561152254520590449";
 
 const SECRET_PASSWORD = process.env.CONFESSION_PASSWORD || "4321confession";
 
-let confessionCounter = 1;
-let replyCounter = 1;
+// Persistance des compteurs dans l'environnement global Node.js
+if (global.confessionCounter === undefined) {
+    global.confessionCounter = 1;
+}
+if (global.replyCounter === undefined) {
+    global.replyCounter = 1;
+}
 
 // Stockage sécurisé en mémoire partagée globale
 if (!global.confessionStorage) {
@@ -87,6 +92,14 @@ module.exports = (client) => {
                     .setRequired(true)
                     .setMaxLength(3000);
 
+                const inputCode = new TextInputBuilder()
+                    .setCustomId('confession_code')
+                    .setLabel('Code (Obligatoire / Required) *')
+                    .setStyle(TextInputStyle.Short)
+                    .setPlaceholder('Ex: secret123, monCode, etc.')
+                    .setRequired(true)
+                    .setMaxLength(50);
+
                 const inputColor = new TextInputBuilder()
                     .setCustomId('confession_color')
                     .setLabel('Custom Color')
@@ -103,6 +116,7 @@ module.exports = (client) => {
 
                 modal.addComponents(
                     new ActionRowBuilder().addComponents(inputContent),
+                    new ActionRowBuilder().addComponents(inputCode),
                     new ActionRowBuilder().addComponents(inputColor),
                     new ActionRowBuilder().addComponents(inputMedia)
                 );
@@ -125,6 +139,14 @@ module.exports = (client) => {
                     .setRequired(true)
                     .setMaxLength(3000);
 
+                const inputCode = new TextInputBuilder()
+                    .setCustomId('reply_code')
+                    .setLabel('Code (Obligatoire / Required) *')
+                    .setStyle(TextInputStyle.Short)
+                    .setPlaceholder('Ex: rep123, secretCode, etc.')
+                    .setRequired(true)
+                    .setMaxLength(50);
+
                 const inputColor = new TextInputBuilder()
                     .setCustomId('reply_color')
                     .setLabel('Custom Color')
@@ -141,6 +163,7 @@ module.exports = (client) => {
 
                 modal.addComponents(
                     new ActionRowBuilder().addComponents(inputReply),
+                    new ActionRowBuilder().addComponents(inputCode),
                     new ActionRowBuilder().addComponents(inputColor),
                     new ActionRowBuilder().addComponents(inputMedia)
                 );
@@ -157,13 +180,14 @@ module.exports = (client) => {
                 await interaction.deferReply({ flags: [1 << 6] });
 
                 const content = interaction.fields.getTextInputValue('confession_content');
+                const userCode = interaction.fields.getTextInputValue('confession_code').toLowerCase().trim();
                 const rawColor = interaction.fields.getTextInputValue('confession_color');
                 const mediaUrl = interaction.fields.getTextInputValue('confession_media');
                 
                 const embedColor = parseColor(rawColor, '#2ECC71');
 
-                const currentNum = confessionCounter++;
-                const codeName = `confess-${currentNum}`;
+                // Incrémentation globale du numéro de confession
+                const currentNum = global.confessionCounter++;
 
                 const confessionEmbed = new EmbedBuilder()
                     .setColor(embedColor)
@@ -196,16 +220,16 @@ module.exports = (client) => {
                     autoArchiveDuration: 1440
                 }).catch(() => null);
 
-                // Enregistrement chiffré + métadonnées
+                // Enregistrement chiffré sous le code choisi par l'utilisateur
                 const encryptedUserId = encryptUserId(interaction.user.id, SECRET_PASSWORD);
-                global.confessionStorage.set(codeName, {
+                global.confessionStorage.set(userCode, {
                     encryptedUserId: encryptedUserId,
                     content: content,
                     url: sentMsg.url
                 });
 
-                // Log dans le salon privé
-                await logConfessionEncrypted(client, codeName, content, sentMsg.url, mediaUrl);
+                // Log dans le salon privé avec le code choisi
+                await logConfessionEncrypted(client, userCode, content, sentMsg.url, mediaUrl);
 
                 return await interaction.editReply({ content: "✅ Ta confession anonyme a été publiée avec succès ! / Your confession has been published!" });
             }
@@ -216,13 +240,13 @@ module.exports = (client) => {
 
                 const confessionNum = interaction.customId.replace('modal_submit_reply_', '');
                 const replyContent = interaction.fields.getTextInputValue('reply_content');
+                const userCode = interaction.fields.getTextInputValue('reply_code').toLowerCase().trim();
                 const rawColor = interaction.fields.getTextInputValue('reply_color');
                 const mediaUrl = interaction.fields.getTextInputValue('reply_media');
 
                 const embedColor = parseColor(rawColor, '#3498DB');
 
-                const replyNum = replyCounter++;
-                const codeName = `reply-${replyNum}`;
+                const replyNum = global.replyCounter++;
 
                 const replyEmbed = new EmbedBuilder()
                     .setColor(embedColor)
@@ -249,15 +273,15 @@ module.exports = (client) => {
 
                 const replyUrl = replyMsg ? replyMsg.url : null;
 
-                // Enregistrement chiffré + métadonnées
+                // Enregistrement chiffré sous le code choisi
                 const encryptedUserId = encryptUserId(interaction.user.id, SECRET_PASSWORD);
-                global.confessionStorage.set(codeName, {
+                global.confessionStorage.set(userCode, {
                     encryptedUserId: encryptedUserId,
                     content: replyContent,
                     url: replyUrl
                 });
 
-                await logReplyEncrypted(client, codeName, confessionNum, replyContent, replyUrl, mediaUrl);
+                await logReplyEncrypted(client, userCode, confessionNum, replyContent, replyUrl, mediaUrl);
 
                 return await interaction.editReply({ content: "✅ Ta réponse anonyme a été envoyée ! / Your answer has been sent!" });
             }
@@ -272,7 +296,7 @@ async function logConfessionEncrypted(client, codeName, content, messageUrl, med
 
         const logEmbed = new EmbedBuilder()
             .setColor('#2B2D31')
-            .setTitle(`🔒 LOG SÉCURISÉ - ${codeName}`)
+            .setTitle(`🔒 LOG SÉCURISÉ - Code: ${codeName}`)
             .addFields(
                 { name: '💬 Contenu', value: content },
                 { name: '🔗 Lien', value: `[Voir la confession](${messageUrl})` },
@@ -298,7 +322,7 @@ async function logReplyEncrypted(client, codeName, confessionNum, content, messa
 
         const logEmbed = new EmbedBuilder()
             .setColor('#2B2D31')
-            .setTitle(`🔒 LOG SÉCURISÉ - ${codeName} (Réponse à #${confessionNum})`)
+            .setTitle(`🔒 LOG SÉCURISÉ - Code: ${codeName} (Réponse à #${confessionNum})`)
             .addFields(
                 { name: '💬 Réponse', value: content },
                 { name: '🔗 Lien', value: messageUrl ? `[Voir la réponse](${messageUrl})` : "N/A" },
