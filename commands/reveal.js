@@ -79,8 +79,7 @@ module.exports = {
                     { name: '🆔 User ID', value: `\`${user.id}\``, inline: true },
                     { name: '💬 Contenu', value: record.content || "*Aucun contenu disponible*", inline: false }
                 )
-                .setFooter({ text: 'Information confidentielle - Usage administratif' })
-                .setTimestamp();
+                .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\ Information confidentielle - Usage administratif` })
 
             if (record.url) {
                 embed.addFields({ name: '🔗 Lien du message', value: `[Accéder au message](${record.url})`, inline: false });
