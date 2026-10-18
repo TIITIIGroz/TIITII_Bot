@@ -3,7 +3,7 @@ const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRow
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('giveaway')
-        .setDescription('Lance un concours / Start a giveaway')
+        .setDescription('Lance un concours')
         .addStringOption(option =>
             option.setName('lot')
                 .setDescription('Ce qui est à gagner / What is the prize')
