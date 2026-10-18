@@ -29,6 +29,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('reveal')
         .setDescription('Déchiffre l\'identité de l\'auteur d\'une confession ou d\'une réponse')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addStringOption(option =>
             option.setName('code')
                 .setDescription('Le code saisi lors de la confession')
