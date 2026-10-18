@@ -41,6 +41,9 @@ module.exports = {
         "1534224381109076172", // Bot choses à faire
         "1547857175878041630", // Config.js
         "1534599616681607388", // Infos Modifications
+        "1552184275309297675", // MP
+        "1552573413850218587", // Logs 
+        "1561152254520590449", // Logs confession
 
         //Catégorie notifications
         "1538731113277689976", // Réseaux Links
@@ -56,6 +59,7 @@ module.exports = {
         "1263628374388113560", // Guides
         "896311964861620266", // Guides Roles
         "1534243455952224359", // Le truc de miel pour bot
+        "1561112527616741427", // Guide Bto    
         
         //Catégorie Création
         "1085589773877518506", // Créer Salons 
