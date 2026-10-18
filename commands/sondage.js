@@ -1,10 +1,13 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, PermissionFlagsBits } = require('discord.js');
+
+const ADMIN_ROLE_IDS = ['894668340902125618', '1012357140679229511', '894669520902451220'];
+const ADMIN_USER_IDS = ['913798085686198292', '707665614067728464'];
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('sondage')
         .setDescription('Crée un sondage interactif.')
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addStringOption(option =>
             option.setName('question')
                 .setDescription('La question du sondage')
@@ -32,6 +35,9 @@ module.exports = {
         ),
 
     async execute(interaction) {
+        const isAdmin = ADMIN_USER_IDS.includes(interaction.user.id) || interaction.member.roles.cache.some(r => ADMIN_ROLE_IDS.includes(r.id));
+        if (!isAdmin) return interaction.reply({ content: "❌ Seuls les administrateurs peuvent utiliser cette commande.", flags: [MessageFlags.Ephemeral] });
+
         const question = interaction.options.getString('question');
         const choices = [
             interaction.options.getString('choix1'),
@@ -58,8 +64,7 @@ module.exports = {
                 .setColor('#57F287')
                 .setTitle(`📊 Sondage : ${question}`)
                 .setDescription(description)
-                .setFooter({ text: `Sondage lancé par ${interaction.user.tag}` })
-                .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` })
+                .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` });
         };
 
         const generateRow = () => {
