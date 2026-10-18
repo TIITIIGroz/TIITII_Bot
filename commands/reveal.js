@@ -1,13 +1,16 @@
 const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 const crypto = require('crypto');
+const Confession = require('../models/Confession');
 
-const SECRET_PASSWORD = process.env.CONFESSION_PASSWORD || "TON_MOT_DE_PASSE_SECRET";
+const SECRET_PASSWORD = process.env.CONFESSION_PASSWORD || "4321confession";
 
 function decryptData(encryptedData, password) {
     try {
         const key = crypto.scryptSync(password, 'salt', 32);
         const [ivHex, authTagHex, encryptedText] = encryptedData.split(':');
         
+        if (!ivHex || !authTagHex || !encryptedText) return null;
+
         const iv = Buffer.from(ivHex, 'hex');
         const authTag = Buffer.from(authTagHex, 'hex');
         const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
@@ -28,7 +31,7 @@ module.exports = {
         .setDescription('Déchiffre l\'identité de l\'auteur d\'une confession ou d\'une réponse')
         .addStringOption(option =>
             option.setName('code')
-                .setDescription('Le numéro de la confession (ex: confess-1 ou reply-1)')
+                .setDescription('Le code saisi lors de la confession')
                 .setRequired(true))
         .addStringOption(option =>
             option.setName('password')
@@ -36,31 +39,32 @@ module.exports = {
                 .setRequired(true)),
 
     async execute(interaction) {
-        const code = interaction.options.getString('code').toLowerCase().trim();
-        const password = interaction.options.getString('password');
+        const userCode = interaction.options.getString('code').toLowerCase().trim();
+        const inputPassword = interaction.options.getString('password');
 
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
-        // Vérification du mot de passe
-        if (password !== SECRET_PASSWORD) {
+        // 1. Vérification du mot de passe fourni
+        if (inputPassword !== SECRET_PASSWORD) {
             return await interaction.editReply({
                 content: "❌ **Échec du déchiffrement !** Le mot de passe fourni est incorrect."
             });
         }
 
-        const confessionMap = global.confessionStorage;
-        if (!confessionMap || !confessionMap.has(code)) {
+        // 2. Recherche dans la base de données MongoDB
+        const record = await Confession.findOne({ code: userCode });
+        if (!record) {
             return await interaction.editReply({
-                content: `❌ **Code introuvable !** Aucune confession ou réponse enregistrée sous l'identifiant \`${code}\`.`
+                content: `❌ **Code introuvable !** Aucun enregistrement trouvé dans la base de données pour le code \`${userCode}\`.`
             });
         }
 
-        const record = confessionMap.get(code); // { encryptedUserId, content, url }
-        const decryptedUserId = decryptData(record.encryptedUserId, password);
+        // 3. Déchiffrement de l'ID utilisateur
+        const decryptedUserId = decryptData(record.encryptedUserId, inputPassword);
 
         if (!decryptedUserId) {
             return await interaction.editReply({
-                content: "❌ **Erreur de déchiffrement !** Impossible d'extraire les données."
+                content: "❌ **Erreur de déchiffrement !** La clé de chiffrement est invalide ou corrompue."
             });
         }
 
@@ -69,7 +73,7 @@ module.exports = {
             
             const embed = new EmbedBuilder()
                 .setColor('#2ECC71')
-                .setTitle(`🔓 Identité Déchiffrée (${code})`)
+                .setTitle(`🔓 Identité Déchiffrée (Code: ${userCode})`)
                 .addFields(
                     { name: '👤 Utilisateur', value: `${user.tag} (<@${user.id}>)`, inline: true },
                     { name: '🆔 User ID', value: `\`${user.id}\``, inline: true },
@@ -85,7 +89,7 @@ module.exports = {
             return await interaction.editReply({ embeds: [embed] });
         } catch (err) {
             return await interaction.editReply({
-                content: `✅ **ID trouvé pour ${code} :** \`${decryptedUserId}\`\n💬 **Contenu :** ${record.content}\n🔗 **Lien :** ${record.url || 'Non spécifié'}`
+                content: `✅ **ID trouvé pour \`${userCode}\` :** \`${decryptedUserId}\`\n💬 **Contenu :** ${record.content}\n🔗 **Lien :** ${record.url || 'Non spécifié'}`
             });
         }
     }
