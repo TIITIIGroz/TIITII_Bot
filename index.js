@@ -7,6 +7,18 @@ process.on('unhandledRejection', error => {
     console.error('❌ Erreur non gérée (Unhandled Rejection) :', error);
 });
 
+// Connexion à la base de données MongoDB Atlas
+const mongoose = require('mongoose');
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (MONGODB_URI) {
+    mongoose.connect(MONGODB_URI)
+        .then(() => console.log('🍃 Connecté à la base de données MongoDB Atlas !'))
+        .catch(err => console.error('❌ Erreur de connexion MongoDB :', err));
+} else {
+    console.log("⚠️ MONGODB_URI n'est pas définie dans les variables d'environnement.");
+}
+
 // Import des systèmes, de Supabase & de la BDD PostgreSQL (pool)
 const { handleXpMessage } = require("./systems/levels/xp");
 const supabase = require("./supabase"); 
