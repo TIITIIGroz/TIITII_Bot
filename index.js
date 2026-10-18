@@ -81,7 +81,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
     if (interaction.channelId !== ALLOWED_CHANNEL_ID && !hasAdminRole && !isSpecialUser) {
         return interaction.reply({
-            content: `❌ Vous n'avez pas les permissions pour faire les commandes dans ce salon, écrivez votre commande dans le salon <#${ALLOWED_CHANNEL_ID}>`,
+            content: `❌ Vous n'avez pas les permissions pour utiliser les commandes dans ce salon, veuillez les effectuer dans <#${ALLOWED_CHANNEL_ID}>\n----------------------------------------------\n*You do not have permission to use commands in this channel, please use them in <#${ALLOWED_CHANNEL_ID}>*`,
             flags: [MessageFlags.Ephemeral]
         });
     }
