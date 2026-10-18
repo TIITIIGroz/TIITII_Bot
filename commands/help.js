@@ -30,14 +30,13 @@ module.exports = {
 
         // 📝 TON ORDRE PERSONNALISÉ STRICT (Modifie l'ordre ici comme tu veux)
         const customOrder = [
-            'help',
             'links',
+            'rank',
+            'leaderboard',
             'statut',
             'statut-serv',
             'stats',
             'stats-serv',
-            'rank',
-            'leaderboard',
             'voice-access',
             'voice-hide',
             'bday-add',
