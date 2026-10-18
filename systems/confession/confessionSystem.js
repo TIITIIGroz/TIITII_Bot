@@ -16,14 +16,6 @@ const LOGS_CONFESSION_CHANNEL_ID = "1561152254520590449";
 
 const SECRET_PASSWORD = process.env.CONFESSION_PASSWORD || "4321confession";
 
-// Persistance globale en mémoire pour la session de numéro d'embed
-if (global.confessionCounter === undefined) {
-    global.confessionCounter = 1;
-}
-if (global.replyCounter === undefined) {
-    global.replyCounter = 1;
-}
-
 function encryptUserId(userId, password) {
     const key = crypto.scryptSync(password, 'salt', 32);
     const iv = crypto.randomBytes(16);
@@ -189,13 +181,14 @@ module.exports = (client) => {
                 }
 
                 const embedColor = parseColor(rawColor, '#2ECC71');
-                const currentNum = global.confessionCounter++;
+                const totalCount = await Confession.countDocuments();
+                const currentNum = totalCount + 1;
 
                 const confessionEmbed = new EmbedBuilder()
                     .setColor(embedColor)
                     .setTitle(`🤫 Confession #${currentNum}`)
                     .setDescription(content)
-                    .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` });
+                    .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` });
 
                 if (mediaUrl && (mediaUrl.startsWith('http://') || mediaUrl.startsWith('https://'))) {
                     confessionEmbed.setImage(mediaUrl);
@@ -256,13 +249,12 @@ module.exports = (client) => {
                 }
 
                 const embedColor = parseColor(rawColor, '#3498DB');
-                const replyNum = global.replyCounter++;
 
                 const replyEmbed = new EmbedBuilder()
                     .setColor(embedColor)
                     .setTitle(`💬 Réponse Anonyme à la Confession #${confessionNum}`)
                     .setDescription(replyContent)
-                    .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` });
+                    .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` });
 
                 if (mediaUrl && (mediaUrl.startsWith('http://') || mediaUrl.startsWith('https://'))) {
                     replyEmbed.setImage(mediaUrl);
@@ -338,8 +330,8 @@ async function logReplyEncrypted(client, codeName, confessionNum, content, messa
                 { name: '🔗 Lien', value: messageUrl ? `[Voir la réponse](${messageUrl})` : "N/A" },
                 { name: '🔑 Code d\'identification', value: `\`\`\`${codeName}\`\`\`` }
             )
-            .setFooter({ text: 'Utilisez /reveal avec ce code et le mot de passe secret pour voir l\'auteur.' };
-
+            .setFooter({ text: 'Utilisez /reveal avec ce code et le mot de passe secret pour voir l\'auteur.' })
+            .setTimestamp();
 
         if (mediaUrl) {
             logEmbed.addFields({ name: '📎 Fichier / Média joint', value: mediaUrl });
