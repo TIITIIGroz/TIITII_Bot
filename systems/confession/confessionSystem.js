@@ -14,7 +14,7 @@ const Confession = require('../../models/Confession');
 const CONFESSION_CHANNEL_ID = "1561085138350383185";
 const LOGS_CONFESSION_CHANNEL_ID = "1561152254520590449";
 
-const SECRET_PASSWORD = process.env.CONFESSION_PASSWORD || "4321confession";
+const SECRET_PASSWORD = process.env.CONFESSION_PASSWORD;
 
 function encryptUserId(userId, password) {
     const key = crypto.scryptSync(password, 'salt', 32);
