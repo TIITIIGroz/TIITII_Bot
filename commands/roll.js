@@ -30,7 +30,7 @@ module.exports = {
             .setColor('#2ECC71')
             .setTitle('🎲 Nombre Aléatoire / Random Number')
             .setDescription(`Résultat / Result : **${result}** (Entre ${min} et ${max})`)
-            .setTimestamp();
+            .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` })
 
         await interaction.reply({ embeds: [embed] });
     },
