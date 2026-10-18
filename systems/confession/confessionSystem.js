@@ -9,23 +9,19 @@ const {
     Events 
 } = require('discord.js');
 const crypto = require('crypto');
+const Confession = require('../../models/Confession');
 
 const CONFESSION_CHANNEL_ID = "1561085138350383185";
 const LOGS_CONFESSION_CHANNEL_ID = "1561152254520590449";
 
 const SECRET_PASSWORD = process.env.CONFESSION_PASSWORD || "4321confession";
 
-// Persistance des compteurs dans l'environnement global Node.js
+// Persistance globale en mémoire pour la session de numéro d'embed
 if (global.confessionCounter === undefined) {
     global.confessionCounter = 1;
 }
 if (global.replyCounter === undefined) {
     global.replyCounter = 1;
-}
-
-// Stockage sécurisé en mémoire partagée globale
-if (!global.confessionStorage) {
-    global.confessionStorage = new Map();
 }
 
 function encryptUserId(userId, password) {
@@ -184,16 +180,22 @@ module.exports = (client) => {
                 const rawColor = interaction.fields.getTextInputValue('confession_color');
                 const mediaUrl = interaction.fields.getTextInputValue('confession_media');
                 
-                const embedColor = parseColor(rawColor, '#2ECC71');
+                // Vérifier si le code existe déjà dans MongoDB
+                const existingEntry = await Confession.findOne({ code: userCode });
+                if (existingEntry) {
+                    return await interaction.editReply({ 
+                        content: `❌ **Le code \`${userCode}\` est déjà utilisé !** Veuillez en choisir un autre.` 
+                    });
+                }
 
-                // Incrémentation globale du numéro de confession
+                const embedColor = parseColor(rawColor, '#2ECC71');
                 const currentNum = global.confessionCounter++;
 
                 const confessionEmbed = new EmbedBuilder()
                     .setColor(embedColor)
                     .setTitle(`🤫 Confession #${currentNum}`)
                     .setDescription(content)
-                    .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` });
+                    .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` });
 
                 if (mediaUrl && (mediaUrl.startsWith('http://') || mediaUrl.startsWith('https://'))) {
                     confessionEmbed.setImage(mediaUrl);
@@ -220,15 +222,16 @@ module.exports = (client) => {
                     autoArchiveDuration: 1440
                 }).catch(() => null);
 
-                // Enregistrement chiffré sous le code choisi par l'utilisateur
+                // Enregistrement sécurisé dans MongoDB Atlas
                 const encryptedUserId = encryptUserId(interaction.user.id, SECRET_PASSWORD);
-                global.confessionStorage.set(userCode, {
+                await Confession.create({
+                    code: userCode,
                     encryptedUserId: encryptedUserId,
                     content: content,
                     url: sentMsg.url
                 });
 
-                // Log dans le salon privé avec le code choisi
+                // Log dans le salon privé
                 await logConfessionEncrypted(client, userCode, content, sentMsg.url, mediaUrl);
 
                 return await interaction.editReply({ content: "✅ Ta confession anonyme a été publiée avec succès ! / Your confession has been published!" });
@@ -244,8 +247,15 @@ module.exports = (client) => {
                 const rawColor = interaction.fields.getTextInputValue('reply_color');
                 const mediaUrl = interaction.fields.getTextInputValue('reply_media');
 
-                const embedColor = parseColor(rawColor, '#3498DB');
+                // Vérifier si le code existe déjà dans MongoDB
+                const existingEntry = await Confession.findOne({ code: userCode });
+                if (existingEntry) {
+                    return await interaction.editReply({ 
+                        content: `❌ **Le code \`${userCode}\` est déjà utilisé !** Veuillez en choisir un autre.` 
+                    });
+                }
 
+                const embedColor = parseColor(rawColor, '#3498DB');
                 const replyNum = global.replyCounter++;
 
                 const replyEmbed = new EmbedBuilder()
@@ -273,9 +283,10 @@ module.exports = (client) => {
 
                 const replyUrl = replyMsg ? replyMsg.url : null;
 
-                // Enregistrement chiffré sous le code choisi
+                // Enregistrement sécurisé dans MongoDB Atlas
                 const encryptedUserId = encryptUserId(interaction.user.id, SECRET_PASSWORD);
-                global.confessionStorage.set(userCode, {
+                await Confession.create({
+                    code: userCode,
                     encryptedUserId: encryptedUserId,
                     content: replyContent,
                     url: replyUrl
