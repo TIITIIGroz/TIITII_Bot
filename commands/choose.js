@@ -3,7 +3,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('choose')
-        .setDescription('Choisit un élément au hasard / Chooses a random item from a list')
+        .setDescription('Choisit un élément au hasard')
         .addStringOption(option =>
             option.setName('options')
                 .setDescription('Sépare les choix par des virgules (ex: Pizza, Tacos, Burger)')
