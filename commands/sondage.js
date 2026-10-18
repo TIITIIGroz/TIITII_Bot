@@ -4,7 +4,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('sondage')
         .setDescription('Crée un sondage interactif.')
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
         .addStringOption(option =>
             option.setName('question')
                 .setDescription('La question du sondage')
