@@ -10,7 +10,7 @@ module.exports = {
                 .setMinValue(1)
                 .setMaxValue(100)
                 .setRequired(true))
-        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     async execute(interaction) {
         const count = interaction.options.getInteger('nombre');
