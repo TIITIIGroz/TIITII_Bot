@@ -20,7 +20,7 @@ module.exports = {
         const userLang = interaction.options.getString('lang');
         const isFrench = userLang ? userLang === 'fr' : true;
 
-        const hiddenCommands = ['add-button', 'dt-button', 'embed-edit', 'embed', 'set-level', 'take-xp', 'give-xp', 'admin-anniv', 'insta', 'ticket-setup','sondage', 'id-salon', 'reveal', 'setup-confess', 'help'];
+        const hiddenCommands = ['add-button', 'dt-button', 'embed-edit', 'embed', 'set-level', 'take-xp', 'give-xp', 'admin-anniv', 'insta', 'ticket-setup','sondage', 'id-salons', 'reveal', 'setup-confess', 'help'];
         const frenchOnlyCommands = ['anniv-aj', 'anniv-rt', 'anniv-list'];
         const englishOnlyCommands = ['bday-add', 'bday-rm', 'bday-list'];
 
