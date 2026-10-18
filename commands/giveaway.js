@@ -38,12 +38,13 @@ module.exports = {
         await interaction.reply({ content: '✅ Le giveaway a été lancé !', ephemeral: true });
         const msg = await interaction.channel.send({ embeds: [embed], components: [button] });
 
-        // Système de stockage temporaire des participants pour ce message
+        // Stockage des participants
         const participants = new Set();
 
         const collector = msg.createMessageComponentCollector({ time: durationMinutes * 60 * 1000 });
 
-        collector.on('collect, async (i) => {
+        // Guillemet fermé correctement ici ('collect')
+        collector.on('collect', async (i) => {
             if (i.customId === 'btn_giveaway_join') {
                 if (participants.has(i.user.id)) {
                     return await i.reply({ content: '❌ Tu PARTICIPES DÉJÀ au giveaway ! / You are already entered!', ephemeral: true });
