@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, MessageFlags, PermissionFlagsBits } = require('discord.js');
 
 const ADMIN_ROLE_IDS = ['894668340902125618', '1012357140679229511', '894669520902451220'];
 const ADMIN_USER_IDS = ['913798085686198292', '707665614067728464'];
@@ -6,51 +6,41 @@ const ADMIN_USER_IDS = ['913798085686198292', '707665614067728464'];
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('sondage')
-        .setDescription('Crée un sondage interactif.')
+        .setDescription('Crée un sondage interactif avec jusqu\'à 10 choix.')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addStringOption(option =>
             option.setName('question')
                 .setDescription('La question du sondage')
                 .setRequired(true)
         )
-        .addStringOption(option =>
-            option.setName('choix1')
-                .setDescription('Premier choix')
-                .setRequired(true)
-        )
-        .addStringOption(option =>
-            option.setName('choix2')
-                .setDescription('Deuxième choix')
-                .setRequired(true)
-        )
-        .addStringOption(option =>
-            option.setName('choix3')
-                .setDescription('Troisième choix (optionnel)')
-                .setRequired(false)
-        )
-        .addStringOption(option =>
-            option.setName('choix4')
-                .setDescription('Quatrième choix (optionnel)')
-                .setRequired(false)
-        ),
+        .addStringOption(option => option.setName('choix1').setDescription('Premier choix').setRequired(true))
+        .addStringOption(option => option.setName('choix2').setDescription('Deuxième choix').setRequired(true))
+        .addStringOption(option => option.setName('choix3').setDescription('Troisième choix').setRequired(false))
+        .addStringOption(option => option.setName('choix4').setDescription('Quatrième choix').setRequired(false))
+        .addStringOption(option => option.setName('choix5').setDescription('Cinquième choix').setRequired(false))
+        .addStringOption(option => option.setName('choix6').setDescription('Sixième choix').setRequired(false))
+        .addStringOption(option => option.setName('choix7').setDescription('Septième choix').setRequired(false))
+        .addStringOption(option => option.setName('choix8').setDescription('Huitième choix').setRequired(false))
+        .addStringOption(option => option.setName('choix9').setDescription('Neuvième choix').setRequired(false))
+        .addStringOption(option => option.setName('choix10').setDescription('Dixième choix').setRequired(false)),
 
     async execute(interaction) {
         const isAdmin = ADMIN_USER_IDS.includes(interaction.user.id) || interaction.member.roles.cache.some(r => ADMIN_ROLE_IDS.includes(r.id));
         if (!isAdmin) return interaction.reply({ content: "❌ Seuls les administrateurs peuvent utiliser cette commande.", flags: [MessageFlags.Ephemeral] });
 
         const question = interaction.options.getString('question');
-        const choices = [
-            interaction.options.getString('choix1'),
-            interaction.options.getString('choix2'),
-            interaction.options.getString('choix3'),
-            interaction.options.getString('choix4')
-        ].filter(Boolean); // Retire les choix vides
+        
+        // Récupère tous les choix remplis (de 1 à 10)
+        const choices = [];
+        for (let i = 1; i <= 10; i++) {
+            const val = interaction.options.getString(`choix${i}`);
+            if (val) choices.push(val);
+        }
 
         // Map pour stocker les votes : idDuMembre -> indexDuChoix
         const votes = new Map();
 
         const generateEmbed = () => {
-            // Compter les votes
             const counts = new Array(choices.length).fill(0);
             votes.forEach(choiceIndex => counts[choiceIndex]++);
 
@@ -67,17 +57,21 @@ module.exports = {
                 .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` });
         };
 
-        const generateRow = () => {
-            const row = new ActionRowBuilder();
-            choices.forEach((_, index) => {
-                row.addComponents(
-                    new ButtonBuilder()
-                        .setCustomId(`poll_vote_${index}`)
-                        .setLabel(`${index + 1}`)
-                        .setStyle(ButtonStyle.Primary)
+        const generateRow = (disabled = false) => {
+            const selectMenu = new StringSelectMenuBuilder()
+                .setCustomId('poll_select')
+                .setPlaceholder('Sélectionne ton choix...')
+                .setDisabled(disabled);
+
+            choices.forEach((choice, index) => {
+                selectMenu.addOptions(
+                    new StringSelectMenuOptionBuilder()
+                        .setLabel(choice.length > 100 ? choice.substring(0, 97) + '...' : choice) // Limite Discord à 100 char max par label
+                        .setValue(`${index}`)
                 );
             });
-            return row;
+
+            return new ActionRowBuilder().addComponents(selectMenu);
         };
 
         await interaction.reply({
@@ -86,11 +80,12 @@ module.exports = {
         });
 
         const message = await interaction.fetchReply();
-        const filter = i => i.customId.startsWith('poll_vote_');
         const collector = message.createMessageComponentCollector({ time: 86400000 }); // Expire après 24h
 
         collector.on('collect', async i => {
-            const choiceIndex = parseInt(i.customId.split('_')[2]);
+            if (!i.isStringSelectMenu()) return;
+
+            const choiceIndex = parseInt(i.values[0]);
             
             // Enregistre ou met à jour le vote de l'utilisateur
             votes.set(i.user.id, choiceIndex);
@@ -104,17 +99,7 @@ module.exports = {
         });
 
         collector.on('end', () => {
-            const disabledRow = new ActionRowBuilder();
-            choices.forEach((_, index) => {
-                disabledRow.addComponents(
-                    new ButtonBuilder()
-                        .setCustomId(`poll_vote_expired_${index}`)
-                        .setLabel(`${index + 1}`)
-                        .setStyle(ButtonStyle.Secondary)
-                        .setDisabled(true)
-                );
-            });
-            message.edit({ components: [disabledRow] }).catch(() => {});
+            message.edit({ components: [generateRow(true)] }).catch(() => {});
         });
     },
 };
