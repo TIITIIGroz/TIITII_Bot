@@ -57,11 +57,10 @@ const ADMIN_ROLE_IDS = ['894668340902125618', '1012357140679229511', '8946695209
 const ADMIN_USER_IDS = ['913798085686198292', '707665614067728464'];
 
 client.on(Events.InteractionCreate, async interaction => {
-    // Délégation des boutons vers les fichiers de commandes (comme ticket-setup.js ou autres)
+    // Délégation des boutons vers les fichiers de commandes
     if (interaction.isButton()) {
         const [commandName] = interaction.customId.split('_'); 
-        // Si c'est un bouton de ticket ou autre géré par les commandes, on peut l'aiguiller ou laisser les commandes intercepter.
-        const command = client.commands.get('ticket-setup'); // Exemple si tu veux router vers ticket-setup
+        const command = client.commands.get('ticket-setup');
         if (command && typeof command.handleButton === 'function') {
             try {
                 await command.handleButton(interaction);
@@ -346,19 +345,10 @@ require('./systems/levels/voiceXp')(client);
 require('./systems/confession/confessionSystem')(client);
 require('./Automatisme/ServerStats')(client);
 
+// 🌐 Lancement du serveur web pour le Dashboard (dossier ./website/server.js)
+const setupDashboard = require('./website/server');
+setupDashboard(client);
+
 client.login(process.env.TOKEN).catch(err => {
     console.error("❌ ERREUR FATALE DE CONNEXION DISCORD :", err);
-});
-
-// Mini serveur HTTP pour satisfaire le port scan de Render (Web Service)
-const express = require('express');
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-app.get('/', (req, res) => {
-    res.send('Le bot Discord est bien en ligne ! 🚀');
-});
-
-app.listen(PORT, () => {
-    console.log(`Serveur web en écoute sur le port ${PORT}`);
 });
