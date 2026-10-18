@@ -344,6 +344,7 @@ require('./Automatisme/WelcomeSystem')(client);
 require('./Automatisme/Gbye.js')(client);
 require('./systems/levels/voiceXp')(client);
 require('./systems/confession/confessionSystem')(client);
+require('./Automatisme/ServerStats')(client);
 
 client.login(process.env.TOKEN).catch(err => {
     console.error("❌ ERREUR FATALE DE CONNEXION DISCORD :", err);
