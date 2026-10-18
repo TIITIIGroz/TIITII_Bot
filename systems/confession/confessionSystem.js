@@ -188,7 +188,7 @@ module.exports = (client) => {
                     .setColor(embedColor)
                     .setTitle(`🤫 Confession #${currentNum}`)
                     .setDescription(content)
-                    .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` });
+                    .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` });
 
                 if (mediaUrl && (mediaUrl.startsWith('http://') || mediaUrl.startsWith('https://'))) {
                     confessionEmbed.setImage(mediaUrl);
@@ -254,7 +254,7 @@ module.exports = (client) => {
                     .setColor(embedColor)
                     .setTitle(`💬 Réponse Anonyme à la Confession #${confessionNum}`)
                     .setDescription(replyContent)
-                    .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` });
+                    .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` });
 
                 if (mediaUrl && (mediaUrl.startsWith('http://') || mediaUrl.startsWith('https://'))) {
                     replyEmbed.setImage(mediaUrl);
@@ -330,7 +330,7 @@ async function logReplyEncrypted(client, codeName, confessionNum, content, messa
                 { name: '🔗 Lien', value: messageUrl ? `[Voir la réponse](${messageUrl})` : "N/A" },
                 { name: '🔑 Code d\'identification', value: `\`\`\`${codeName}\`\`\`` }
             )
-            .setFooter({ text: 'Utilisez /reveal avec ce code et le mot de passe secret pour voir l\'auteur.' })
+            .setFooter({ text: '/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛\\ Utilisez /reveal avec ce code et le mot de passe secret pour voir l\'auteur.' })
             .setTimestamp();
 
         if (mediaUrl) {
