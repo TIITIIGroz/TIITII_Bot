@@ -20,7 +20,7 @@ module.exports = {
             .setDescription(
                 "C'est ici que seront montré les confessions ***__Anonyme__*** ! Ecrivez ce que vous voulez tant que c'est dans le respect. Appuyez sur le bouton 'Confession' pour créer un message en bas du message !\n\n" +
                 "----------------------------------------------\n\n" +
-                "This is where the confessions will be shown ***__Anonyme__*** ! Write whatever you want as long as it’s respectful. Press the 'Confession' button to create a message at the bottom of the message!"
+                "This is where the confessions will be shown ***__Anonymously__*** ! Write whatever you want as long as it’s respectful. Press the 'Confession' button to create a message at the bottom of the message !"
             )
             .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛\\` });
 
