@@ -1,8 +1,11 @@
-const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags, PermissionFlagsBits } = require('discord.js');
 const crypto = require('crypto');
 const Confession = require('../models/Confession');
 
 const SECRET_PASSWORD = process.env.CONFESSION_PASSWORD || "4321confession";
+
+const ADMIN_ROLE_IDS = ['894668340902125618', '1012357140679229511', '894669520902451220'];
+const ADMIN_USER_IDS = ['913798085686198292', '707665614067728464'];
 
 function decryptData(encryptedData, password) {
     try {
@@ -29,7 +32,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('reveal')
         .setDescription('Déchiffre l\'identité de l\'auteur d\'une confession ou d\'une réponse')
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addStringOption(option =>
             option.setName('code')
                 .setDescription('Le code saisi lors de la confession')
@@ -40,6 +43,9 @@ module.exports = {
                 .setRequired(true)),
 
     async execute(interaction) {
+        const isAdmin = ADMIN_USER_IDS.includes(interaction.user.id) || interaction.member.roles.cache.some(r => ADMIN_ROLE_IDS.includes(r.id));
+        if (!isAdmin) return interaction.reply({ content: "❌ Seuls les administrateurs peuvent utiliser cette commande.", flags: [MessageFlags.Ephemeral] });
+
         const userCode = interaction.options.getString('code').toLowerCase().trim();
         const inputPassword = interaction.options.getString('password');
 
@@ -80,7 +86,7 @@ module.exports = {
                     { name: '🆔 User ID', value: `\`${user.id}\``, inline: true },
                     { name: '💬 Contenu', value: record.content || "*Aucun contenu disponible*", inline: false }
                 )
-                .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\ Information confidentielle - Usage administratif` })
+                .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} Information confidentielle - Usage administratif` });
 
             if (record.url) {
                 embed.addFields({ name: '🔗 Lien du message', value: `[Accéder au message](${record.url})`, inline: false });
