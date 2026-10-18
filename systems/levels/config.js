@@ -56,10 +56,11 @@ module.exports = {
         
         
         //Catégorie Support
-        "1263628374388113560", // Guides
+        "1263628374388113560", // Guides-FR
+        "1561445760682168400", // Guides En
         "896311964861620266", // Guides Roles
         "1534243455952224359", // Le truc de miel pour bot
-        "1561112527616741427", // Guide Bto    
+        "1561112527616741427", // Guide Bot
         
         //Catégorie Création
         "1085589773877518506", // Créer Salons 
