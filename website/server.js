@@ -11,8 +11,6 @@ const ADMIN_USER_IDS = ['913798085686198292', '707665614067728464'];
 function setupDashboard(client) {
     const app = express();
 
-    app.set('view engine', 'ejs');
-    app.set('views', path.join(__dirname, 'views'));
     app.use(express.urlencoded({ extended: true }));
     app.use(express.json());
 
@@ -55,7 +53,7 @@ function setupDashboard(client) {
         return done(null, profile);
     }));
 
-    // 🌐 Page d'accueil publique (Parfaite pour UptimeRobot, sans fichier ejs requis)
+    // 🌐 Page d'accueil publique (UptimeRobot friendly)
     app.get('/', (req, res) => {
         const user = req.user || null;
         res.send(`
@@ -146,7 +144,7 @@ function setupDashboard(client) {
         return res.redirect('/auth/unauthorized');
     }
 
-    // Page du Dashboard Admin
+    // 📊 Page du Dashboard Admin (Autonome sans fichier ejs externe)
     app.get('/dashboard', checkAdminAuth, async (req, res) => {
         try {
             const uptime = process.uptime();
@@ -159,18 +157,115 @@ function setupDashboard(client) {
                 console.error("Erreur lecture MongoDB dans Dashboard :", mongoErr);
             }
 
-            const supabaseData = [];
+            const user = req.user;
+            const avatarUrl = user.avatar 
+                ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` 
+                : 'https://cdn.discordapp.com/embed/avatars/0.png';
 
-            res.render('dashboard', {
-                user: req.user,
-                stats: {
-                    uptime: Math.floor(uptime / 60),
-                    totalMembers,
-                    ping: client.ws.ping
-                },
-                confessions,
-                supabaseData
-            });
+            // Génération dynamique des lignes du tableau des confessions
+            let confessionsRows = '';
+            if (confessions.length > 0) {
+                confessions.forEach(conf => {
+                    confessionsRows += `
+                        <tr class="border-b border-slate-700/50 text-sm hover:bg-slate-750/50 transition">
+                            <td class="py-3 px-2 font-mono text-indigo-400 font-semibold">${conf.code || '#'}</td>
+                            <td class="py-3 px-2 text-slate-300">${conf.content || 'Fichier/Média joint'}</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                confessionsRows = `
+                    <tr>
+                        <td colspan="2" class="py-4 text-center text-slate-400 text-sm">Aucune confession enregistrée pour le moment.</td>
+                    </tr>
+                `;
+            }
+
+            res.send(`
+                <!DOCTYPE html>
+                <html lang="fr">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>𝑻𝑰𝑰𝑻𝑰𝑰_𝑩𝒐𝒕 - Dashboard Admin</title>
+                    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+                </head>
+                <body class="bg-slate-900 text-white font-sans min-h-screen">
+                    <div class="flex h-screen overflow-hidden">
+                        <!-- Sidebar -->
+                        <div class="w-64 bg-slate-950 p-6 flex flex-col justify-between border-r border-slate-800 shrink-0">
+                            <div>
+                                <h1 class="text-xl font-bold text-indigo-400 mb-8">𝑻𝑰𝑰𝑻𝑰𝑰_𝑩𝒐𝒕 Panel</h1>
+                                <nav class="space-y-3">
+                                    <a href="#overview" class="block py-2.5 px-4 rounded bg-indigo-600 text-white font-medium hover:bg-indigo-500 transition">📊 Vue d'ensemble</a>
+                                    <a href="#confessions" class="block py-2.5 px-4 rounded hover:bg-slate-800 text-slate-300 transition">🔓 Confessions (MongoDB)</a>
+                                    <a href="#supabase" class="block py-2.5 px-4 rounded hover:bg-slate-800 text-slate-300 transition">📈 Niveaux (Supabase)</a>
+                                </nav>
+                            </div>
+                            <div class="flex items-center justify-between border-t border-slate-800 pt-4">
+                                <div class="flex items-center gap-3">
+                                    <img src="${avatarUrl}" class="w-10 h-10 rounded-full border border-slate-700">
+                                    <div>
+                                        <p class="font-semibold text-sm leading-tight">${user.username}</p>
+                                        <p class="text-xs text-emerald-400 font-medium">Connecté</p>
+                                    </div>
+                                </div>
+                                <a href="/logout" class="text-slate-400 hover:text-red-400 text-sm font-semibold transition" title="Déconnexion">🚪</a>
+                            </div>
+                        </div>
+
+                        <!-- Contenu principal -->
+                        <div class="flex-1 p-8 overflow-y-auto">
+                            <h2 class="text-3xl font-bold mb-6 text-slate-100">Tableau de bord administrateur</h2>
+
+                            <!-- Section 1 : Stats du Bot -->
+                            <div id="overview" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700/80 shadow-lg">
+                                    <p class="text-slate-400 text-sm font-medium">Uptime du Bot</p>
+                                    <p class="text-3xl font-bold mt-2 text-indigo-400">${Math.floor(uptime / 60)} min</p>
+                                </div>
+                                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700/80 shadow-lg">
+                                    <p class="text-slate-400 text-sm font-medium">Membres totaux</p>
+                                    <p class="text-3xl font-bold mt-2 text-emerald-400">${totalMembers}</p>
+                                </div>
+                                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700/80 shadow-lg">
+                                    <p class="text-slate-400 text-sm font-medium">Latence API (Ping)</p>
+                                    <p class="text-3xl font-bold mt-2 text-amber-400">${client.ws.ping} ms</p>
+                                </div>
+                            </div>
+
+                            <!-- Section 2 : Confessions MongoDB -->
+                            <div id="confessions" class="bg-slate-800 p-6 rounded-xl border border-slate-700/80 shadow-lg mb-10">
+                                <h3 class="text-xl font-bold mb-4 text-indigo-300 flex items-center gap-2">
+                                    <span>🔓</span> Dernières Confessions (MongoDB)
+                                </h3>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr class="border-b border-slate-700 text-slate-400 text-sm">
+                                                <th class="pb-3 px-2">Code</th>
+                                                <th class="pb-3 px-2">Contenu</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${confessionsRows}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Section 3 : Supabase -->
+                            <div id="supabase" class="bg-slate-800 p-6 rounded-xl border border-slate-700/80 shadow-lg">
+                                <h3 class="text-xl font-bold mb-2 text-emerald-300 flex items-center gap-2">
+                                    <span>📈</span> Suivi Supabase (Niveaux & Activité)
+                                </h3>
+                                <p class="text-slate-400 text-sm">Les données de ton serveur Supabase apparaîtront ici.</p>
+                            </div>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `);
         } catch (err) {
             console.error("Erreur lors du rendu du Dashboard :", err);
             res.status(500).send("Erreur interne du serveur lors du chargement du Dashboard.");
