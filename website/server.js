@@ -4,6 +4,7 @@ const passport = require('passport');
 const DiscordStrategy = require('passport-discord').Strategy;
 const path = require('path');
 const Confession = require('../models/Confession'); // Modèle MongoDB
+const supabase = require('../supabase'); // Client Supabase
 
 const ADMIN_ROLE_IDS = ['894668340902125618', '1012357140679229511', '894669520902451220'];
 const ADMIN_USER_IDS = ['913798085686198292', '707665614067728464'];
@@ -42,7 +43,7 @@ function setupDashboard(client) {
     app.use(passport.session());
 
     passport.serializeUser((user, done) => done(null, user));
-    passport.deserializeUser((obj, done) => done(null, obj));
+    passport.deserializeUser((obj, done) => done(obj, done));
 
     passport.use(new DiscordStrategy({
         clientID: clientId,
@@ -144,12 +145,13 @@ function setupDashboard(client) {
         return res.redirect('/auth/unauthorized');
     }
 
-    // 📊 Page du Dashboard Admin (Autonome sans fichier ejs externe)
+    // 📊 Page du Dashboard Admin
     app.get('/dashboard', checkAdminAuth, async (req, res) => {
         try {
             const uptime = process.uptime();
             const totalMembers = client.guilds.cache.reduce((acc, g) => acc + g.memberCount, 0);
 
+            // 1. Récupération des confessions (MongoDB)
             let confessions = [];
             try {
                 confessions = await Confession.find().sort({ _id: -1 }).limit(15);
@@ -157,12 +159,23 @@ function setupDashboard(client) {
                 console.error("Erreur lecture MongoDB dans Dashboard :", mongoErr);
             }
 
+            // 2. Récupération des niveaux Supabase (table 'levels' ou similaire)
+            let supabaseLevels = [];
+            try {
+                const { data, error } = await supabase.from('levels').select('*').limit(15);
+                if (!error && data) {
+                    supabaseLevels = data;
+                }
+            } catch (supErr) {
+                console.error("Erreur lecture Supabase dans Dashboard :", supErr);
+            }
+
             const user = req.user;
             const avatarUrl = user.avatar 
                 ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` 
                 : 'https://cdn.discordapp.com/embed/avatars/0.png';
 
-            // Génération dynamique des lignes du tableau des confessions
+            // Génération dynamique des lignes du tableau des confessions (avec bouton supprimer)
             let confessionsRows = '';
             if (confessions.length > 0) {
                 confessions.forEach(conf => {
@@ -170,13 +183,47 @@ function setupDashboard(client) {
                         <tr class="border-b border-slate-700/50 text-sm hover:bg-slate-750/50 transition">
                             <td class="py-3 px-2 font-mono text-indigo-400 font-semibold">${conf.code || '#'}</td>
                             <td class="py-3 px-2 text-slate-300">${conf.content || 'Fichier/Média joint'}</td>
+                            <td class="py-3 px-2 text-right">
+                                <form action="/dashboard/confession/delete/${conf._id}" method="POST" onsubmit="return confirm('Voulez-vous vraiment supprimer cette confession ?');">
+                                    <button type="submit" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded text-xs font-semibold transition">Supprimer</button>
+                                </form>
+                            </td>
                         </tr>
                     `;
                 });
             } else {
                 confessionsRows = `
                     <tr>
-                        <td colspan="2" class="py-4 text-center text-slate-400 text-sm">Aucune confession enregistrée pour le moment.</td>
+                        <td colspan="3" class="py-4 text-center text-slate-400 text-sm">Aucune confession enregistrée pour le moment.</td>
+                    </tr>
+                `;
+            }
+
+            // Génération dynamique des lignes du tableau Supabase Niveaux (avec bouton supprimer)
+            let supabaseRows = '';
+            if (supabaseLevels.length > 0) {
+                supabaseLevels.forEach(row => {
+                    // S'adapte selon tes colonnes Supabase (ex: user_id, xp, level ou userid)
+                    const userId = row.user_id || row.userid || 'Inconnu';
+                    const xp = row.xp || 0;
+                    const level = row.level || 0;
+
+                    supabaseRows += `
+                        <tr class="border-b border-slate-700/50 text-sm hover:bg-slate-750/50 transition">
+                            <td class="py-3 px-2 font-mono text-emerald-400">${userId}</td>
+                            <td class="py-3 px-2 text-slate-300">Niveau ${level} (${xp} XP)</td>
+                            <td class="py-3 px-2 text-right">
+                                <form action="/dashboard/supabase/delete/${userId}" method="POST" onsubmit="return confirm('Voulez-vous vraiment supprimer les données de cet utilisateur ?');">
+                                    <button type="submit" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded text-xs font-semibold transition">Supprimer / Reset</button>
+                                </form>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } else {
+                supabaseRows = `
+                    <tr>
+                        <td colspan="3" class="py-4 text-center text-slate-400 text-sm">Aucune donnée de niveau trouvée dans Supabase.</td>
                     </tr>
                 `;
             }
@@ -245,6 +292,7 @@ function setupDashboard(client) {
                                             <tr class="border-b border-slate-700 text-slate-400 text-sm">
                                                 <th class="pb-3 px-2">Code</th>
                                                 <th class="pb-3 px-2">Contenu</th>
+                                                <th class="pb-3 px-2 text-right">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -254,12 +302,25 @@ function setupDashboard(client) {
                                 </div>
                             </div>
 
-                            <!-- Section 3 : Supabase -->
-                            <div id="supabase" class="bg-slate-800 p-6 rounded-xl border border-slate-700/80 shadow-lg">
-                                <h3 class="text-xl font-bold mb-2 text-emerald-300 flex items-center gap-2">
+                            <!-- Section 3 : Suivi Supabase -->
+                            <div id="supabase" class="bg-slate-800 p-6 rounded-xl border border-slate-700/80 shadow-lg mb-10">
+                                <h3 class="text-xl font-bold mb-4 text-emerald-300 flex items-center gap-2">
                                     <span>📈</span> Suivi Supabase (Niveaux & Activité)
                                 </h3>
-                                <p class="text-slate-400 text-sm">Les données de ton serveur Supabase apparaîtront ici.</p>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr class="border-b border-slate-700 text-slate-400 text-sm">
+                                                <th class="pb-3 px-2">ID Utilisateur</th>
+                                                <th class="pb-3 px-2">Progression</th>
+                                                <th class="pb-3 px-2 text-right">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${supabaseRows}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -272,21 +333,23 @@ function setupDashboard(client) {
         }
     });
 
-    app.get('/logout', (req, res, next) => {
-        req.logout((err) => {
-            if (err) return next(err);
-            res.redirect('/');
-        });
+    // 🗑️ Route pour supprimer une confession MongoDB depuis le web
+    app.post('/dashboard/confession/delete/:id', checkAdminAuth, async (req, res) => {
+        try {
+            const confessionId = req.params.id;
+            await Confession.findByIdAndDelete(confessionId);
+            res.redirect('/dashboard');
+        } catch (err) {
+            console.error("Erreur suppression confession :", err);
+            res.status(500).send("Erreur lors de la suppression de la confession.");
+        }
     });
 
-    app.get('/auth/unauthorized', (req, res) => {
-        res.status(403).send("❌ Accès refusé : Réservé exclusivement aux administrateurs de 𝑻𝑰𝑰𝑻𝑰𝑰_𝑩𝒐𝒕.");
-    });
-
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => {
-        console.log(`🌐 Dashboard web démarré avec succès sur le port ${PORT}`);
-    });
-}
-
-module.exports = setupDashboard;
+    // 🗑️ Route pour supprimer/reset un utilisateur dans Supabase depuis le web
+    app.post('/dashboard/supabase/delete/:userId', checkAdminAuth, async (req, res) => {
+        try {
+            const userId = req.params.userId;
+            // Supprime l'entrée dans la table levels (adapte 'user_id' si ta colonne s'appelle 'userid')
+            await supabase.from('levels').delete().eq('user_id', userId);
+            // Si jamais la colonne s'appelle 'userid', essaie les deux ou ajuste selon ta table :
+            await supabase.from('levels').delete().eq('userid', userId);
