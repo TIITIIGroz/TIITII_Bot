@@ -16,12 +16,10 @@ function setupDashboard(client) {
     app.use(express.urlencoded({ extended: true }));
     app.use(express.json());
 
-    // Détection souple des variables d'environnement (avec ou sans préfixe DISCORD_)
     const clientId = process.env.DISCORD_CLIENT_ID || process.env.CLIENT_ID;
     const clientSecret = process.env.DISCORD_CLIENT_SECRET || process.env.CLIENT_SECRET;
     const callbackUrl = process.env.DISCORD_CALLBACK_URL || process.env.CALLBACK_URL;
 
-    // Protection anti-crash si les variables sont introuvables
     if (!clientId || !clientSecret) {
         console.warn("⚠️ Attention : CLIENT_ID ou CLIENT_SECRET est introuvable. Le Dashboard OAuth2 est désactivé.");
         const PORT = process.env.PORT || 3000;
@@ -31,12 +29,15 @@ function setupDashboard(client) {
         return;
     }
 
-    // Configuration des sessions (pour ne pas se déconnecter lors d'un refresh/F5)
+    // Configuration des sessions avec persistance prolongée (7 jours)
     app.use(session({
-        secret: process.env.SESSION_SECRET || 'titiipasswordsecret',
+        secret: process.env.SESSION_SECRET || 'titiipasswordsecret_ultra_securise',
         resave: false,
         saveUninitialized: false,
-        cookie: { secure: false } // Mettre à true si HTTPS strict imposé
+        cookie: { 
+            secure: false, // Mettre à true si HTTPS strict est exigé par Render
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 jours de connexion persistante même après un F5 !
+        }
     }));
 
     app.use(passport.initialize());
@@ -45,7 +46,6 @@ function setupDashboard(client) {
     passport.serializeUser((user, done) => done(null, user));
     passport.deserializeUser((obj, done) => done(null, obj));
 
-    // Configuration de la stratégie Discord OAuth2
     passport.use(new DiscordStrategy({
         clientID: clientId,
         clientSecret: clientSecret,
@@ -55,12 +55,9 @@ function setupDashboard(client) {
         return done(null, profile);
     }));
 
-    // Route racine (Redirige vers le dashboard s'il est authentifié, sinon vers le login)
+    // 🌐 Page d'accueil publique (Parfaite pour UptimeRobot !)
     app.get('/', (req, res) => {
-        if (req.isAuthenticated()) {
-            return res.redirect('/dashboard');
-        }
-        res.redirect('/auth/discord');
+        res.render('index', { user: req.user || null });
     });
 
     // Route de connexion Discord
@@ -72,7 +69,6 @@ function setupDashboard(client) {
         async (req, res) => {
             const guildId = process.env.DISCORD_GUILD_ID;
             
-            // Si pas de GUILD_ID configuré, vérifie simplement si l'ID utilisateur est dans la liste des admins
             if (guildId) {
                 const guild = client.guilds.cache.get(guildId);
                 if (guild) {
@@ -88,7 +84,6 @@ function setupDashboard(client) {
                 }
             }
 
-            // Vérification de secours uniquement sur l'ID utilisateur
             if (!ADMIN_USER_IDS.includes(req.user.id)) {
                 return res.redirect('/auth/unauthorized');
             }
@@ -120,13 +115,12 @@ function setupDashboard(client) {
         return res.redirect('/auth/unauthorized');
     }
 
-    // Page du Dashboard Admin (Vue d'ensemble, MongoDB & Supabase)
+    // Page du Dashboard Admin
     app.get('/dashboard', checkAdminAuth, async (req, res) => {
         try {
-            const uptime = process.uptime(); // temps de fonctionnement en secondes
+            const uptime = process.uptime();
             const totalMembers = client.guilds.cache.reduce((acc, g) => acc + g.memberCount, 0);
 
-            // Récupération des 15 dernières confessions depuis MongoDB
             let confessions = [];
             try {
                 confessions = await Confession.find().sort({ _id: -1 }).limit(15);
@@ -134,13 +128,12 @@ function setupDashboard(client) {
                 console.error("Erreur lecture MongoDB dans Dashboard :", mongoErr);
             }
 
-            // Récupération des données Supabase (remplace par ton appel Supabase souhaité)
             const supabaseData = [];
 
             res.render('dashboard', {
                 user: req.user,
                 stats: {
-                    uptime: Math.floor(uptime / 60), // Conversion en minutes
+                    uptime: Math.floor(uptime / 60),
                     totalMembers,
                     ping: client.ws.ping
                 },
@@ -153,7 +146,6 @@ function setupDashboard(client) {
         }
     });
 
-    // Page de déconnexion
     app.get('/logout', (req, res, next) => {
         req.logout((err) => {
             if (err) return next(err);
@@ -161,12 +153,10 @@ function setupDashboard(client) {
         });
     });
 
-    // Page en cas d'accès non autorisé
     app.get('/auth/unauthorized', (req, res) => {
         res.status(403).send("❌ Accès refusé : Réservé exclusivement aux administrateurs de 𝑻𝑰𝑰𝑻𝑰𝑰_𝑩𝒐𝒕.");
     });
 
-    // Lancement de l'écoute HTTP sur le port Render
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
         console.log(`🌐 Dashboard web démarré avec succès sur le port ${PORT}`);
