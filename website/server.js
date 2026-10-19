@@ -15,7 +15,7 @@ function setupDashboard(client) {
     app.use(express.urlencoded({ extended: true }));
     app.use(express.json());
 
-    // Service des fichiers statiques (pour accéder à /images/Bannière.jpg)
+    // 🖼️ Service des fichiers statiques (pour accéder à /images/Bannière.jpg)
     app.use(express.static(path.join(__dirname, 'public')));
     app.use('/public', express.static(path.join(__dirname, 'public')));
 
@@ -77,7 +77,7 @@ function setupDashboard(client) {
                 </style>
             </head>
             <body class="text-white font-sans flex items-center justify-center h-screen">
-                <div class="bg-slate-900/80 backdrop-blur-md p-8 rounded-2xl border border-slate-700/80 shadow-2xl text-center max-w-md w-full">
+                <div class="bg-slate-900/85 backdrop-blur-md p-8 rounded-2xl border border-slate-700/80 shadow-2xl text-center max-w-md w-full">
                     <h1 class="text-3xl font-extrabold text-indigo-400 mb-2">𝑻𝑰𝑰𝑻𝑰𝑰_𝑩𝒐𝒕</h1>
                     <p class="text-slate-300 text-sm mb-6">Panneau de contrôle et administration du bot Discord.</p>
                     
@@ -155,7 +155,7 @@ function setupDashboard(client) {
         return res.redirect('/auth/unauthorized');
     }
 
-    // 📊 Page du Dashboard Admin avec fond d'écran
+    // 📊 Page du Dashboard Admin avec fond d'écran et vrai bouton de déconnexion
     app.get('/dashboard', checkAdminAuth, async (req, res) => {
         try {
             const uptime = process.uptime();
@@ -175,6 +175,8 @@ function setupDashboard(client) {
                 const { data, error } = await supabase.from('levels').select('*').limit(15);
                 if (!error && data) {
                     supabaseLevels = data;
+                } else {
+                    console.warn("Supabase warning/error:", error);
                 }
             } catch (supErr) {
                 console.error("Erreur lecture Supabase dans Dashboard :", supErr);
@@ -195,7 +197,7 @@ function setupDashboard(client) {
                             <td class="py-3 px-2 text-slate-200">${conf.content || 'Fichier/Média joint'}</td>
                             <td class="py-3 px-2 text-right">
                                 <form action="/dashboard/confession/delete/${conf._id}" method="POST" onsubmit="return confirm('Voulez-vous vraiment supprimer cette confession ?');">
-                                    <button type="submit" class="bg-red-600/90 hover:bg-red-500 text-white px-3 py-1 rounded text-xs font-semibold transition">Supprimer</button>
+                                    <button type="submit" class="bg-red-600/90 hover:bg-red-500 text-white px-3 py-1 rounded text-xs font-semibold transition cursor-pointer">Supprimer</button>
                                 </form>
                             </td>
                         </tr>
@@ -213,9 +215,9 @@ function setupDashboard(client) {
             let supabaseRows = '';
             if (supabaseLevels.length > 0) {
                 supabaseLevels.forEach(row => {
-                    const userId = row.user_id || row.userid || 'Inconnu';
-                    const xp = row.xp || 0;
-                    const level = row.level || 0;
+                    const userId = row.user_id || row.userid || row.id || 'Inconnu';
+                    const xp = row.xp || row.points || 0;
+                    const level = row.level || row.lvl || 0;
 
                     supabaseRows += `
                         <tr class="border-b border-slate-700/50 text-sm hover:bg-slate-800/60 transition">
@@ -223,7 +225,7 @@ function setupDashboard(client) {
                             <td class="py-3 px-2 text-slate-200">Niveau ${level} (${xp} XP)</td>
                             <td class="py-3 px-2 text-right">
                                 <form action="/dashboard/supabase/delete/${userId}" method="POST" onsubmit="return confirm('Voulez-vous vraiment supprimer cet utilisateur de Supabase ?');">
-                                    <button type="submit" class="bg-red-600/90 hover:bg-red-500 text-white px-3 py-1 rounded text-xs font-semibold transition">Supprimer / Reset</button>
+                                    <button type="submit" class="bg-red-600/90 hover:bg-red-500 text-white px-3 py-1 rounded text-xs font-semibold transition cursor-pointer">Supprimer / Reset</button>
                                 </form>
                             </td>
                         </tr>
@@ -232,7 +234,7 @@ function setupDashboard(client) {
             } else {
                 supabaseRows = `
                     <tr>
-                        <td colspan="3" class="py-4 text-center text-slate-400 text-sm">Aucune donnée de niveau trouvée dans Supabase.</td>
+                        <td colspan="3" class="py-4 text-center text-slate-400 text-sm">Aucune donnée de niveau trouvée dans Supabase (Vérifie si la table s'appelle bien 'levels').</td>
                     </tr>
                 `;
             }
@@ -264,15 +266,19 @@ function setupDashboard(client) {
                                     <a href="#supabase" class="block py-2.5 px-4 rounded hover:bg-slate-800/80 text-slate-300 transition">📈 Niveaux (Supabase)</a>
                                 </nav>
                             </div>
-                            <div class="flex items-center justify-between border-t border-slate-800/80 pt-4">
+
+                            <!-- Profil & Vrai Bouton de Déconnexion -->
+                            <div class="border-t border-slate-800/80 pt-4 space-y-3">
                                 <div class="flex items-center gap-3">
                                     <img src="${avatarUrl}" class="w-10 h-10 rounded-full border border-slate-700">
-                                    <div>
-                                        <p class="font-semibold text-sm leading-tight">${user.username}</p>
+                                    <div class="overflow-hidden">
+                                        <p class="font-semibold text-sm leading-tight truncate">${user.username}</p>
                                         <p class="text-xs text-emerald-400 font-medium">Connecté</p>
                                     </div>
                                 </div>
-                                <a href="/logout" class="text-slate-400 hover:text-red-400 text-sm font-semibold transition" title="Déconnexion">🚪</a>
+                                <a href="/logout" class="w-full flex items-center justify-center gap-2 bg-red-600/80 hover:bg-red-600 text-white text-xs font-semibold py-2 px-3 rounded-lg transition shadow">
+                                    <span>🚪</span> Se déconnecter
+                                </a>
                             </div>
                         </div>
 
@@ -366,6 +372,7 @@ function setupDashboard(client) {
             const userId = req.params.userId;
             await supabase.from('levels').delete().eq('user_id', userId);
             await supabase.from('levels').delete().eq('userid', userId);
+            await supabase.from('levels').delete().eq('id', userId);
             res.redirect('/dashboard');
         } catch (err) {
             console.error("Erreur suppression Supabase :", err);
@@ -379,15 +386,3 @@ function setupDashboard(client) {
             res.redirect('/');
         });
     });
-
-    app.get('/auth/unauthorized', (req, res) => {
-        res.status(403).send("❌ Accès refusé : Réservé exclusivement aux administrateurs de 𝑻𝑰𝑰𝑻𝑰𝑰_𝑩𝒐𝒕.");
-    });
-
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => {
-        console.log(`🌐 Dashboard web démarré avec succès sur le port ${PORT}`);
-    });
-}
-
-module.exports = setupDashboard;
