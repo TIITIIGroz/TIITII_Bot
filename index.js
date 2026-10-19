@@ -344,6 +344,7 @@ require('./Automatisme/Gbye.js')(client);
 require('./systems/levels/voiceXp')(client);
 require('./systems/confession/confessionSystem')(client);
 require('./Automatisme/ServerStats')(client);
+require('./Automatisme/OnboardingSystem')(client);
 
 // 🌐 Lancement du serveur web pour le Dashboard (dossier ./website/server.js)
 const setupDashboard = require('./website/server');
