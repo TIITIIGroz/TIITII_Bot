@@ -15,6 +15,10 @@ function setupDashboard(client) {
     app.use(express.urlencoded({ extended: true }));
     app.use(express.json());
 
+    // 🖼️ Service des fichiers statiques (pour accéder à /images/Bannière.jpg)
+    app.use(express.static(path.join(__dirname, 'public')));
+    app.use('/public', express.static(path.join(__dirname, 'public')));
+
     const clientId = process.env.DISCORD_CLIENT_ID || process.env.CLIENT_ID;
     const clientSecret = process.env.DISCORD_CLIENT_SECRET || process.env.CLIENT_SECRET;
     const callbackUrl = process.env.DISCORD_CALLBACK_URL || process.env.CALLBACK_URL;
@@ -28,14 +32,14 @@ function setupDashboard(client) {
         return;
     }
 
-    // Configuration des sessions avec persistance prolongée (7 jours)
+    // Configuration des sessions (7 jours)
     app.use(session({
         secret: process.env.SESSION_SECRET || 'titiipasswordsecret_ultra_securise',
         resave: false,
         saveUninitialized: false,
         cookie: { 
             secure: false,
-            maxAge: 7 * 24 * 60 * 60 * 1000 // Reste connecté 7 jours même après un refresh (F5)
+            maxAge: 7 * 24 * 60 * 60 * 1000
         }
     }));
 
@@ -43,7 +47,7 @@ function setupDashboard(client) {
     app.use(passport.session());
 
     passport.serializeUser((user, done) => done(null, user));
-    passport.deserializeUser((obj, done) => done(obj, done));
+    passport.deserializeUser((obj, done) => done(null, obj));
 
     passport.use(new DiscordStrategy({
         clientID: clientId,
@@ -54,7 +58,7 @@ function setupDashboard(client) {
         return done(null, profile);
     }));
 
-    // 🌐 Page d'accueil publique (UptimeRobot friendly)
+    // 🌐 Page d'accueil publique avec fond d'écran
     app.get('/', (req, res) => {
         const user = req.user || null;
         res.send(`
@@ -65,14 +69,20 @@ function setupDashboard(client) {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>𝑻𝑰𝑰𝑻𝑰𝑰_𝑩𝒐𝒕 - Accueil</title>
                 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+                <style>
+                    body {
+                        background: linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.85)), url('/images/Bannière.jpg') no-repeat center center fixed;
+                        background-size: cover;
+                    }
+                </style>
             </head>
-            <body class="bg-slate-900 text-white font-sans flex items-center justify-center h-screen">
-                <div class="bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-2xl text-center max-w-md w-full">
+            <body class="text-white font-sans flex items-center justify-center h-screen">
+                <div class="bg-slate-900/80 backdrop-blur-md p-8 rounded-2xl border border-slate-700/80 shadow-2xl text-center max-w-md w-full">
                     <h1 class="text-3xl font-extrabold text-indigo-400 mb-2">𝑻𝑰𝑰𝑻𝑰𝑰_𝑩𝒐𝒕</h1>
-                    <p class="text-slate-400 text-sm mb-6">Panneau de contrôle et administration du bot Discord.</p>
+                    <p class="text-slate-300 text-sm mb-6">Panneau de contrôle et administration du bot Discord.</p>
                     
                     ${user ? `
-                        <div class="mb-6 p-3 bg-slate-900 rounded-xl border border-slate-700 flex items-center justify-center gap-3">
+                        <div class="mb-6 p-3 bg-slate-950/80 rounded-xl border border-slate-700/80 flex items-center justify-center gap-3">
                             <p class="text-sm">Connecté en tant que <span class="font-bold text-emerald-400">${user.username}</span></p>
                         </div>
                         <a href="/dashboard" class="w-full block bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition shadow-lg mb-3">
@@ -122,7 +132,7 @@ function setupDashboard(client) {
         }
     );
 
-    // Middleware de sécurité pour protéger la page /dashboard
+    // Middleware de sécurité
     async function checkAdminAuth(req, res, next) {
         if (!req.isAuthenticated()) return res.redirect('/auth/discord');
         
@@ -145,211 +155,10 @@ function setupDashboard(client) {
         return res.redirect('/auth/unauthorized');
     }
 
-    // 📊 Page du Dashboard Admin
+    // 📊 Page du Dashboard Admin avec fond d'écran
     app.get('/dashboard', checkAdminAuth, async (req, res) => {
         try {
             const uptime = process.uptime();
             const totalMembers = client.guilds.cache.reduce((acc, g) => acc + g.memberCount, 0);
 
-            // 1. Récupération des confessions (MongoDB)
-            let confessions = [];
-            try {
-                confessions = await Confession.find().sort({ _id: -1 }).limit(15);
-            } catch (mongoErr) {
-                console.error("Erreur lecture MongoDB dans Dashboard :", mongoErr);
-            }
-
-            // 2. Récupération des niveaux Supabase (table 'levels' ou similaire)
-            let supabaseLevels = [];
-            try {
-                const { data, error } = await supabase.from('levels').select('*').limit(15);
-                if (!error && data) {
-                    supabaseLevels = data;
-                }
-            } catch (supErr) {
-                console.error("Erreur lecture Supabase dans Dashboard :", supErr);
-            }
-
-            const user = req.user;
-            const avatarUrl = user.avatar 
-                ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` 
-                : 'https://cdn.discordapp.com/embed/avatars/0.png';
-
-            // Génération dynamique des lignes du tableau des confessions (avec bouton supprimer)
-            let confessionsRows = '';
-            if (confessions.length > 0) {
-                confessions.forEach(conf => {
-                    confessionsRows += `
-                        <tr class="border-b border-slate-700/50 text-sm hover:bg-slate-750/50 transition">
-                            <td class="py-3 px-2 font-mono text-indigo-400 font-semibold">${conf.code || '#'}</td>
-                            <td class="py-3 px-2 text-slate-300">${conf.content || 'Fichier/Média joint'}</td>
-                            <td class="py-3 px-2 text-right">
-                                <form action="/dashboard/confession/delete/${conf._id}" method="POST" onsubmit="return confirm('Voulez-vous vraiment supprimer cette confession ?');">
-                                    <button type="submit" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded text-xs font-semibold transition">Supprimer</button>
-                                </form>
-                            </td>
-                        </tr>
-                    `;
-                });
-            } else {
-                confessionsRows = `
-                    <tr>
-                        <td colspan="3" class="py-4 text-center text-slate-400 text-sm">Aucune confession enregistrée pour le moment.</td>
-                    </tr>
-                `;
-            }
-
-            // Génération dynamique des lignes du tableau Supabase Niveaux (avec bouton supprimer)
-            let supabaseRows = '';
-            if (supabaseLevels.length > 0) {
-                supabaseLevels.forEach(row => {
-                    // S'adapte selon tes colonnes Supabase (ex: user_id, xp, level ou userid)
-                    const userId = row.user_id || row.userid || 'Inconnu';
-                    const xp = row.xp || 0;
-                    const level = row.level || 0;
-
-                    supabaseRows += `
-                        <tr class="border-b border-slate-700/50 text-sm hover:bg-slate-750/50 transition">
-                            <td class="py-3 px-2 font-mono text-emerald-400">${userId}</td>
-                            <td class="py-3 px-2 text-slate-300">Niveau ${level} (${xp} XP)</td>
-                            <td class="py-3 px-2 text-right">
-                                <form action="/dashboard/supabase/delete/${userId}" method="POST" onsubmit="return confirm('Voulez-vous vraiment supprimer les données de cet utilisateur ?');">
-                                    <button type="submit" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded text-xs font-semibold transition">Supprimer / Reset</button>
-                                </form>
-                            </td>
-                        </tr>
-                    `;
-                });
-            } else {
-                supabaseRows = `
-                    <tr>
-                        <td colspan="3" class="py-4 text-center text-slate-400 text-sm">Aucune donnée de niveau trouvée dans Supabase.</td>
-                    </tr>
-                `;
-            }
-
-            res.send(`
-                <!DOCTYPE html>
-                <html lang="fr">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>𝑻𝑰𝑰𝑻𝑰𝑰_𝑩𝒐𝒕 - Dashboard Admin</title>
-                    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-                </head>
-                <body class="bg-slate-900 text-white font-sans min-h-screen">
-                    <div class="flex h-screen overflow-hidden">
-                        <!-- Sidebar -->
-                        <div class="w-64 bg-slate-950 p-6 flex flex-col justify-between border-r border-slate-800 shrink-0">
-                            <div>
-                                <h1 class="text-xl font-bold text-indigo-400 mb-8">𝑻𝑰𝑰𝑻𝑰𝑰_𝑩𝒐𝒕 Panel</h1>
-                                <nav class="space-y-3">
-                                    <a href="#overview" class="block py-2.5 px-4 rounded bg-indigo-600 text-white font-medium hover:bg-indigo-500 transition">📊 Vue d'ensemble</a>
-                                    <a href="#confessions" class="block py-2.5 px-4 rounded hover:bg-slate-800 text-slate-300 transition">🔓 Confessions (MongoDB)</a>
-                                    <a href="#supabase" class="block py-2.5 px-4 rounded hover:bg-slate-800 text-slate-300 transition">📈 Niveaux (Supabase)</a>
-                                </nav>
-                            </div>
-                            <div class="flex items-center justify-between border-t border-slate-800 pt-4">
-                                <div class="flex items-center gap-3">
-                                    <img src="${avatarUrl}" class="w-10 h-10 rounded-full border border-slate-700">
-                                    <div>
-                                        <p class="font-semibold text-sm leading-tight">${user.username}</p>
-                                        <p class="text-xs text-emerald-400 font-medium">Connecté</p>
-                                    </div>
-                                </div>
-                                <a href="/logout" class="text-slate-400 hover:text-red-400 text-sm font-semibold transition" title="Déconnexion">🚪</a>
-                            </div>
-                        </div>
-
-                        <!-- Contenu principal -->
-                        <div class="flex-1 p-8 overflow-y-auto">
-                            <h2 class="text-3xl font-bold mb-6 text-slate-100">Tableau de bord administrateur</h2>
-
-                            <!-- Section 1 : Stats du Bot -->
-                            <div id="overview" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700/80 shadow-lg">
-                                    <p class="text-slate-400 text-sm font-medium">Uptime du Bot</p>
-                                    <p class="text-3xl font-bold mt-2 text-indigo-400">${Math.floor(uptime / 60)} min</p>
-                                </div>
-                                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700/80 shadow-lg">
-                                    <p class="text-slate-400 text-sm font-medium">Membres totaux</p>
-                                    <p class="text-3xl font-bold mt-2 text-emerald-400">${totalMembers}</p>
-                                </div>
-                                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700/80 shadow-lg">
-                                    <p class="text-slate-400 text-sm font-medium">Latence API (Ping)</p>
-                                    <p class="text-3xl font-bold mt-2 text-amber-400">${client.ws.ping} ms</p>
-                                </div>
-                            </div>
-
-                            <!-- Section 2 : Confessions MongoDB -->
-                            <div id="confessions" class="bg-slate-800 p-6 rounded-xl border border-slate-700/80 shadow-lg mb-10">
-                                <h3 class="text-xl font-bold mb-4 text-indigo-300 flex items-center gap-2">
-                                    <span>🔓</span> Dernières Confessions (MongoDB)
-                                </h3>
-                                <div class="overflow-x-auto">
-                                    <table class="w-full text-left border-collapse">
-                                        <thead>
-                                            <tr class="border-b border-slate-700 text-slate-400 text-sm">
-                                                <th class="pb-3 px-2">Code</th>
-                                                <th class="pb-3 px-2">Contenu</th>
-                                                <th class="pb-3 px-2 text-right">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            ${confessionsRows}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <!-- Section 3 : Suivi Supabase -->
-                            <div id="supabase" class="bg-slate-800 p-6 rounded-xl border border-slate-700/80 shadow-lg mb-10">
-                                <h3 class="text-xl font-bold mb-4 text-emerald-300 flex items-center gap-2">
-                                    <span>📈</span> Suivi Supabase (Niveaux & Activité)
-                                </h3>
-                                <div class="overflow-x-auto">
-                                    <table class="w-full text-left border-collapse">
-                                        <thead>
-                                            <tr class="border-b border-slate-700 text-slate-400 text-sm">
-                                                <th class="pb-3 px-2">ID Utilisateur</th>
-                                                <th class="pb-3 px-2">Progression</th>
-                                                <th class="pb-3 px-2 text-right">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            ${supabaseRows}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </body>
-                </html>
-            `);
-        } catch (err) {
-            console.error("Erreur lors du rendu du Dashboard :", err);
-            res.status(500).send("Erreur interne du serveur lors du chargement du Dashboard.");
-        }
-    });
-
-    // 🗑️ Route pour supprimer une confession MongoDB depuis le web
-    app.post('/dashboard/confession/delete/:id', checkAdminAuth, async (req, res) => {
-        try {
-            const confessionId = req.params.id;
-            await Confession.findByIdAndDelete(confessionId);
-            res.redirect('/dashboard');
-        } catch (err) {
-            console.error("Erreur suppression confession :", err);
-            res.status(500).send("Erreur lors de la suppression de la confession.");
-        }
-    });
-
-    // 🗑️ Route pour supprimer/reset un utilisateur dans Supabase depuis le web
-    app.post('/dashboard/supabase/delete/:userId', checkAdminAuth, async (req, res) => {
-        try {
-            const userId = req.params.userId;
-            // Supprime l'entrée dans la table levels (adapte 'user_id' si ta colonne s'appelle 'userid')
-            await supabase.from('levels').delete().eq('user_id', userId);
-            // Si jamais la colonne s'appelle 'userid', essaie les deux ou ajuste selon ta table :
-            await supabase.from('levels').delete().eq('userid', userId);
+            
