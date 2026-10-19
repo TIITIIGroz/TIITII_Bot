@@ -24,7 +24,7 @@ module.exports = (client) => {
             const rulesChannel = await newMember.guild.channels.fetch(RULES_CHANNEL_ID).catch(() => null);
             if (rulesChannel) {
                 const msgRules = await rulesChannel.send(
-                    `<@${newMember.id}> Lisez et acceptez en appuyant sur le bouton ✅\n\n----------------------------------------------\nRead and accept by pressing the button ✅`
+                    `<@${newMember.id}> Lisez et acceptez en appuyant sur le bouton ✅\n\n----------------------------------------------\n<@${newMember.id}> Read and accept by pressing the button ✅`
                 ).catch(() => null);
                 if (msgRules) rulesMessages.set(newMember.id, msgRules.id);
             }
