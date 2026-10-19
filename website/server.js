@@ -35,8 +35,8 @@ function setupDashboard(client) {
         resave: false,
         saveUninitialized: false,
         cookie: { 
-            secure: false, // Mettre à true si HTTPS strict est exigé par Render
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 jours de connexion persistante même après un F5 !
+            secure: false,
+            maxAge: 7 * 24 * 60 * 60 * 1000 // Reste connecté 7 jours même après un refresh (F5)
         }
     }));
 
@@ -55,9 +55,40 @@ function setupDashboard(client) {
         return done(null, profile);
     }));
 
-    // 🌐 Page d'accueil publique (Parfaite pour UptimeRobot !)
+    // 🌐 Page d'accueil publique (Parfaite pour UptimeRobot, sans fichier ejs requis)
     app.get('/', (req, res) => {
-        res.render('index', { user: req.user || null });
+        const user = req.user || null;
+        res.send(`
+            <!DOCTYPE html>
+            <html lang="fr">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>𝑻𝑰𝑰𝑻𝑰𝑰_𝑩𝒐𝒕 - Accueil</title>
+                <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+            </head>
+            <body class="bg-slate-900 text-white font-sans flex items-center justify-center h-screen">
+                <div class="bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-2xl text-center max-w-md w-full">
+                    <h1 class="text-3xl font-extrabold text-indigo-400 mb-2">𝑻𝑰𝑰𝑻𝑰𝑰_𝑩𝒐𝒕</h1>
+                    <p class="text-slate-400 text-sm mb-6">Panneau de contrôle et administration du bot Discord.</p>
+                    
+                    ${user ? `
+                        <div class="mb-6 p-3 bg-slate-900 rounded-xl border border-slate-700 flex items-center justify-center gap-3">
+                            <p class="text-sm">Connecté en tant que <span class="font-bold text-emerald-400">${user.username}</span></p>
+                        </div>
+                        <a href="/dashboard" class="w-full block bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition shadow-lg mb-3">
+                            Accéder au Dashboard 🚀
+                        </a>
+                        <a href="/logout" class="text-xs text-slate-400 hover:text-red-400 transition">Se déconnecter</a>
+                    ` : `
+                        <a href="/auth/discord" class="w-full block bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition shadow-lg">
+                            Connexion Administrateur (Discord) 🔑
+                        </a>
+                    `}
+                </div>
+            </body>
+            </html>
+        `);
     });
 
     // Route de connexion Discord
