@@ -66,6 +66,7 @@ module.exports = (client) => {
 🔥 ✦ ʀᴇᴊᴏɪɢɴᴇᴢ ʟᴀ 𝑭𝒂𝒎𝒊𝒍𝒍𝒆 𝑮𝒓𝒐𝒛 ᴅᴇ̀s ᴍᴀɪɴᴛᴇɴᴀɴᴛ !
 
 🎟️ ✦ ᴛᴏɴ ᴛɪᴄᴋᴇᴛ ➝ https://invites.gg/TIITII_Groz
+                    https://discord.gg/ZrZy5d9Mgd
 
 📹 ✦ ʀᴇ́sᴇᴀᴜx ➝ https://beacons.ai/tiitii_groz
 
