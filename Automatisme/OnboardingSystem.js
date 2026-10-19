@@ -1,7 +1,7 @@
 const { Events } = require('discord.js');
 
 const ADMIS_ROLE_ID = '1492064548101034076';
-const RULES_ROLE_ID = '864920115270909972'; // ID du rôle attribué lors de l'acceptation des règles
+const RULES_ROLE_ID = '894668498180124703'; // ID du rôle attribué lors de l'acceptation des règles
 
 const RULES_CHANNEL_ID = '864920115270909972';
 const LANG_CHANNEL_ID = '896545873570455553';
