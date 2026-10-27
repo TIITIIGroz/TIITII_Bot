@@ -18,7 +18,7 @@ if (MONGODB_URI) {
 }
 
 const { handleXpMessage } = require("./systems/levels/xp");
-const { checkAndReward } = require("./systems/levels/rewards"); // 👈 Import pour la synchro
+const { checkAndReward } = require("./systems/levels/rewards");
 const supabase = require("./supabase"); 
 const pool = require("./systems/levels/database");
 console.log("TEST TOKEN :", process.env.TOKEN ? "Le token est bien lu !" : "ATTENTION : Le token est VIDE !");
@@ -138,7 +138,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                         { name: '👤 Propriétaire', value: `${member.user.tag} (<@${member.id}>)`, inline: true },
                         { name: '📂 Salon', value: `${tempChannel} (\`${tempChannel.name}\`)`, inline: true }
                     )
-                    .setFooter({ text: '/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑂𝒓𝒐𝒛\\' })
+                    .setFooter({ text: '/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛\\' })
                     .setTimestamp();
                 await logsChannel.send({ embeds: [voiceLogEmbed] });
             }
@@ -193,7 +193,7 @@ client.on(Events.GuildMemberAdd, async (member) => {
     } catch (err) {}
 });
 
-// Événement : Client Prêt (Synchronisation globale + Présence + Anniversaires)
+// Événement : Client Prêt (Synchronisation globale sécurisée + Présence + Anniversaires)
 client.once(Events.ClientReady, async () => {
     console.log(`✅ Connecté en tant que ${client.user.tag}`);
     console.log(`📋 Commandes enregistrées : ${client.commands.size}`);
@@ -203,17 +203,18 @@ client.once(Events.ClientReady, async () => {
         status: "online",
     });
 
-    // 🔄 SYNCHRONISATION GLOBALE AU DÉMARRAGE (Rattrapage des rôles et vérifications)
-    console.log("🔄 Lancement de la synchronisation globale des membres et des rôles...");
+    // 🔄 SYNCHRONISATION GLOBALE SÉCURISÉE AU DÉMARRAGE
+    console.log("🔄 Lancement de la synchronisation globale des rôles...");
     try {
         for (const [guildId, guild] of client.guilds.cache) {
-            await guild.members.fetch(); // Charger tous les membres en cache
             const resDb = await pool.query(`SELECT userid, level FROM users WHERE guildid = $1`, [guildId]);
             
             for (const row of resDb.rows) {
-                const member = guild.members.cache.get(row.userid);
-                if (member && row.level > 0) {
-                    await checkAndReward(member, parseInt(row.level));
+                if (row.level > 0) {
+                    const member = await guild.members.fetch(row.userid).catch(() => null);
+                    if (member) {
+                        await checkAndReward(member, parseInt(row.level));
+                    }
                 }
             }
         }
