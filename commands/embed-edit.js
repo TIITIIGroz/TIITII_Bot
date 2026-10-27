@@ -7,6 +7,7 @@ const AUTHORIZED_USERS = [
     "894669520902451220",  // Admin normal
     "987485855474147368",  // Modérateur
     "913798085686198292", // Mon ID TIITII_Groz !
+    "707665614067728464", // Mon ID Nk B
 ];
 
 module.exports = {
