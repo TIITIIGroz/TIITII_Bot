@@ -2,12 +2,10 @@ const { Client, GatewayIntentBits, Partials, Collection, ActivityType, Events, M
 const fs = require("fs");
 const path = require("path");
 
-// 👇 1. SÉCURITÉ POUR ATTRAPER LES ERREURS 👇
 process.on('unhandledRejection', error => {
     console.error('❌ Erreur non gérée (Unhandled Rejection) :', error);
 });
 
-// Connexion à la base de données MongoDB Atlas
 const mongoose = require('mongoose');
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -19,8 +17,8 @@ if (MONGODB_URI) {
     console.log("⚠️ MONGODB_URI n'est pas définie dans les variables d'environnement.");
 }
 
-// Import des systèmes, de Supabase & de la BDD PostgreSQL (pool)
 const { handleXpMessage } = require("./systems/levels/xp");
+const { checkAndReward } = require("./systems/levels/rewards"); // 👈 Import pour la synchro
 const supabase = require("./supabase"); 
 const pool = require("./systems/levels/database");
 console.log("TEST TOKEN :", process.env.TOKEN ? "Le token est bien lu !" : "ATTENTION : Le token est VIDE !");
@@ -35,14 +33,13 @@ const client = new Client({
         GatewayIntentBits.DirectMessages
     ],
     partials: [
-        Partials.Channel,  // 👈 OBLIGATOIRE POUR DÉTECTER LES MP D'UTILISATEURS
+        Partials.Channel,
         Partials.Message
     ]
 });
 
 client.commands = new Collection();
 
-// Charger les commandes
 const commandsPath = path.join(__dirname, "commands");
 if (fs.existsSync(commandsPath)) {
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".js"));
@@ -52,21 +49,14 @@ if (fs.existsSync(commandsPath)) {
     }
 }
 
-// 🛡 Listes des administrateurs et rôles
 const ADMIN_ROLE_IDS = ['894668340902125618', '1012357140679229511', '894669520902451220'];
 const ADMIN_USER_IDS = ['913798085686198292', '707665614067728464'];
 
 client.on(Events.InteractionCreate, async interaction => {
-    // Délégation des boutons vers les fichiers de commandes
     if (interaction.isButton()) {
-        const [commandName] = interaction.customId.split('_'); 
         const command = client.commands.get('ticket-setup');
         if (command && typeof command.handleButton === 'function') {
-            try {
-                await command.handleButton(interaction);
-            } catch (err) {
-                console.error("Erreur gestion bouton :", err);
-            }
+            try { await command.handleButton(interaction); } catch (err) { console.error("Erreur gestion bouton :", err); }
         }
         return;
     }
@@ -98,20 +88,15 @@ client.on(Events.InteractionCreate, async interaction => {
 });
 
 client.on(Events.MessageCreate, async (message) => {
-    // Transférer les messages reçus en MP vers le salon spécifié
     if (message.guild === null && !message.author.bot) {
         const LOG_DM_CHANNEL_ID = "1552184275309297675";
         try {
             const targetChannel = await client.channels.fetch(LOG_DM_CHANNEL_ID).catch(() => null);
             if (targetChannel) {
                 const timestamp = Math.floor(Date.now() / 1000);
-                await targetChannel.send(
-                    `📥 **Nouveau MP reçu le <t:${timestamp}:F> (<t:${timestamp}:R>) de** ${message.author.tag} (\`${message.author.id}\`) :\n> ${message.content}`
-                );
+                await targetChannel.send(`📥 **Nouveau MP reçu le <t:${timestamp}:F> (<t:${timestamp}:R>) de** ${message.author.tag} (\`${message.author.id}\`) :\n> ${message.content}`);
             }
-        } catch (err) {
-            console.error("Erreur transfert MP :", err);
-        }
+        } catch (err) { console.error("Erreur transfert MP :", err); }
         return;
     }
 
@@ -120,7 +105,6 @@ client.on(Events.MessageCreate, async (message) => {
 
 const temporaryVoiceChannels = new Map();
 
-// Événement : Salons vocaux temporaires
 client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
     const PILOT_CHANNEL_ID = "1533281900318167060";
     const LOGS_VOICE_ID = "1258726912721817611";
@@ -154,7 +138,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                         { name: '👤 Propriétaire', value: `${member.user.tag} (<@${member.id}>)`, inline: true },
                         { name: '📂 Salon', value: `${tempChannel} (\`${tempChannel.name}\`)`, inline: true }
                     )
-                    .setFooter({ text: '/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛\\' })
+                    .setFooter({ text: '/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑂𝒓𝒐𝒛\\' })
                     .setTimestamp();
                 await logsChannel.send({ embeds: [voiceLogEmbed] });
             }
@@ -187,7 +171,6 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
     }
 });
 
-// Événement : Départ de membre (Prison / Nettoyage BDD)
 client.on(Events.GuildMemberRemove, async (member) => {
     const PRISON_ROLES = ["1549495761761214484", "913882559363043388"];
     const hasPrisonRole = member.roles.cache.some(role => PRISON_ROLES.includes(role.id));
@@ -200,7 +183,6 @@ client.on(Events.GuildMemberRemove, async (member) => {
     } catch (err) { console.error("Erreur nettoyage BDD départ :", err); }
 });
 
-// Événement : Arrivée de membre (Restauration rôles prison)
 client.on(Events.GuildMemberAdd, async (member) => {
     try {
         const { data } = await supabase.from('prison_escapes').select('prison_roles').eq('user_id', member.id).single();
@@ -211,7 +193,7 @@ client.on(Events.GuildMemberAdd, async (member) => {
     } catch (err) {}
 });
 
-// Événement : Client Prêt (Présence, message en ligne, anniversaires)
+// Événement : Client Prêt (Synchronisation globale + Présence + Anniversaires)
 client.once(Events.ClientReady, async () => {
     console.log(`✅ Connecté en tant que ${client.user.tag}`);
     console.log(`📋 Commandes enregistrées : ${client.commands.size}`);
@@ -220,6 +202,25 @@ client.once(Events.ClientReady, async () => {
         activities: [{ name: "TIITII_Groz sur/on Twitch", type: ActivityType.Streaming, url: "https://www.twitch.tv/TIITII_Groz" }],
         status: "online",
     });
+
+    // 🔄 SYNCHRONISATION GLOBALE AU DÉMARRAGE (Rattrapage des rôles et vérifications)
+    console.log("🔄 Lancement de la synchronisation globale des membres et des rôles...");
+    try {
+        for (const [guildId, guild] of client.guilds.cache) {
+            await guild.members.fetch(); // Charger tous les membres en cache
+            const resDb = await pool.query(`SELECT userid, level FROM users WHERE guildid = $1`, [guildId]);
+            
+            for (const row of resDb.rows) {
+                const member = guild.members.cache.get(row.userid);
+                if (member && row.level > 0) {
+                    await checkAndReward(member, parseInt(row.level));
+                }
+            }
+        }
+        console.log("✅ Synchronisation globale terminée avec succès !");
+    } catch (err) {
+        console.error("❌ Erreur lors de la synchronisation globale :", err);
+    }
 
     const ONLINE_CHANNEL_ID = "1547854332333006899";
     try {
@@ -230,7 +231,6 @@ client.once(Events.ClientReady, async () => {
         }
     } catch (err) { console.error("Erreur message en ligne :", err); }
 
-    // Système des anniversaires à minuit
     setInterval(async () => {
         const now = new Date();
         if (now.getHours() === 0 && now.getMinutes() === 0) {
@@ -286,7 +286,6 @@ client.once(Events.ClientReady, async () => {
     }, 60000);
 });
 
-// Événement : Gestion des rôles d'accès
 client.on("guildMemberUpdate", async (oldMember, newMember) => {
     const ACCESS_ROLE = "1509584318203433001";
     const TRIGGER_ROLES = ["1269778023826067699", "1533558027825840218"];
@@ -299,7 +298,6 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
     } catch (err) { console.error("Erreur rôle d'accès :", err); }
 });
 
-// Événement : Gestion des boosts serveur
 client.on("guildMemberUpdate", async (oldMember, newMember) => {
     const BOOST_ROLE_ID = "1547695661435195424";
     const LOG_CHANNEL_ID = "1534224381109076172";
@@ -318,7 +316,6 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
     } catch (err) { console.error("Erreur boost :", err); }
 });
 
-// Événement : Gestion du pseudo/tag personnalisé ("GROZ")
 client.on("guildMemberUpdate", async (oldMember, newMember) => {
     const TAG_ROLE_ID = "1547699213700309072";
     const TARGET_TAG = "GROZ"; 
@@ -337,7 +334,6 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
     } catch (err) { console.error("Erreur tag :", err); }
 });
 
-// Chargement des automatismes externes
 require('./Automatisme/ConfigReminder')(client);
 require('./Automatisme/WelcomeSystem')(client);
 require('./Automatisme/Gbye.js')(client);
@@ -346,7 +342,6 @@ require('./systems/confession/confessionSystem')(client);
 require('./Automatisme/ServerStats')(client);
 require('./Automatisme/OnboardingSystem')(client);
 
-// 🌐 Lancement du serveur web pour le Dashboard (dossier ./website/server.js)
 const setupDashboard = require('./website/server');
 setupDashboard(client);
 
