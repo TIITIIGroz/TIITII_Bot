@@ -17,7 +17,6 @@ const langMessages = new Map();  // userId -> messageId
 async function deleteUserMentionMessage(channel, userId, knownMsgId = null) {
     if (!channel) return;
 
-    // 1. Essai avec l'ID sauvegardé en mémoire
     if (knownMsgId) {
         const msg = await channel.messages.fetch(knownMsgId).catch(() => null);
         if (msg) {
@@ -26,7 +25,6 @@ async function deleteUserMentionMessage(channel, userId, knownMsgId = null) {
         }
     }
 
-    // 2. Sécurité : Recherche dans les 50 derniers messages du salon si l'ID n'est plus en mémoire
     const fetchedMessages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
     if (fetchedMessages) {
         const targetMsg = fetchedMessages.find(m => m.author.id === channel.client.user.id && m.content.includes(`<@${userId}>`));
@@ -47,11 +45,8 @@ module.exports = (client) => {
         const hadLang = oldMember.roles.cache.has(FR_ROLE_ID) || oldMember.roles.cache.has(EN_ROLE_ID);
         const hasLang = newMember.roles.cache.has(FR_ROLE_ID) || newMember.roles.cache.has(EN_ROLE_ID);
 
-        // -------------------------------------------------------------
-        // 1. OBTENTION DU RÔLE "ADMIS"
-        // -------------------------------------------------------------
+        // 1. Obtention du rôle "admis"
         if (!hadAdmis && hasAdmis) {
-            // A. Envoi dans le salon des règles
             const rulesChannel = await newMember.guild.channels.fetch(RULES_CHANNEL_ID).catch(() => null);
             if (rulesChannel && !hasRulesRole) {
                 const msgRules = await rulesChannel.send(
@@ -60,7 +55,6 @@ module.exports = (client) => {
                 if (msgRules) rulesMessages.set(newMember.id, msgRules.id);
             }
 
-            // B. Envoi dans le salon des langues (si pas encore de langue)
             const langChannel = await newMember.guild.channels.fetch(LANG_CHANNEL_ID).catch(() => null);
             if (langChannel && !hasLang) {
                 const msgLang = await langChannel.send(
@@ -70,27 +64,21 @@ module.exports = (client) => {
             }
         }
 
-        // -------------------------------------------------------------
-        // 2. VALIDATION DES RÈGLES -> Suppression du message Règles
-        // -------------------------------------------------------------
-        if ((!hadRulesRole && hasRulesRole) || (hasRulesRole && rulesMessages.has(newMember.id))) {
+        // 2. Validation des règles -> Suppression du message Règles
+        if (!hadRulesRole && hasRulesRole) {
             const rulesChannel = await newMember.guild.channels.fetch(RULES_CHANNEL_ID).catch(() => null);
             await deleteUserMentionMessage(rulesChannel, newMember.id, rulesMessages.get(newMember.id));
             rulesMessages.delete(newMember.id);
         }
 
-        // -------------------------------------------------------------
-        // 3. SELECTION D'UNE OU DEUX LANGUES -> Suppression du message Langues
-        // -------------------------------------------------------------
+        // 3. Sélection d'une ou deux langues -> Suppression du message Langues
         if (!hadLang && hasLang) {
             const langChannel = await newMember.guild.channels.fetch(LANG_CHANNEL_ID).catch(() => null);
             await deleteUserMentionMessage(langChannel, newMember.id, langMessages.get(newMember.id));
             langMessages.delete(newMember.id);
         }
 
-        // -------------------------------------------------------------
-        // 4. RETRAIT DE TOUTES LES LANGUES (Si toujours admis) -> Relance
-        // -------------------------------------------------------------
+        // 4. Retrait de toutes les langues -> Relance
         if (hadLang && !hasLang && hasAdmis) {
             const langChannel = await newMember.guild.channels.fetch(LANG_CHANNEL_ID).catch(() => null);
             if (langChannel) {
