@@ -1,84 +1,78 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const pool = require('../systems/levels/database');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('stats')
-        .setDescription('Affiche tes statistiques ou celles d’un membre (XP, classement, messages...)')
-        .addUserOption(option => 
-            option.setName('membre')
-                .setDescription('Le membre dont tu veux voir les statistiques (optionnel)')
-                .setRequired(false)
-        ),
-    
+        .setName('statut')
+        .setDescription('Affiche la liste des rôles du serveur par pages'),
+
     async execute(interaction) {
         await interaction.deferReply();
 
-        const { guild } = interaction;
+        const roles = interaction.guild.roles.cache
+            .filter(r => r.id !== interaction.guild.id)
+            .sort((a, b) => b.position - a.position)
+            .map(r => `${r} (\`${r.members.size} membres\`)`);
 
-        // On cible soit la personne mentionnée, soit l'auteur de la commande par défaut
-        const targetUser = interaction.options.getUser('membre') || interaction.user;
-        const targetMember = guild.members.cache.get(targetUser.id) || await guild.members.fetch(targetUser.id).catch(() => null);
-
-        if (!targetMember) {
-            return interaction.editReply({ content: "❌ Impossible de trouver ce membre sur le serveur." });
+        if (roles.length === 0) {
+            return interaction.editReply({ content: "❌ Aucun rôle trouvé sur ce serveur." });
         }
 
-        let level = 0;
-        let totalXp = 0;
-        let rank = 'Non classé';
-        let messagesCount = 0;
-        let favoriteTextChannel = 'Aucun';
-        let voiceHours = 0;
-        let favoriteVoiceChannel = 'Aucun';
+        const itemsPerPage = 10;
+        const totalPages = Math.ceil(roles.length / itemsPerPage);
+        let currentPage = 0;
 
-        try {
-            // 1. Récupérer le niveau et l'XP total de la cible
-            const userQuery = await pool.query(
-                `SELECT totalxp, level FROM users WHERE userid = $1 AND guildid = $2`,
-                [targetUser.id, guild.id]
+        const generateEmbed = (page) => {
+            const start = page * itemsPerPage;
+            const currentRoles = roles.slice(start, start + itemsPerPage).join('\n');
+
+            return new EmbedBuilder()
+                .setColor('#5865F2')
+                .setTitle(`🛡️ Liste des rôles de ${interaction.guild.name}`)
+                .setDescription(currentRoles)
+                .setFooter({ text: `Rôles page ${page + 1}/${totalPages} • /Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛` });
+        };
+
+        const generateRow = (page) => {
+            return new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId('prev_roles')
+                    .setLabel('◀️ Précédent')
+                    .setStyle(ButtonStyle.Primary)
+                    .setDisabled(page === 0),
+                new ButtonBuilder()
+                    .setCustomId('next_roles')
+                    .setLabel('Suivant ▶️')
+                    .setStyle(ButtonStyle.Primary)
+                    .setDisabled(page === totalPages - 1)
             );
+        };
 
-            if (userQuery.rows.length > 0) {
-                totalXp = parseInt(userQuery.rows[0].totalxp) || 0;
-                level = parseInt(userQuery.rows[0].level) || 0;
+        const message = await interaction.editReply({
+            embeds: [generateEmbed(currentPage)],
+            components: [generateRow(currentPage)]
+        });
+
+        const collector = message.createMessageComponentCollector({ time: 60000 });
+
+        collector.on('collect, async i => {
+            if (i.user.id !== interaction.user.id) {
+                return i.reply({ content: "❌ Tu ne peux pas utiliser ces boutons.", ephemeral: true });
             }
 
-            // 2. Calculer le rang dans le classement (Leaderboard)
-            const rankQuery = await pool.query(
-                `SELECT COUNT(*) + 1 as rank FROM users WHERE guildid = $1 AND totalxp > (SELECT COALESCE(totalxp, 0) FROM users WHERE userid = $2 AND guildid = $1)`,
-                [guild.id, targetUser.id]
-            );
-            if (rankQuery.rows.length > 0) {
-                rank = `#${rankQuery.rows[0].rank}`;
+            if (i.customId === 'prev_roles') {
+                currentPage = Math.max(currentPage - 1, 0);
+            } else if (i.customId === 'next_roles') {
+                currentPage = Math.min(currentPage + 1, totalPages - 1);
             }
 
-        } catch (err) {
-            console.error("Erreur lors de la récupération des statistiques :", err);
-        }
+            await i.update({
+                embeds: [generateEmbed(currentPage)],
+                components: [generateRow(currentPage)]
+            });
+        });
 
-        // Calcul de l'XP restant
-        const xpRequiredForNextLevel = (level + 1) * 100; 
-        const xpRemaining = Math.max(0, xpRequiredForNextLevel - (totalXp % xpRequiredForNextLevel)); 
-
-        // Construction de l'embed
-        const statsEmbed = new EmbedBuilder()
-            .setColor(targetMember.displayHexColor || '#5865F2')
-            .setTitle(`📊 Statistiques de ${targetUser.username}`)
-            .setThumbnail(targetUser.displayAvatarURL({ dynamic: true, size: 512 }))
-            .addFields(
-                { name: '⭐ Niveau', value: `\`${level}\``, inline: true },
-                { name: '🎯 XP restant', value: `\`${xpRemaining} XP\` (pour le niveau ${level + 1})`, inline: true },
-                { name: '🏆 Rang', value: `\`${rank}\``, inline: true },
-                
-                { name: '💬 Total des messages envoyés', value: `\`${messagesCount} messages\``, inline: false },
-                { name: '📌 Salon des messages préféré', value: `${favoriteTextChannel}`, inline: false },
-                
-                { name: '⏱️ Total d’heures passées en vocal', value: `\`${voiceHours} heures\``, inline: false },
-                { name: '🎧 Salon du vocal préféré', value: `${favoriteVoiceChannel}`, inline: false }
-            )
-            .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` })
-
-        await interaction.editReply({ embeds: [statsEmbed] });
-    },
+        collector.on('end', () => {
+            interaction.editReply({ components: [] }).catch(() => {});
+        });
+    }
 };
