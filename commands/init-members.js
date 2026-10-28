@@ -1,45 +1,49 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const pool = require('../systems/levels/database'); // Ton pool PostgreSQL pour requêter directement la BDD
 const supabase = require('../supabase');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('init-members')
-        .setDescription('Marque tous les membres enregistrés comme déjà accueillis')
+        .setDescription('Marque la totalité des membres du serveur comme déjà accueillis')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     async execute(interaction) {
-        await interaction.deferReply({ flags: [1 << 6] });
+        await interaction.deferReply({ flags: [1 << 6] }); // Éphémère
 
         const guild = interaction.guild;
-        
-        try {
-            // Au lieu de fetch tous les membres via Discord (ce qui plante à cause du rate limit),
-            // on récupère tous les user_id uniques qui ont déjà un profil dans ta table de niveaux/messages !
-            const dbUsersQuery = await pool.query(
-                `SELECT DISTINCT userid FROM users WHERE guildid = $1`,
-                [guild.id]
-            );
 
-            const userIds = dbUsersQuery.rows.map(row => row.userid);
+        try {
+            // 1. Récupération progressive des membres pour éviter le Rate Limit Discord
+            await guild.members.fetch({ time: 60000 }); // Attend la synchronisation du cache
+            const allMembers = Array.from(guild.members.cache.values());
+            const userIds = allMembers.filter(m => !m.user.bot).map(m => m.id);
 
             if (userIds.length === 0) {
-                return await interaction.editReply({ content: "⚠️ Aucun utilisateur trouvé dans la base de données des niveaux pour ce serveur." });
+                return await interaction.editReply({ content: "⚠️ Aucun membre trouvé." });
             }
 
-            // Appel de la fonction Supabase pour enregistrer tous ces utilisateurs d'un coup
-            const { error } = await supabase.rpc('initialize_existing_members', {
-                p_user_ids: userIds,
-                p_guild_id: guild.id
-            });
+            // 2. Découpage en paquets de 100 membres max par sécurité
+            const chunkSize = 100;
+            let insertedCount = 0;
 
-            if (error) throw error;
+            for (let i = 0; i < userIds.length; i += chunkSize) {
+                const chunk = userIds.slice(i, i + chunkSize);
+
+                const { error } = await supabase.rpc('initialize_existing_members', {
+                    p_user_ids: chunk,
+                    p_guild_id: guild.id
+                });
+
+                if (error) throw error;
+                insertedCount += chunk.length;
+            }
 
             await interaction.editReply({ 
-                content: `✅ **${userIds.length} membres actifs** ont été enregistrés en BDD avec succès ! Ils ne recevront plus de messages d'accueil en cas de changement de rôle.` 
+                content: `✅ **${insertedCount} membres** (sur les ${guild.memberCount} du serveur) ont été enregistrés en BDD ! Ils ne recevront aucun message d'accueil en cas de changement de rôles.` 
             });
+
         } catch (err) {
-            console.error("Erreur lors de l'initialisation des membres :", err);
+            console.error("Erreur lors de l'initialisation complète des membres :", err);
             await interaction.editReply({ content: "❌ Une erreur est survenue lors de l'initialisation." });
         }
     }
