@@ -1,24 +1,33 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const supabase = require('../supabase'); // Assure-toi que le chemin est correct
+const pool = require('../systems/levels/database'); // Ton pool PostgreSQL pour requêter directement la BDD
+const supabase = require('../supabase');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('init-members')
-        .setDescription('Marque tous les membres actuels comme déjà accueillis pour éviter le spam')
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // Cache la commande et restreint l'accès aux admins
+        .setDescription('Marque tous les membres enregistrés comme déjà accueillis')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     async execute(interaction) {
-        // Réponse éphémère : invisible pour les autres membres du salon
-        await interaction.deferReply({ flags: [1 << 6] }); 
+        await interaction.deferReply({ flags: [1 << 6] });
 
         const guild = interaction.guild;
         
         try {
-            // On récupère tous les membres du serveur
-            const members = await guild.members.fetch();
-            const userIds = members.filter(m => !m.user.bot).map(m => m.id);
+            // Au lieu de fetch tous les membres via Discord (ce qui plante à cause du rate limit),
+            // on récupère tous les user_id uniques qui ont déjà un profil dans ta table de niveaux/messages !
+            const dbUsersQuery = await pool.query(
+                `SELECT DISTINCT userid FROM users WHERE guildid = $1`,
+                [guild.id]
+            );
 
-            // Appel de la fonction Supabase pour enregistrer tout le monde d'un coup
+            const userIds = dbUsersQuery.rows.map(row => row.userid);
+
+            if (userIds.length === 0) {
+                return await interaction.editReply({ content: "⚠️ Aucun utilisateur trouvé dans la base de données des niveaux pour ce serveur." });
+            }
+
+            // Appel de la fonction Supabase pour enregistrer tous ces utilisateurs d'un coup
             const { error } = await supabase.rpc('initialize_existing_members', {
                 p_user_ids: userIds,
                 p_guild_id: guild.id
@@ -27,7 +36,7 @@ module.exports = {
             if (error) throw error;
 
             await interaction.editReply({ 
-                content: `✅ **${userIds.length} membres** actuels ont été enregistrés en BDD ! Ils ne recevront plus aucun message d'accueil/langue lors de leurs futurs changements de rôles.` 
+                content: `✅ **${userIds.length} membres actifs** ont été enregistrés en BDD avec succès ! Ils ne recevront plus de messages d'accueil en cas de changement de rôle.` 
             });
         } catch (err) {
             console.error("Erreur lors de l'initialisation des membres :", err);
