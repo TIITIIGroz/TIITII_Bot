@@ -54,6 +54,39 @@ const ADMIN_USER_IDS = ['913798085686198292', '707665614067728464'];
 
 client.on(Events.InteractionCreate, async interaction => {
     if (interaction.isButton()) {
+        const customId = interaction.customId;
+
+        // 1. Gestion des boutons personnalisés/traductions enregistrés dans Supabase (Persistant après redémarrage)
+        if (customId.startsWith('translate_')) {
+            const key = customId.replace('translate_', '');
+            try {
+                const { data, error } = await supabase
+                    .from('button_translations')
+                    .select('response_text')
+                    .eq('key', key)
+                    .single();
+
+                if (error || !data) {
+                    return interaction.reply({ 
+                        content: "❌ Désolé, le texte associé à ce bouton est introuvable en base de données.", 
+                        flags: [MessageFlags.Ephemeral] 
+                    });
+                }
+
+                return interaction.reply({ 
+                    content: data.response_text, 
+                    flags: [MessageFlags.Ephemeral] 
+                });
+            } catch (err) {
+                console.error("Erreur lors de la récupération du texte du bouton depuis Supabase :", err);
+                return interaction.reply({ 
+                    content: "❌ Une erreur est survenue lors du chargement du texte.", 
+                    flags: [MessageFlags.Ephemeral] 
+                });
+            }
+        }
+
+        // 2. Gestion des autres boutons (ex: Tickets)
         const command = client.commands.get('ticket-setup');
         if (command && typeof command.handleButton === 'function') {
             try { await command.handleButton(interaction); } catch (err) { console.error("Erreur gestion bouton :", err); }
