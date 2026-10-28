@@ -4,10 +4,10 @@ const supabase = require('../supabase');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('anniv-aj')
-        .setDescription('Enregistre ta date d\'anniversaire ou re écris ta date pour la modifier')
+        .setDescription('Enregistre ta date d\'anniversaire ou réécris ta date pour la modifier')
         .addStringOption(option =>
             option.setName('date')
-                .setDescription('Ta date d\'anniversaire au format JJ/MM (ex: 25/12) ou modifie la en remettant la bonne date')
+                .setDescription('Ta date d\'anniversaire au format JJ/MM (ex: 25/12)')
                 .setRequired(true)
         ),
     async execute(interaction) {
@@ -19,10 +19,11 @@ module.exports = {
             });
         }
 
-        const dateInput = interaction.options.getString('date');
+        const dateInput = interaction.options.getString('date').trim();
         const userId = interaction.user.id;
         const guildId = interaction.guild.id;
 
+        // Validation du format JJ/MM
         const regex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])$/;
         if (!regex.test(dateInput)) {
             return interaction.reply({
@@ -32,11 +33,38 @@ module.exports = {
         }
 
         try {
-            const { error } = await supabase
+            // 1. Vérifier si l'utilisateur a déjà un anniversaire enregistré pour ce serveur
+            const { data: existingUser, error: fetchError } = await supabase
                 .from('birthdays')
-                .upsert({ user_id: userId, guild_id: guildId, birth_date: dateInput }, { onConflict: 'user_id' });
+                .select('*')
+                .eq('user_id', userId)
+                .eq('guild_id', guildId)
+                .maybeSingle();
 
-            if (error) throw error;
+            if (fetchError) {
+                console.error("Erreur lecture Supabase (birthdays) :", fetchError);
+                throw fetchError;
+            }
+
+            let queryError;
+
+            if (existingUser) {
+                // 2A. Mise à jour si l'utilisateur existe déjà
+                const { error } = await supabase
+                    .from('birthdays')
+                    .update({ birth_date: dateInput })
+                    .eq('user_id', userId)
+                    .eq('guild_id', guildId);
+                queryError = error;
+            } else {
+                // 2B. Insertion si c'est la première fois
+                const { error } = await supabase
+                    .from('birthdays')
+                    .insert([{ user_id: userId, guild_id: guildId, birth_date: dateInput }]);
+                queryError = error;
+            }
+
+            if (queryError) throw queryError;
 
             await interaction.reply({
                 content: `✅ Ton anniversaire a bien été enregistré à la date du **${dateInput}** !`,
