@@ -29,7 +29,8 @@ module.exports = {
         let rank = 'Non classé';
         let messagesCount = 0;
         let favoriteTextChannel = 'Aucun';
-        let voiceHours = 0;
+        
+        let totalVoiceMinutes = 0;
         let favoriteVoiceChannel = 'Aucun';
 
         try {
@@ -71,8 +72,39 @@ module.exports = {
                 favoriteTextChannel = `<#${topChanQuery.rows[0].channelid}>`;
             }
 
+            // 5. Récupérer les stats vocales depuis Supabase (table 'voice_stats' ou 'users' selon ton système, ici on suppose une table dédiée ou la colonne voicetime dans users)
+            // Si tu stockes le temps total en minutes dans une table voice_stats (userid, guildid, duration_minutes, channelid) :
+            const voiceTimeQuery = await pool.query(
+                `SELECT SUM(duration_minutes) as total_minutes FROM voice_logs WHERE userid = $1 AND guildid = $2`,
+                [targetUser.id, guild.id]
+            );
+            if (voiceTimeQuery.rows.length > 0 && voiceTimeQuery.rows[0].total_minutes) {
+                totalVoiceMinutes = parseInt(voiceTimeQuery.rows[0].total_minutes) || 0;
+            }
+
+            // 6. Récupérer le salon vocal préféré (où l'utilisateur a passé le plus de temps)
+            const topVoiceChanQuery = await pool.query(
+                `SELECT channelid, SUM(duration_minutes) as total_minutes FROM voice_logs WHERE userid = $1 AND guildid = $2 GROUP BY channelid ORDER BY total_minutes DESC LIMIT 1`,
+                [targetUser.id, guild.id]
+            );
+            if (topVoiceChanQuery.rows.length > 0 && topVoiceChanQuery.rows[0].channelid) {
+                favoriteVoiceChannel = `<#${topVoiceChanQuery.rows[0].channelid}>`;
+            }
+
         } catch (err) {
             console.error("Erreur lors de la récupération des statistiques :", err);
+        }
+
+        // Conversion des minutes totales en Jours, Heures et Minutes
+        const days = Math.floor(totalVoiceMinutes / (24 * 60));
+        const hours = Math.floor((totalVoiceMinutes % (24 * 60)) / 60);
+        const minutes = totalVoiceMinutes % 60;
+        
+        let voiceFormatted = `${minutes} min`;
+        if (days > 0) {
+            voiceFormatted = `${days} jours, ${hours} h et ${minutes} min`;
+        } else if (hours > 0) {
+            voiceFormatted = `${hours} h et ${minutes} min`;
         }
 
         // Calcul de l'XP restant
@@ -92,7 +124,7 @@ module.exports = {
                 { name: '💬 Total des messages envoyés', value: `\`${messagesCount} messages\``, inline: false },
                 { name: '📌 Salon des messages préféré', value: `${favoriteTextChannel}`, inline: false },
                 
-                { name: '⏱️ Total d’heures passées en vocal', value: `\`${voiceHours} heures\``, inline: false },
+                { name: '⏱️ Total du temps passé en vocal', value: `\`${voiceFormatted}\``, inline: false },
                 { name: '🎧 Salon du vocal préféré', value: `${favoriteVoiceChannel}`, inline: false }
             )
             .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` });
