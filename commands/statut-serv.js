@@ -7,6 +7,7 @@ module.exports = {
         .setDescription('Affiche toutes les informations du serveur'),
     
     async execute(interaction) {
+        // TOUJOURS en tout premier pour éviter l'expiration "Unknown interaction"
         await interaction.deferReply();
 
         const { guild } = interaction;
@@ -43,7 +44,7 @@ module.exports = {
             console.error("Erreur récupération top user BDD :", err);
         }
 
-        // ⏳ Récupération du plus ancien et du plus récent membre via le cache (sans surcharger l'API)
+        // ⏳ Récupération du plus ancien et du plus récent membre via le cache
         let oldestMemberText = "Inconnu";
         let newestMemberText = "Inconnu";
         try {
