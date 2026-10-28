@@ -50,7 +50,7 @@ if (fs.existsSync(commandsPath)) {
     }
 }
 
-// Chargement des événements depuis ton dossier "event" (au singulier)
+// Chargement des événements depuis ton dossier "event" (au singulier) -> Gère l'interactionCreate, etc.
 const eventPath = path.join(__dirname, "event");
 if (fs.existsSync(eventPath)) {
     const eventFiles = fs.readdirSync(eventPath).filter(file => file.endsWith(".js"));
@@ -63,80 +63,6 @@ if (fs.existsSync(eventPath)) {
         }
     }
 }
-
-const ADMIN_ROLE_IDS = ['894668340902125618', '1012357140679229511', '894669520902451220'];
-const ADMIN_USER_IDS = ['913798085686198292', '707665614067728464'];
-
-client.on(Events.InteractionCreate, async interaction => {
-    if (interaction.isButton()) {
-        const customId = interaction.customId;
-
-        if (customId.startsWith('translate_')) {
-            const key = customId.replace('translate_', '');
-            try {
-                const { data, error } = await supabase
-                    .from('button_translations')
-                    .select('response_text')
-                    .eq('key', key)
-                    .single();
-
-                if (error || !data) {
-                    return interaction.reply({ 
-                        content: "❌ Désolé, le texte associé à ce bouton est introuvable en base de données.", 
-                        flags: [MessageFlags.Ephemeral] 
-                    });
-                }
-
-                return interaction.reply({ 
-                    content: data.response_text, 
-                    flags: [MessageFlags.Ephemeral] 
-                });
-            } catch (err) {
-                console.error("Erreur lors de la récupération du texte du bouton depuis Supabase :", err);
-                return interaction.reply({ 
-                    content: "❌ Une erreur est survenue lors du chargement du texte.", 
-                    flags: [MessageFlags.Ephemeral] 
-                });
-            }
-        }
-
-        const command = client.commands.get('ticket-setup');
-        if (command && typeof command.handleButton === 'function') {
-            try { await command.handleButton(interaction); } catch (err) { console.error("Erreur gestion bouton :", err); }
-        }
-        return;
-    }
-
-    if (!interaction.isChatInputCommand()) return;
-
-    const ALLOWED_CHANNEL_ID = '1534722984391082105';
-    const BIRTHDAY_CHANNEL_ID = '1011649291124744212';
-    const BDAY_COMMANDS = ['anniv-aj', 'anniv-rt'];
-
-    const memberRoles = interaction.member.roles.cache;
-    const hasAdminRole = ADMIN_ROLE_IDS.some(roleId => memberRoles.has(roleId));
-    const isSpecialUser = ADMIN_USER_IDS.includes(interaction.user.id);
-
-    const isBdayCmdInBdayChannel = BDAY_COMMANDS.includes(interaction.commandName) && interaction.channelId === BIRTHDAY_CHANNEL_ID;
-
-    if (interaction.channelId !== ALLOWED_CHANNEL_ID && !isBdayCmdInBdayChannel && !hasAdminRole && !isSpecialUser) {
-        return interaction.reply({
-            content: `Vous n'avez pas les permissions pour utiliser les commandes dans ce salon, veuillez les effectuer dans <#${ALLOWED_CHANNEL_ID}>\n----------------------------------------------\n*You do not have permission to use commands in this channel, please use them in <#${ALLOWED_CHANNEL_ID}>*`,
-            flags: [MessageFlags.Ephemeral]
-        });
-    }
-
-    const command = client.commands.get(interaction.commandName);
-    if (!command) return;
-
-    try {
-        await command.execute(interaction);
-    } catch (error) {
-        console.error(error);
-        const reply = { content: "Une erreur est survenue.", flags: [MessageFlags.Ephemeral] };
-        interaction.replied || interaction.deferred ? await interaction.followUp(reply) : await interaction.reply(reply);
-    }
-});
 
 client.on(Events.MessageCreate, async (message) => {
     if (message.guild === null && !message.author.bot) {
@@ -235,7 +161,6 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
 
     // 2. Gestion du suivi du temps vocal dans Supabase (server_voice_activity) avec exclusion des salons ignorés
     try {
-        // Vérifier si le salon est dans la table des salons ignorés
         let isIgnored = false;
         const targetChannelToCheck = newChannelId || oldChannelId;
         if (targetChannelToCheck) {
@@ -248,10 +173,8 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
 
         if (!isIgnored) {
             if (!oldChannelId && newChannelId) {
-                // L'utilisateur rejoint un vocal valide
                 voiceSessions.set(key, { channelId: newChannelId, timestamp: Date.now() });
             } else if (oldChannelId && (!newChannelId || oldChannelId !== newChannelId)) {
-                // L'utilisateur quitte un vocal ou change de salon
                 const session = voiceSessions.get(key);
                 if (session) {
                     const durationSeconds = Math.floor((Date.now() - session.timestamp) / 1000);
