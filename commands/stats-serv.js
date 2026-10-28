@@ -155,7 +155,7 @@ module.exports = {
             `• Membres actifs en vocal : \`${voiceMembers}\`\n` +
             `• ID du serveur : \`${serverId}\`\n` +
             `• Serveur créé le : <t:${createdAt}:D> (<t:${createdAt}:R>)\n\n` +
-            `**__Membres (Rôle <@&${targetRoleId}>)__:**\n` +
+            `**__Membres (Rôle __<@&${targetRoleId}>)__:**\n` +
             `• Total : \`${roleMemberCount}\`\n` +
             `• Il y a un mois : \`${membersMonth}\`\n` +
             `• Il y a 15 jours : \`${members15Days}\`\n` +
