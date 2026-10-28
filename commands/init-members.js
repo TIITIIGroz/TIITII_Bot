@@ -4,7 +4,7 @@ const supabase = require('../supabase');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('init-members')
-        .setDescription('Marque la totalité des membres du serveur comme déjà accueillis')
+        .setDescription('Marque les membres actuels du cache comme déjà accueillis')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     async execute(interaction) {
@@ -13,37 +13,28 @@ module.exports = {
         const guild = interaction.guild;
 
         try {
-            // 1. Récupération progressive des membres pour éviter le Rate Limit Discord
-            await guild.members.fetch({ time: 60000 }); // Attend la synchronisation du cache
-            const allMembers = Array.from(guild.members.cache.values());
-            const userIds = allMembers.filter(m => !m.user.bot).map(m => m.id);
+            // Utilise uniquement le cache actuel du bot pour éviter tout Rate Limit de l'API Discord
+            const members = guild.members.cache.filter(m => !m.user.bot);
+            const userIds = Array.from(members.keys());
 
             if (userIds.length === 0) {
-                return await interaction.editReply({ content: "⚠️ Aucun membre trouvé." });
+                return await interaction.editReply({ content: "⚠️ Aucun membre trouvé dans le cache du bot pour le moment." });
             }
 
-            // 2. Découpage en paquets de 100 membres max par sécurité
-            const chunkSize = 100;
-            let insertedCount = 0;
+            // Enregistrement direct dans Supabase
+            const { error } = await supabase.rpc('initialize_existing_members', {
+                p_user_ids: userIds,
+                p_guild_id: guild.id
+            });
 
-            for (let i = 0; i < userIds.length; i += chunkSize) {
-                const chunk = userIds.slice(i, i + chunkSize);
-
-                const { error } = await supabase.rpc('initialize_existing_members', {
-                    p_user_ids: chunk,
-                    p_guild_id: guild.id
-                });
-
-                if (error) throw error;
-                insertedCount += chunk.length;
-            }
+            if (error) throw error;
 
             await interaction.editReply({ 
-                content: `✅ **${insertedCount} membres** (sur les ${guild.memberCount} du serveur) ont été enregistrés en BDD ! Ils ne recevront aucun message d'accueil en cas de changement de rôles.` 
+                content: `✅ **${userIds.length} membres** du cache ont été enregistrés en BDD avec succès ! Ils ne recevront aucun message d'accueil lors de leurs futurs changements de rôles.` 
             });
 
         } catch (err) {
-            console.error("Erreur lors de l'initialisation complète des membres :", err);
+            console.error("Erreur lors de l'initialisation des membres :", err);
             await interaction.editReply({ content: "❌ Une erreur est survenue lors de l'initialisation." });
         }
     }
