@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const pool = require('../systems/levels/database');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -14,7 +15,6 @@ module.exports = {
         await interaction.deferReply();
 
         const { guild } = interaction;
-        const { database: pool } = require('../systems/levels');
 
         // On cible soit la personne mentionnée, soit l'auteur de la commande par défaut
         const targetUser = interaction.options.getUser('membre') || interaction.user;
@@ -57,7 +57,7 @@ module.exports = {
             console.error("Erreur lors de la récupération des statistiques :", err);
         }
 
-        // Calcul de l'XP restant (ajuste la formule selon ton système si besoin)
+        // Calcul de l'XP restant
         const xpRequiredForNextLevel = (level + 1) * 100; 
         const xpRemaining = Math.max(0, xpRequiredForNextLevel - (totalXp % xpRequiredForNextLevel)); 
 
