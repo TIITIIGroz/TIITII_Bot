@@ -77,19 +77,19 @@ module.exports = {
                 // Groupe 1 : Les 3 premiers (2 côte à côte + 1 ligne entière)
                 { name: '👑 Propriétaire', value: owner ? `${owner}` : 'Inconnu', inline: true },
                 { name: '🆔 ID du serveur', value: `\`${guild.id}\``, inline: true },
-                { name: '📅 Créé le', value: `<t:${createdAt}:D> (<t:${createdAt}:R>)`, inline: false },
+                { name: '📅 Créé le', value: `<t:${createdAt}:D> (<t:${createdAt}:R>)`, inline: false },\n
                 
                 // Groupe 2 : Membres et Salons (2 par 2)
                 { name: '👥 Membres', value: `Total : **${roleMemberCount}**`, inline: true },
-                { name: '💬 Salons', value: `Texte : **${textChannels}** | Vocaux : **${voiceChannels}** | Catégories : **${categoryChannels}**`, inline: true },
+                { name: '💬 Salons', value: `Texte : **${textChannels}** | Vocaux : **${voiceChannels}** | Catégories : **${categoryChannels}**`, inline: true },\n
                 
                 // Groupe 3 : Rôle Fr et Rôle En (2 par 2)
                 { name: '🇫🇷 Rôle Français', value: `**${frRoleCount}** membres`, inline: true },
-                { name: '🇬🇧 Rôle Anglais', value: `**${enRoleCount}** membres`, inline: true },
+                { name: '🇬🇧 Rôle Anglais', value: `**${enRoleCount}** membres`, inline: true },\n
 
                 // Groupe 4 : Boost et Top Niveau (2 par 2)
                 { name: '💎 Boosts', value: `Niveau **${guild.premiumTier}** (**${guild.premiumSubscriptionCount || 0}** boosts)`, inline: true },
-                { name: '🏆 Top Niveau (XP)', value: topUserText, inline: true },
+                { name: '🏆 Top Niveau (XP)', value: topUserText, inline: true },\n
 
                 // Groupe 5 : Plus ancien et plus récent membre (2 par 2)
                 { name: '📜 Plus ancien membre', value: oldestMemberText, inline: true },
