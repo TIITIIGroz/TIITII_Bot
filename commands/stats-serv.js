@@ -10,29 +10,38 @@ module.exports = {
         await interaction.deferReply();
 
         const { guild } = interaction;
+        const targetRoleId = '894668498180124703'; // Rôle spécifique demandé
 
-        // --- Récupérations basiques du serveur ---
         const serverName = guild.name;
         const serverId = guild.id;
         const createdAt = Math.floor(guild.createdTimestamp / 1000);
 
-        // Membres actifs actuels
         const onlineMembers = guild.members.cache.filter(member => member.presence && member.presence.status !== 'offline').size;
-        
-        // Membres en vocal
         const voiceMembers = guild.channels.cache
-            .filter(channel => channel.isVoiceBased())
+            .filter(channel => channel.isVoiceBased() && channel.id !== '896742491565473812')
             .reduce((acc, channel) => acc + channel.members.size, 0);
 
-        let membersMonth = "Données non dispo";
-        let members15Days = "Données non dispo";
+        // Salons ignorés pour les messages
+        const ignoredChannels = [
+            '1350852883649663040', '894680444698779708', '1534205869909082172', '894671498965561394',
+            '864920115270909972', '1094755406829584385', '896545873570455553', '897619009556602971',
+            '1011571833704808509', '1011434339076149248', '1011657738994065468', '1011570558607048785',
+            '1036503057300729906', '990641310476148766', '1534249654701785168', '1232429441221791836',
+            '1549500976317337670', '1208168912353493073', '987031560945553418', '1491749498094092388',
+            '990629853801881630', '1533214591201312909', '990642579542536262', '998668844048580609',
+            '1534599616681607388', '1534224381109076172', '1533889676513906838', '1547857175878041630',
+            '896742491565473812'
+        ];
+
         let membersToday = guild.memberCount;
+        let membersMonth = 0;
+        let members15Days = 0;
 
         let msgMonth = 0, msg15Days = 0, msgWeek = 0, msg24h = 0;
         let bestTextChannel = "Aucun";
         let bestTextMember = "Aucun";
 
-        let voiceMonthDays = 0, voiceMonthHours = 0, voiceMonthMinutes = 0;
+        let voiceMonthHours = 0, voiceMonthMinutes = 0;
         let voice15Days = "0h 0min";
         let voiceWeek = "0h 0min";
         let voice24h = "0h 0min";
@@ -40,82 +49,77 @@ module.exports = {
         let bestVoiceMember = "Aucun";
 
         try {
-            // 1. Messages des dernières 24h
+            await guild.members.fetch();
+            const now = Date.now();
+            membersMonth = guild.members.cache.filter(m => m.joinedTimestamp && (now - m.joinedTimestamp) >= 30 * 24 * 60 * 60 * 1000).size;
+            members15Days = guild.members.cache.filter(m => m.joinedTimestamp && (now - m.joinedTimestamp) >= 15 * 24 * 60 * 60 * 1000).size;
+
+            // Requêtes SQL en excluant les salons ignorés
+            const placeholders = ignoredChannels.map((_, i) => `$${i + 2}`).join(', ');
+
             const query24h = await pool.query(
-                `SELECT COUNT(*) as count FROM server_messages WHERE guildid = $1 AND created_at >= NOW() - INTERVAL '24 hours'`,
-                [guild.id]
+                `SELECT COUNT(*) as count FROM server_messages WHERE guildid = $1 AND channelid NOT IN (${placeholders}) AND created_at >= NOW() - INTERVAL '24 hours'`,
+                [guild.id, ...ignoredChannels]
             );
             msg24h = parseInt(query24h.rows[0]?.count) || 0;
 
-            // 2. Messages des 15 derniers jours
             const query15d = await pool.query(
-                `SELECT COUNT(*) as count FROM server_messages WHERE guildid = $1 AND created_at >= NOW() - INTERVAL '15 days'`,
-                [guild.id]
+                `SELECT COUNT(*) as count FROM server_messages WHERE guildid = $1 AND channelid NOT IN (${placeholders}) AND created_at >= NOW() - INTERVAL '15 days'`,
+                [guild.id, ...ignoredChannels]
             );
             msg15Days = parseInt(query15d.rows[0]?.count) || 0;
 
-            // 3. Messages du mois (30 derniers jours)
             const queryMonth = await pool.query(
-                `SELECT COUNT(*) as count FROM server_messages WHERE guildid = $1 AND created_at >= NOW() - INTERVAL '30 days'`,
-                [guild.id]
+                `SELECT COUNT(*) as count FROM server_messages WHERE guildid = $1 AND channelid NOT IN (${placeholders}) AND created_at >= NOW() - INTERVAL '30 days'`,
+                [guild.id, ...ignoredChannels]
             );
             msgMonth = parseInt(queryMonth.rows[0]?.count) || 0;
 
-            // 4. Messages de la semaine (7 derniers jours)
             const queryWeek = await pool.query(
-                `SELECT COUNT(*) as count FROM server_messages WHERE guildid = $1 AND created_at >= NOW() - INTERVAL '7 days'`,
-                [guild.id]
+                `SELECT COUNT(*) as count FROM server_messages WHERE guildid = $1 AND channelid NOT IN (${placeholders}) AND created_at >= NOW() - INTERVAL '7 days'`,
+                [guild.id, ...ignoredChannels]
             );
             msgWeek = parseInt(queryWeek.rows[0]?.count) || 0;
 
-            // 5. Meilleur salon textuel (sur le mois)
             const topChan = await pool.query(
-                `SELECT channelid, COUNT(*) as count FROM server_messages WHERE guildid = $1 AND created_at >= NOW() - INTERVAL '30 days' GROUP BY channelid ORDER BY count DESC LIMIT 1`,
-                [guild.id]
+                `SELECT channelid, COUNT(*) as count FROM server_messages WHERE guildid = $1 AND channelid NOT IN (${placeholders}) AND created_at >= NOW() - INTERVAL '30 days' GROUP BY channelid ORDER BY count DESC LIMIT 1`,
+                [guild.id, ...ignoredChannels]
             );
-            if (topChan.rows.length > 0) {
-                bestTextChannel = `<#${topChan.rows[0].channelid}>`;
-            }
+            if (topChan.rows.length > 0) bestTextChannel = `<#${topChan.rows[0].channelid}>`;
 
-            // 6. Meilleur(e) membre textuel (sur le mois)
             const topMember = await pool.query(
-                `SELECT userid, COUNT(*) as count FROM server_messages WHERE guildid = $1 AND created_at >= NOW() - INTERVAL '30 days' GROUP BY userid ORDER BY count DESC LIMIT 1`,
-                [guild.id]
+                `SELECT userid, COUNT(*) as count FROM server_messages WHERE guildid = $1 AND channelid NOT IN (${placeholders}) AND created_at >= NOW() - INTERVAL '30 days' GROUP BY userid ORDER BY count DESC LIMIT 1`,
+                [guild.id, ...ignoredChannels]
             );
-            if (topMember.rows.length > 0) {
-                bestTextMember = `<@${topMember.rows[0].userid}>`;
-            }
+            if (topMember.rows.length > 0) bestTextMember = `<@${topMember.rows[0].userid}>`;
 
         } catch (err) {
-            console.error("Erreur lors de la récupération des statistiques du serveur :", err);
+            console.error("Erreur stats-serv :", err);
         }
 
-        // Formatage du texte
+        const roleMemberCount = guild.members.cache.filter(member => member.roles.cache.has(targetRoleId)).size;
+
         const embedDescription = `__**Statistiques du serveur:**__\n\n` +
-            `**Nom du serveur**\n` +
-            `${serverName}\n\n` +
-            
+            `**Nom du serveur**\n${serverName}\n\n` +
             `**Infos de base**\n` +
             `• Membres actifs à l'écrit : \`${onlineMembers}\`\n` +
             `• Membres actifs en vocal : \`${voiceMembers}\`\n` +
             `• ID du serveur : \`${serverId}\`\n` +
             `• Serveur créé le : <t:${createdAt}:D> (<t:${createdAt}:R>)\n\n` +
-            
-            `**Membres**\n` +
+            `**Membres (Rôle <@&${targetRoleId}>)**\n` +
+            `• Total : \`${roleMemberCount}\`\n` +
             `• Il y a un mois : \`${membersMonth}\`\n` +
             `• Il y a 15 jours : \`${members15Days}\`\n` +
             `• Aujourd'hui : \`${membersToday}\`\n\n` +
-            
-            `**Messages**\n` +
+            `**Messages (Hors salons exclus)**\n` +
             `• Durant le mois : \`${msgMonth} messages\`\n` +
             `• Les 15 derniers jours : \`${msg15Days} messages\`\n` +
             `• Durant la semaine : \`${msgWeek} messages\`\n` +
             `• Durant les dernières 24h : \`${msg24h} messages\`\n` +
             `• Meilleur salon : ${bestTextChannel}\n` +
             `• Meilleur(e) membre : ${bestTextMember}\n\n` +
-            
             `**Vocal**\n` +
-            `• Durant le mois : \`${voiceMonthDays} jours, ${voiceMonthHours} heures et ${voiceMonthMinutes} minutes\`\n` +
+            `• Durant le mois : \`${voiceMonthHours} heures et ${voiceMonthMinutes} minutes\`\n` +
             `• Les 15 derniers jours : \`${voice15Days}\`\n` +
             `• Durant la semaine : \`${voiceWeek}\`\n` +
             `• Durant les dernières 24h : \`${voice24h}\`\n` +
@@ -126,7 +130,7 @@ module.exports = {
             .setColor('#5865F2')
             .setThumbnail(guild.iconURL({ dynamic: true, size: 512 }))
             .setDescription(embedDescription)
-            .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` });
+            .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛` });
 
         await interaction.editReply({ embeds: [statsEmbed] });
     },
