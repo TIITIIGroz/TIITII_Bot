@@ -80,7 +80,7 @@ module.exports = {
                 { name: '📜 Plus ancien membre', value: oldestMemberText, inline: true },
                 { name: '🆕 Plus récent membre', value: newestMemberText, inline: true }
             )
-            .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛` });
+            .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` });
 
         if (guild.bannerURL()) {
             serverEmbed.setImage(guild.bannerURL({ size: 1024 }));
