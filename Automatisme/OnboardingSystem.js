@@ -45,47 +45,58 @@ module.exports = (client) => {
         const hadLang = oldMember.roles.cache.has(FR_ROLE_ID) || oldMember.roles.cache.has(EN_ROLE_ID);
         const hasLang = newMember.roles.cache.has(FR_ROLE_ID) || newMember.roles.cache.has(EN_ROLE_ID);
 
-        // 1. Obtention du rôle "admis"
+        // 1. Obtention du rôle "admis" -> Envoi unique du message des règles d'abord
         if (!hadAdmis && hasAdmis) {
             const rulesChannel = await newMember.guild.channels.fetch(RULES_CHANNEL_ID).catch(() => null);
             if (rulesChannel && !hasRulesRole) {
-                const msgRules = await rulesChannel.send(
-                    `<@${newMember.id}> Lisez et acceptez en appuyant sur le bouton ✅\n\n----------------------------------------------\n<@${newMember.id}> Read and accept by pressing the button ✅`
-                ).catch(() => null);
-                if (msgRules) rulesMessages.set(newMember.id, msgRules.id);
-            }
-
-            const langChannel = await newMember.guild.channels.fetch(LANG_CHANNEL_ID).catch(() => null);
-            if (langChannel && !hasLang) {
-                const msgLang = await langChannel.send(
-                    `<@${newMember.id}> n’oubliez pas de choisir votre langue !\n\n----------------------------------------------\n<@${newMember.id}> don’t forget to choose your language !`
-                ).catch(() => null);
-                if (msgLang) langMessages.set(newMember.id, msgLang.id);
+                // Vérifie s'il n'a pas déjà un message en cours pour éviter les doublons
+                const existingMsgId = rulesMessages.get(newMember.id);
+                if (!existingMsgId) {
+                    const msgRules = await rulesChannel.send(
+                        `<@${newMember.id}> Lisez et acceptez en appuyant sur le bouton ✅\n\n----------------------------------------------\n<@${newMember.id}> Read and accept by pressing the button ✅`
+                    ).catch(() => null);
+                    if (msgRules) rulesMessages.set(newMember.id, msgRules.id);
+                }
             }
         }
 
-        // 2. Validation des règles -> Suppression du message Règles
+        // 2. Validation des règles -> Suppression propre du message des règles ET envoi unique du message de langue juste après
         if (!hadRulesRole && hasRulesRole) {
             const rulesChannel = await newMember.guild.channels.fetch(RULES_CHANNEL_ID).catch(() => null);
             await deleteUserMentionMessage(rulesChannel, newMember.id, rulesMessages.get(newMember.id));
             rulesMessages.delete(newMember.id);
+
+            // Une fois les règles acceptées, on envoie le message de langue un par un s'il ne l'a pas encore
+            const langChannel = await newMember.guild.channels.fetch(LANG_CHANNEL_ID).catch(() => null);
+            if (langChannel && !hasLang) {
+                const existingLangMsgId = langMessages.get(newMember.id);
+                if (!existingLangMsgId) {
+                    const msgLang = await langChannel.send(
+                        `<@${newMember.id}> n’oubliez pas de choisir votre langue !\n\n----------------------------------------------\n<@${newMember.id}> don’t forget to choose your language !`
+                    ).catch(() => null);
+                    if (msgLang) langMessages.set(newMember.id, msgLang.id);
+                }
+            }
         }
 
-        // 3. Sélection d'une ou deux langues -> Suppression du message Langues
+        // 3. Sélection d'une ou deux langues -> Suppression propre du message Langues
         if (!hadLang && hasLang) {
             const langChannel = await newMember.guild.channels.fetch(LANG_CHANNEL_ID).catch(() => null);
             await deleteUserMentionMessage(langChannel, newMember.id, langMessages.get(newMember.id));
             langMessages.delete(newMember.id);
         }
 
-        // 4. Retrait de toutes les langues -> Relance
+        // 4. Retrait de toutes les langues -> Relance unique
         if (hadLang && !hasLang && hasAdmis) {
             const langChannel = await newMember.guild.channels.fetch(LANG_CHANNEL_ID).catch(() => null);
             if (langChannel) {
-                const msgLang = await langChannel.send(
-                    `<@${newMember.id}> n’oubliez pas de choisir votre langue !\n\n----------------------------------------------\n<@${newMember.id}> don’t forget to choose your language !`
-                ).catch(() => null);
-                if (msgLang) langMessages.set(newMember.id, msgLang.id);
+                const existingLangMsgId = langMessages.get(newMember.id);
+                if (!existingLangMsgId) {
+                    const msgLang = await langChannel.send(
+                        `<@${newMember.id}> n’oubliez pas de choisir votre langue !\n\n----------------------------------------------\n<@${newMember.id}> don’t forget to choose your language !`
+                    ).catch(() => null);
+                    if (msgLang) langMessages.set(newMember.id, msgLang.id);
+                }
             }
         }
     });
