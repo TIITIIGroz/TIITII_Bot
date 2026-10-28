@@ -100,13 +100,13 @@ module.exports = {
         const roleMemberCount = guild.members.cache.filter(member => member.roles.cache.has(targetRoleId)).size;
 
         const embedDescription = `__**Statistiques du serveur:**__\n\n` +
-            `**Nom du serveur**\n${serverName}\n\n` +
-            `**Infos de base**\n` +
+            `**Nom du serveur:**\n\n${serverName}\n\n` +
+            `**Infos de base:**\n` +
             `• Membres actifs à l'écrit : \`${onlineMembers}\`\n` +
             `• Membres actifs en vocal : \`${voiceMembers}\`\n` +
             `• ID du serveur : \`${serverId}\`\n` +
             `• Serveur créé le : <t:${createdAt}:D> (<t:${createdAt}:R>)\n\n` +
-            `**Membres (Rôle <@&${targetRoleId}>)**\n` +
+            `**Membres (Rôle <@&${targetRoleId}>):**\n` +
             `• Total : \`${roleMemberCount}\`\n` +
             `• Il y a un mois : \`${membersMonth}\`\n` +
             `• Il y a 15 jours : \`${members15Days}\`\n` +
@@ -118,8 +118,8 @@ module.exports = {
             `• Durant les dernières 24h : \`${msg24h} messages\`\n` +
             `• Meilleur salon : ${bestTextChannel}\n` +
             `• Meilleur(e) membre : ${bestTextMember}\n\n` +
-            `**Vocal**\n` +
-            `• Durant le mois : \`${voiceMonthHours} heures et ${voiceMonthMinutes} minutes\`\n` +
+            `**Vocal:**\n` +
+            `• Durant le mois : \`${voiceMonthHours} h et ${voiceMonthMinutes} mins\`\n` +
             `• Les 15 derniers jours : \`${voice15Days}\`\n` +
             `• Durant la semaine : \`${voiceWeek}\`\n` +
             `• Durant les dernières 24h : \`${voice24h}\`\n` +
