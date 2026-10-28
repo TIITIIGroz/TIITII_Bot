@@ -43,23 +43,18 @@ module.exports = {
             console.error("Erreur récupération top user BDD :", err);
         }
 
-        // ⏳ Récupération du plus ancien et du plus récent membre de manière sécurisée
+        // ⏳ Récupération du plus ancien et du plus récent membre de manière sécurisée et forcée
         let oldestMemberText = "Inconnu";
         let newestMemberText = "Inconnu";
         try {
-            const members = await guild.members.fetch();
+            const fetchedMembers = await guild.members.fetch({ force: true });
+            const sortedMembers = Array.from(fetchedMembers.values()).sort((a, b) => a.joinedTimestamp - b.joinedTimestamp);
             
-            // On convertit la collection en tableau et on trie par date d'arrivée
-            const membersArray = Array.from(members.values()).filter(m => m.joinedTimestamp);
-            
-            if (membersArray.length > 0) {
-                membersArray.sort((a, b) => a.joinedTimestamp - b.joinedTimestamp);
-
-                const oldest = membersArray[0];
-                const newest = membersArray[membersArray.length - 1];
-
-                if (oldest) oldestMemberText = `<@${oldest.id}> (<t:${Math.floor(oldest.joinedTimestamp / 1000)}:R>)`;
-                if (newest) newestMemberText = `<@${newest.id}> (<t:${Math.floor(newest.joinedTimestamp / 1000)}:R>)`;
+            if (sortedMembers.length > 0) {
+                const oldest = sortedMembers[0];
+                const newest = sortedMembers[sortedMembers.length - 1];
+                oldestMemberText = `<@${oldest.id}> (<t:${Math.floor(oldest.joinedTimestamp / 1000)}:R>)`;
+                newestMemberText = `<@${newest.id}> (<t:${Math.floor(newest.joinedTimestamp / 1000)}:R>)`;
             }
         } catch (err) {
             console.error("Erreur tri des membres :", err);
@@ -83,7 +78,7 @@ module.exports = {
                 { name: '📜 Plus ancien membre', value: oldestMemberText, inline: true },
                 { name: '🆕 Plus récent membre', value: newestMemberText, inline: true }
             )
-            .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` });
+            .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛\\` });
 
         if (guild.bannerURL()) {
             serverEmbed.setImage(guild.bannerURL({ size: 1024 }));
