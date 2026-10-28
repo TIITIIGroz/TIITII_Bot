@@ -40,12 +40,27 @@ const client = new Client({
 
 client.commands = new Collection();
 
+// Chargement des commandes depuis le dossier "commands"
 const commandsPath = path.join(__dirname, "commands");
 if (fs.existsSync(commandsPath)) {
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith(".js"));
     for (const file of commandFiles) {
         const command = require(path.join(commandsPath, file));
         client.commands.set(command.data.name, command);
+    }
+}
+
+// Chargement des événements depuis ton dossier "event" (au singulier)
+const eventPath = path.join(__dirname, "event");
+if (fs.existsSync(eventPath)) {
+    const eventFiles = fs.readdirSync(eventPath).filter(file => file.endsWith(".js"));
+    for (const file of eventFiles) {
+        const event = require(path.join(eventPath, file));
+        if (event.once) {
+            client.once(event.name, (...args) => event.execute(...args, client));
+        } else {
+            client.on(event.name, (...args) => event.execute(...args, client));
+        }
     }
 }
 
@@ -56,7 +71,6 @@ client.on(Events.InteractionCreate, async interaction => {
     if (interaction.isButton()) {
         const customId = interaction.customId;
 
-        // 1. Gestion des boutons personnalisés/traductions enregistrés dans Supabase (Persistant après redémarrage)
         if (customId.startsWith('translate_')) {
             const key = customId.replace('translate_', '');
             try {
@@ -86,7 +100,6 @@ client.on(Events.InteractionCreate, async interaction => {
             }
         }
 
-        // 2. Gestion des autres boutons (ex: Tickets)
         const command = client.commands.get('ticket-setup');
         if (command && typeof command.handleButton === 'function') {
             try { await command.handleButton(interaction); } catch (err) { console.error("Erreur gestion bouton :", err); }
@@ -97,14 +110,13 @@ client.on(Events.InteractionCreate, async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
     const ALLOWED_CHANNEL_ID = '1534722984391082105';
-    const BIRTHDAY_CHANNEL_ID = '1011649291124744212'; // Salon d'anniversaire
+    const BIRTHDAY_CHANNEL_ID = '1011649291124744212';
     const BDAY_COMMANDS = ['anniv-aj', 'anniv-rt'];
 
     const memberRoles = interaction.member.roles.cache;
     const hasAdminRole = ADMIN_ROLE_IDS.some(roleId => memberRoles.has(roleId));
     const isSpecialUser = ADMIN_USER_IDS.includes(interaction.user.id);
 
-    // Autoriser les commandes d'anniversaire dans leur salon dédié, sinon restreindre au salon principal (sauf admins)
     const isBdayCmdInBdayChannel = BDAY_COMMANDS.includes(interaction.commandName) && interaction.channelId === BIRTHDAY_CHANNEL_ID;
 
     if (interaction.channelId !== ALLOWED_CHANNEL_ID && !isBdayCmdInBdayChannel && !hasAdminRole && !isSpecialUser) {
@@ -142,7 +154,9 @@ client.on(Events.MessageCreate, async (message) => {
     await handleXpMessage(message, client);
 });
 
+// --- GESTION UNIFIÉE DES ÉVÉNEMENTS VOCAUX (Salons Temporaires + Temps Vocal Supabase) ---
 const temporaryVoiceChannels = new Map();
+const voiceSessions = new Map();
 
 client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
     const PILOT_CHANNEL_ID = "1533281900318167060";
@@ -150,7 +164,17 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
     const guild = newState.guild;
     const member = newState.member;
 
-    if (newState.channelId === PILOT_CHANNEL_ID) {
+    if (!member || member.user.bot) return;
+
+    const guildId = guild.id;
+    const userId = member.id;
+    const key = `${guildId}-${userId}`;
+
+    const oldChannelId = oldState.channelId;
+    const newChannelId = newState.channelId;
+
+    // 1. Gestion des salons vocaux temporaires
+    if (newChannelId === PILOT_CHANNEL_ID) {
         try {
             const channelName = `Voc ${member.user.username}`;
             const parentCategory = newState.channel?.parent;
@@ -208,6 +232,48 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
             } catch (err) { console.error("Erreur suppression salon vide :", err); }
         }
     }
+
+    // 2. Gestion du suivi du temps vocal dans Supabase (server_voice_activity) avec exclusion des salons ignorés
+    try {
+        // Vérifier si le salon est dans la table des salons ignorés
+        let isIgnored = false;
+        const targetChannelToCheck = newChannelId || oldChannelId;
+        if (targetChannelToCheck) {
+            const { data: ignoredData } = await pool.query(
+                `SELECT 1 FROM ignored_channels WHERE guildid = $1 AND channelid = $2`,
+                [guildId, targetChannelToCheck]
+            );
+            if (ignoredData && ignoredData.length > 0) isIgnored = true;
+        }
+
+        if (!isIgnored) {
+            if (!oldChannelId && newChannelId) {
+                // L'utilisateur rejoint un vocal valide
+                voiceSessions.set(key, { channelId: newChannelId, timestamp: Date.now() });
+            } else if (oldChannelId && (!newChannelId || oldChannelId !== newChannelId)) {
+                // L'utilisateur quitte un vocal ou change de salon
+                const session = voiceSessions.get(key);
+                if (session) {
+                    const durationSeconds = Math.floor((Date.now() - session.timestamp) / 1000);
+
+                    if (durationSeconds > 5) {
+                        await pool.query(
+                            `INSERT INTO server_voice_activity (guildid, userid, channelid, duration_seconds) VALUES ($1, $2, $3, $4)`,
+                            [guildId, userId, session.channelId, durationSeconds]
+                        );
+                    }
+                }
+
+                if (newChannelId) {
+                    voiceSessions.set(key, { channelId: newChannelId, timestamp: Date.now() });
+                } else {
+                    voiceSessions.delete(key);
+                }
+            }
+        }
+    } catch (err) {
+        console.error("Erreur suivi vocal Supabase :", err);
+    }
 });
 
 client.on(Events.GuildMemberRemove, async (member) => {
@@ -232,7 +298,6 @@ client.on(Events.GuildMemberAdd, async (member) => {
     } catch (err) {}
 });
 
-// Événement : Client Prêt (Synchronisation globale sécurisée + Présence + Anniversaires)
 client.once(Events.ClientReady, async () => {
     console.log(`✅ Connecté en tant que ${client.user.tag}`);
     console.log(`📋 Commandes enregistrées : ${client.commands.size}`);
@@ -242,7 +307,6 @@ client.once(Events.ClientReady, async () => {
         status: "online",
     });
 
-    // 🔄 SYNCHRONISATION GLOBALE SÉCURISÉE AU DÉMARRAGE
     console.log("🔄 Lancement de la synchronisation globale des rôles...");
     try {
         for (const [guildId, guild] of client.guilds.cache) {
