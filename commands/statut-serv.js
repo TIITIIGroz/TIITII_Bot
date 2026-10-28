@@ -68,28 +68,28 @@ module.exports = {
             console.error("Erreur tri des membres :", err);
         }
 
-        // Construction de l'embed d'informations avec séparation stricte des blocs par paires
+        // Construction de l'embed d'informations avec les \n intégrés dans les valeurs
         const serverEmbed = new EmbedBuilder()
             .setColor('#5865F2')
             .setTitle(`📊 Informations de ${guild.name}`)
             .setThumbnail(guild.iconURL({ dynamic: true, size: 512 }))
             .addFields(
-                // Groupe 1 : Infos de base
+                // Groupe 1 : Infos de base (avec un \n après la date pour sauter une ligne)
                 { name: '👑 Propriétaire', value: owner ? `${owner}` : 'Inconnu', inline: true },
                 { name: '🆔 ID du serveur', value: `\`${guild.id}\``, inline: true },
-                { name: '📅 Créé le', value: `<t:${createdAt}:D> (<t:${createdAt}:R>)`, inline: false }\n,
+                { name: '📅 Créé le', value: `<t:${createdAt}:D> (<t:${createdAt}:R>)\n`, inline: false },
 
-                // Groupe 2 : Membres et Salons
+                // Groupe 2 : Membres et Salons (avec un \n à la fin)
                 { name: '👥 Membres', value: `Total : **${roleMemberCount}**`, inline: true },
-                { name: '💬 Salons', value: `Texte : **${textChannels}** | Vocaux : **${voiceChannels}** | Catégories : **${categoryChannels}**`, inline: true }\n,
+                { name: '💬 Salons', value: `Texte : **${textChannels}** | Vocaux : **${voiceChannels}** | Catégories : **${categoryChannels}**\n`, inline: true },
 
-                // Groupe 3 : Rôles Linguistiques
+                // Groupe 3 : Rôles Linguistiques (avec un \n à la fin)
                 { name: '🇫🇷 Rôle Français', value: `**${frRoleCount}** membres`, inline: true },
-                { name: '🇬🇧 Rôle Anglais', value: `**${enRoleCount}** membres`, inline: true }\n,
+                { name: '🇬🇧 Rôle Anglais', value: `**${enRoleCount}** membres\n`, inline: true },
 
-                // Groupe 4 : Boost & Niveau
+                // Groupe 4 : Boost & Niveau (avec un \n à la fin)
                 { name: '💎 Boosts', value: `Niveau **${guild.premiumTier}** (**${guild.premiumSubscriptionCount || 0}** boosts)`, inline: true },
-                { name: '🏆 Top Niveau (XP)', value: topUserText, inline: true }\n,
+                { name: '🏆 Top Niveau (XP)', value: `${topUserText}\n`, inline: true },
 
                 // Groupe 5 : Ancienneté
                 { name: '📜 Plus ancien membre', value: oldestMemberText, inline: true },
