@@ -32,7 +32,7 @@ module.exports = {
             '896742491565473812'
         ];
 
-        let membersToday = guild.memberCount;
+        let membersToday = 0;
         let membersMonth = 0;
         let members15Days = 0;
 
@@ -60,8 +60,13 @@ module.exports = {
 
         try {
             const now = Date.now();
-            membersMonth = guild.members.cache.filter(m => m.joinedTimestamp && (now - m.joinedTimestamp) >= 30 * 24 * 60 * 60 * 1000).size;
-            members15Days = guild.members.cache.filter(m => m.joinedTimestamp && (now - m.joinedTimestamp) >= 15 * 24 * 60 * 60 * 1000).size;
+            
+            // Filtrage exclusif sur les membres ayant le rôle targetRoleId
+            const roleMembers = guild.members.cache.filter(member => member.roles.cache.has(targetRoleId));
+            
+            membersToday = roleMembers.size;
+            membersMonth = roleMembers.filter(m => m.joinedTimestamp && (now - m.joinedTimestamp) >= 30 * 24 * 60 * 60 * 1000).size;
+            members15Days = roleMembers.filter(m => m.joinedTimestamp && (now - m.joinedTimestamp) >= 15 * 24 * 60 * 60 * 1000).size;
 
             const placeholders = ignoredChannels.map((_, i) => `$${i + 2}`).join(', ');
 
@@ -155,12 +160,12 @@ module.exports = {
             `• Membres actifs en vocal : \`${voiceMembers}\`\n` +
             `• ID du serveur : \`${serverId}\`\n` +
             `• Serveur créé le : <t:${createdAt}:D> (<t:${createdAt}:R>)\n\n` +
-            `**__Membres (Rôle __<@&${targetRoleId}>__)__:**\n` +
+            `**__Membres__:**\n` +
             `• Total : \`${roleMemberCount}\`\n` +
             `• Il y a un mois : \`${membersMonth}\`\n` +
             `• Il y a 15 jours : \`${members15Days}\`\n` +
             `• Aujourd'hui : \`${membersToday}\`\n\n` +
-            `**__Messages (Hors salons exclus)__:**\n` +
+            `**__Messages__:**\n` +
             `• Durant le mois : \`${msgMonth} messages\`\n` +
             `• Les 15 derniers jours : \`${msg15Days} messages\`\n` +
             `• Durant la semaine : \`${msgWeek} messages\`\n` +
