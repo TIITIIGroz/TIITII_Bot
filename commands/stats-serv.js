@@ -153,7 +153,7 @@ module.exports = {
 
         const roleMemberCount = guild.members.cache.filter(member => member.roles.cache.has(targetRoleId)).size;
 
-        const embedDescription = `__**Statistiques du serveur:**__\n\n` +
+        const embedDescription = `## __**Statistiques du serveur:**__\n\n` +
             `**__Nom du serveur__:**\n\n${serverName}\n\n` +
             `**__Infos de base__:**\n` +
             `• Membres actifs à l'écrit : \`${onlineMembers}\`\n` +
