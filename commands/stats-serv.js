@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const pool = require('../systems/levels/database');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -9,7 +10,6 @@ module.exports = {
         await interaction.deferReply();
 
         const { guild } = interaction;
-        const { database: pool } = require('../systems/levels'); // Ajuste selon ton chemin de base de données
 
         // --- Récupérations basiques du serveur ---
         const serverName = guild.name;
@@ -40,7 +40,7 @@ module.exports = {
         let bestVoiceMember = "Aucun";
 
         try {
-            // 1. Messages des dernières 24h (utilise server_messages ou messages_stats selon ton choix)
+            // 1. Messages des dernières 24h
             const query24h = await pool.query(
                 `SELECT COUNT(*) as count FROM server_messages WHERE guildid = $1 AND created_at >= NOW() - INTERVAL '24 hours'`,
                 [guild.id]
@@ -87,7 +87,7 @@ module.exports = {
             }
 
         } catch (err) {
-            console.error("Erreur lors de la récupération des stats Supabase :", err);
+            console.error("Erreur lors de la récupération des statistiques du serveur :", err);
         }
 
         // Formatage du texte
@@ -115,12 +115,12 @@ module.exports = {
             `• Meilleur(e) membre : ${bestTextMember}\n\n` +
             
             `**Vocal**\n` +
-            `• Durant le mois : \`${voiceMonthDays} jours, ${voiceMonthHours} heures et${voiceMonthMinutes} minutes\`\n` +
+            `• Durant le mois : \`${voiceMonthDays} jours, ${voiceMonthHours} heures et ${voiceMonthMinutes} minutes\`\n` +
             `• Les 15 derniers jours : \`${voice15Days}\`\n` +
             `• Durant la semaine : \`${voiceWeek}\`\n` +
             `• Durant les dernières 24h : \`${voice24h}\`\n` +
             `• Meilleur salon : ${bestVoiceChannel}\n` +
-            `• Meilleur(e) membre : **${bestVoiceMember}**`;
+            `• Meilleur(e) membre : ${bestVoiceMember}`;
 
         const statsEmbed = new EmbedBuilder()
             .setColor('#5865F2')
