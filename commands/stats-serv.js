@@ -10,7 +10,7 @@ module.exports = {
         await interaction.deferReply();
 
         const { guild } = interaction;
-        const targetRoleId = '894668498180124703'; // Rôle spécifique demandé
+        const targetRoleId = '894668498180124703';
 
         const serverName = guild.name;
         const serverId = guild.id;
@@ -21,7 +21,6 @@ module.exports = {
             .filter(channel => channel.isVoiceBased() && channel.id !== '896742491565473812')
             .reduce((acc, channel) => acc + channel.members.size, 0);
 
-        // Salons ignorés pour les messages
         const ignoredChannels = [
             '1350852883649663040', '894680444698779708', '1534205869909082172', '894671498965561394',
             '864920115270909972', '1094755406829584385', '896545873570455553', '897619009556602971',
@@ -41,20 +40,29 @@ module.exports = {
         let bestTextChannel = "Aucun";
         let bestTextMember = "Aucun";
 
-        let voiceMonthHours = 0, voiceMonthMinutes = 0;
-        let voice15Days = "0h 0min";
-        let voiceWeek = "0h 0min";
-        let voice24h = "0h 0min";
+        let voiceMonthFormatted = "0h 0min";
+        let voice15DaysFormatted = "0h 0min";
+        let voiceWeekFormatted = "0h 0min";
+        let voice24hFormatted = "0h 0min";
         let bestVoiceChannel = "Aucun";
         let bestVoiceMember = "Aucun";
 
+        function formatSeconds(totalSeconds) {
+            const secs = parseInt(totalSeconds) || 0;
+            if (secs === 0) return "0h 0min";
+            const days = Math.floor(secs / (24 * 3600));
+            const hours = Math.floor((secs % (24 * 3600)) / 3600);
+            const minutes = Math.floor((secs % 3600) / 60);
+
+            if (days > 0) return `${days} j, ${hours} h et ${minutes} min`;
+            return `${hours} h et ${minutes} min`;
+        }
+
         try {
-            await guild.members.fetch();
             const now = Date.now();
             membersMonth = guild.members.cache.filter(m => m.joinedTimestamp && (now - m.joinedTimestamp) >= 30 * 24 * 60 * 60 * 1000).size;
             members15Days = guild.members.cache.filter(m => m.joinedTimestamp && (now - m.joinedTimestamp) >= 15 * 24 * 60 * 60 * 1000).size;
 
-            // Requêtes SQL en excluant les salons ignorés
             const placeholders = ignoredChannels.map((_, i) => `$${i + 2}`).join(', ');
 
             const query24h = await pool.query(
@@ -93,6 +101,47 @@ module.exports = {
             );
             if (topMember.rows.length > 0) bestTextMember = `<@${topMember.rows[0].userid}>`;
 
+            // --- REQUÊTES VOCALES (server_voice_activity) ---
+            const vMonth = await pool.query(
+                `SELECT SUM(duration_seconds) as total FROM server_voice_activity WHERE guildid = $1`,
+                [guild.id]
+            );
+            voiceMonthFormatted = formatSeconds(vMonth.rows[0]?.total);
+
+            const v15d = await pool.query(
+                `SELECT SUM(duration_seconds) as total FROM server_voice_activity WHERE guildid = $1`,
+                [guild.id]
+            );
+            voice15DaysFormatted = formatSeconds(v15d.rows[0]?.total);
+
+            const vWeek = await pool.query(
+                `SELECT SUM(duration_seconds) as total FROM server_voice_activity WHERE guildid = $1`,
+                [guild.id]
+            );
+            voiceWeekFormatted = formatSeconds(vWeek.rows[0]?.total);
+
+            const v24h = await pool.query(
+                `SELECT SUM(duration_seconds) as total FROM server_voice_activity WHERE guildid = $1`,
+                [guild.id]
+            );
+            voice24hFormatted = formatSeconds(v24h.rows[0]?.total);
+
+            const topVoiceChan = await pool.query(
+                `SELECT channelid, SUM(duration_seconds) as total FROM server_voice_activity WHERE guildid = $1 GROUP BY channelid ORDER BY total DESC LIMIT 1`,
+                [guild.id]
+            );
+            if (topVoiceChan.rows.length > 0 && topVoiceChan.rows[0].channelid) {
+                bestVoiceChannel = `<#${topVoiceChan.rows[0].channelid}>`;
+            }
+
+            const topVoiceMember = await pool.query(
+                `SELECT userid, SUM(duration_seconds) as total FROM server_voice_activity WHERE guildid = $1 GROUP BY userid ORDER BY total DESC LIMIT 1`,
+                [guild.id]
+            );
+            if (topVoiceMember.rows.length > 0 && topVoiceMember.rows[0].userid) {
+                bestVoiceMember = `<@${topVoiceMember.rows[0].userid}>`;
+            }
+
         } catch (err) {
             console.error("Erreur stats-serv :", err);
         }
@@ -106,7 +155,7 @@ module.exports = {
             `• Membres actifs en vocal : \`${voiceMembers}\`\n` +
             `• ID du serveur : \`${serverId}\`\n` +
             `• Serveur créé le : <t:${createdAt}:D> (<t:${createdAt}:R>)\n\n` +
-            `**__Membres (Rôle__ <@&${targetRoleId}>__)__:**\n` +
+            `**__Membres (Rôle <@&${targetRoleId}>)__:**\n` +
             `• Total : \`${roleMemberCount}\`\n` +
             `• Il y a un mois : \`${membersMonth}\`\n` +
             `• Il y a 15 jours : \`${members15Days}\`\n` +
@@ -119,10 +168,10 @@ module.exports = {
             `• Meilleur salon : ${bestTextChannel}\n` +
             `• Meilleur(e) membre : ${bestTextMember}\n\n` +
             `**__Vocal__:**\n` +
-            `• Durant le mois : \`${voiceMonthHours} h et ${voiceMonthMinutes} mins\`\n` +
-            `• Les 15 derniers jours : \`${voice15Days}\`\n` +
-            `• Durant la semaine : \`${voiceWeek}\`\n` +
-            `• Durant les dernières 24h : \`${voice24h}\`\n` +
+            `• Durant le mois : \`${voiceMonthFormatted}\`\n` +
+            `• Les 15 derniers jours : \`${voice15DaysFormatted}\`\n` +
+            `• Durant la semaine : \`${voiceWeekFormatted}\`\n` +
+            `• Durant les dernières 24h : \`${voice24hFormatted}\`\n` +
             `• Meilleur salon : ${bestVoiceChannel}\n` +
             `• Meilleur(e) membre : ${bestVoiceMember}`;
 
