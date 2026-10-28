@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ChannelType } = require('discord.js');
+const pool = require('../systems/levels/database');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -9,7 +10,6 @@ module.exports = {
         await interaction.deferReply();
 
         const { guild } = interaction;
-        const { database: pool } = require('../systems/levels');
         
         // Récupération du propriétaire
         const owner = await guild.fetchOwner().catch(() => null);
@@ -43,18 +43,24 @@ module.exports = {
             console.error("Erreur récupération top user BDD :", err);
         }
 
-        // ⏳ Récupération du plus ancien et du plus récent membre
+        // ⏳ Récupération du plus ancien et du plus récent membre de manière sécurisée
         let oldestMemberText = "Inconnu";
         let newestMemberText = "Inconnu";
         try {
-            await guild.members.fetch();
+            const members = await guild.members.fetch();
             
-            const sortedByJoin = guild.members.cache.sorted((a, b) => a.joinedTimestamp - b.joinedTimestamp);
-            const oldest = sortedByJoin.first();
-            const newest = sortedByJoin.last();
+            // On convertit la collection en tableau et on trie par date d'arrivée
+            const membersArray = Array.from(members.values()).filter(m => m.joinedTimestamp);
+            
+            if (membersArray.length > 0) {
+                membersArray.sort((a, b) => a.joinedTimestamp - b.joinedTimestamp);
 
-            if (oldest) oldestMemberText = `<@${oldest.id}> (<t:${Math.floor(oldest.joinedTimestamp / 1000)}:R>)`;
-            if (newest) newestMemberText = `<@${newest.id}> (<t:${Math.floor(newest.joinedTimestamp / 1000)}:R>)`;
+                const oldest = membersArray[0];
+                const newest = membersArray[membersArray.length - 1];
+
+                if (oldest) oldestMemberText = `<@${oldest.id}> (<t:${Math.floor(oldest.joinedTimestamp / 1000)}:R>)`;
+                if (newest) newestMemberText = `<@${newest.id}> (<t:${Math.floor(newest.joinedTimestamp / 1000)}:R>)`;
+            }
         } catch (err) {
             console.error("Erreur tri des membres :", err);
         }
