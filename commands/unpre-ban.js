@@ -33,14 +33,15 @@ module.exports = {
 
             if (error) throw error;
 
-            // Si aucune ligne n'a été supprimée, c'est que la personne n'était pas pré-bannie
+            // Si aucune ligne n'a été supprimée, l'utilisateur n'avait pas de sanction en attente
             if (!data || data.length === 0) {
                 return await interaction.editReply({ 
                     content: `⚠️ **${targetUser.tag}** n'a aucun pré-ban en attente.` 
                 });
             }
 
-            // 2. Notification en MP au membre concerné
+            // 2. Envoi du Message Privé (MP) à la personne concernée
+            let dmSent = true;
             try {
                 const dmEmbed = new EmbedBuilder()
                     .setTitle('✅ Sanction annulée')
@@ -51,7 +52,8 @@ module.exports = {
 
                 await targetUser.send({ embeds: [dmEmbed] });
             } catch (dmErr) {
-                console.warn(`Impossible d'envoyer un MP à ${targetUser.tag}.`);
+                dmSent = false;
+                console.warn(`Impossible d'envoyer un MP à ${targetUser.tag} (DMs fermés).`);
             }
 
             // 3. Log dans le salon dédié : 1552573413850218587
@@ -63,7 +65,8 @@ module.exports = {
                     .addFields(
                         { name: '👤 Membre concerné', value: `${targetUser.tag} (<@${targetUser.id}>)`, inline: true },
                         { name: '🛡️ Modérateur', value: `<@${interaction.user.id}>`, inline: true },
-                        { name: '📝 Raison de l\'annulation', value: reason }
+                        { name: '📝 Raison de l\'annulation', value: reason },
+                        { name: '📩 MP envoyé', value: dmSent ? 'Oui' : 'Non (DMs fermés)', inline: true }
                     )
                     .setTimestamp();
 
@@ -71,7 +74,7 @@ module.exports = {
             }
 
             await interaction.editReply({ 
-                content: `✅ Le pré-ban de **${targetUser.tag}** a bien été annulé.` 
+                content: `✅ Le pré-ban de **${targetUser.tag}** a bien été annulé.${dmSent ? ' Un message privé lui a été envoyé.' : ' (MP non envoyé : DMs fermés)'}` 
             });
 
         } catch (err) {
