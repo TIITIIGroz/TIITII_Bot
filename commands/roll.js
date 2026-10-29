@@ -28,10 +28,16 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setColor('#2ECC71')
-            .setTitle('🎲 Nombre Aléatoire / Random Number')
+            .setTitle('🎲 Nombre Aléatoire / Random Number\n')
             .setDescription(`Résultat / Result : **${result}** (Entre ${min} et ${max})`)
-            .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` })
-
+            .setFooter({ 
+                text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { 
+                    timeZone: 'Europe/Paris', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                })}\\` 
+            });
+            
         await interaction.reply({ embeds: [embed] });
     },
 };
