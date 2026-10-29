@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const pool = require('../systems/levels/database');
+const { getLevelProgress } = require('../systems/levels/level'); // 📌 Import de la vraie fonction de calcul
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -95,23 +96,30 @@ module.exports = {
             voiceFormatted = `${hours} h et ${minutes} min`;
         }
 
-        const xpRequiredForNextLevel = (level + 1) * 100; 
-        const xpRemaining = Math.max(0, xpRequiredForNextLevel - (totalXp % xpRequiredForNextLevel)); 
+        // 📌 Utilisation de la vraie logique de progression (identique à /rank)
+        const progress = getLevelProgress(totalXp);
+        const xpRemaining = progress.requiredXp - progress.currentXp;
 
         const statsEmbed = new EmbedBuilder()
             .setColor(targetMember.displayHexColor || '#5865F2')
             .setTitle(`📊 Statistiques de ${targetUser.username}`)
             .setThumbnail(targetUser.displayAvatarURL({ dynamic: true, size: 512 }))
             .addFields(
-                { name: '⭐ Niveau', value: `\`${level}\``, inline: true },
-                { name: '🎯 XP restant', value: `\`${xpRemaining} XP\` (pour le niveau ${level + 1})`, inline: true },
+                { name: '⭐ Niveau', value: `\`${progress.level}\``, inline: true },
+                { name: '🎯 XP restant', value: `\`${xpRemaining} XP\` (pour le niveau ${progress.level + 1})`, inline: true },
                 { name: '🏆 Rang', value: `\`${rank}\``, inline: true },
                 { name: '💬 Total des messages envoyés', value: `\`${messagesCount} messages\``, inline: false },
                 { name: '📌 Salon des messages préféré', value: `${favoriteTextChannel}`, inline: false },
                 { name: '⏱️ Total du temps passé en vocal', value: `\`${voiceFormatted}\``, inline: false },
                 { name: '🎧 Salon du vocal préféré', value: `${favoriteVoiceChannel}`, inline: false }
             )
-            .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` });
+            .setFooter({ 
+                text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { 
+                    timeZone: 'Europe/Paris', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                })}\\` 
+            });
 
         await interaction.editReply({ embeds: [statsEmbed] });
     },
