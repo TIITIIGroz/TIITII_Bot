@@ -21,6 +21,8 @@ const { handleXpMessage } = require("./systems/levels/xp");
 const { checkAndReward } = require("./systems/levels/rewards");
 const supabase = require("./supabase"); 
 const pool = require("./systems/levels/database");
+const initPreBanChecker = require('./systems/preBanManager'); // Importation du gestionnaire de pré-ban
+
 console.log("TEST TOKEN :", process.env.TOKEN ? "Le token est bien lu !" : "ATTENTION : Le token est VIDE !");
 
 const client = new Client({
@@ -127,7 +129,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                         { name: '👤 Propriétaire', value: `${member.user.tag} (<@${member.id}>)`, inline: true },
                         { name: '📂 Salon', value: `${tempChannel} (\`${tempChannel.name}\`)`, inline: true }
                     )
-                    .setFooter({ text: '/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛\\' })
+                    .setFooter({ text: '/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑲𝒓𝒐𝒛\\' })
                     .setTimestamp();
                 await logsChannel.send({ embeds: [voiceLogEmbed] });
             }
@@ -151,7 +153,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                             { name: '📂 Salon', value: `\`${emptyChannel.name}\``, inline: true },
                             { name: '👤 Propriétaire initial', value: `<@${ownerId}>`, inline: true }
                         )
-                        .setFooter({ text: '/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛\\' })
+                        .setFooter({ text: '/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑲𝒓𝒐𝒛\\' })
                         .setTimestamp();
                     await logsChannel.send({ embeds: [deleteLogEmbed] });
                 }
@@ -224,6 +226,9 @@ client.on(Events.GuildMemberAdd, async (member) => {
 client.once(Events.ClientReady, async () => {
     console.log(`✅ Connecté en tant que ${client.user.tag}`);
     console.log(`📋 Commandes enregistrées : ${client.commands.size}`);
+
+    // Lancement du système de vérification des pré-bannissements automatiques
+    initPreBanChecker(client);
 
     client.user.setPresence({
         activities: [{ name: "TIITII_Groz sur/on Twitch", type: ActivityType.Streaming, url: "https://www.twitch.tv/TIITII_Groz" }],
@@ -304,7 +309,7 @@ client.once(Events.ClientReady, async () => {
                         .setColor('#FF69B4')
                         .setTitle('🎉 Joyeux Anniversaire ! 🎂')
                         .setDescription(`Tout le monde souhaite un excellent anniversaire à <@${b.user_id}> ! Passe une merveilleuse journée ! 🎈`)
-                        .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` });
+                        .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑲𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` });
 
                     await channel.send({ content: `<@&${PING_ROLE_ID}>`, embeds: [bdayEmbed] });
                 }
