@@ -130,7 +130,6 @@ module.exports = {
                 .setTitle(isFrench ? `📖 Liste des commandes (Page ${pageNum}/${totalPages})` : `📖 Command List (Page ${pageNum}/${totalPages})`)
                 .setDescription(isFrench ? "Voici la liste des commandes disponibles :" : "Here is the list of available commands:")
                 .addFields({ name: '\u200b', value: commandListText || "Aucune commande.", inline: false })
-
                 .setFooter({ 
                 text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { 
                     timeZone: 'Europe/Paris', 
