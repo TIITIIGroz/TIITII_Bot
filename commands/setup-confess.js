@@ -22,8 +22,14 @@ module.exports = {
                 "----------------------------------------------\n\n" +
                 "This is where the confessions will be shown ***__Anonymously__*** ! Write whatever you want as long as it’s respectful. Press the 'Confession' button to create a message at the bottom of the message !"
             )
-            .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛\\` });
-
+                .setFooter({ 
+                text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { 
+                    timeZone: 'Europe/Paris', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                })}\\` 
+            });
+            
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId('btn_open_confession')
