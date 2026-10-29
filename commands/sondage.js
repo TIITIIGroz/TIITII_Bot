@@ -55,13 +55,14 @@ module.exports = {
                 .setTitle(`📊 Sondage : ${question}`)
                 .setDescription(description)
                 .setFooter({ 
-                text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { 
-                    timeZone: 'Europe/Paris', 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                })}\\` 
-            });
-            
+                    text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { 
+                        timeZone: 'Europe/Paris', 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    })}\\` 
+                });
+        }; // ⬅️ L'accolade fermante de generateEmbed était manquante ici !
+
         const generateRow = (disabled = false) => {
             const selectMenu = new StringSelectMenuBuilder()
                 .setCustomId('poll_select')
@@ -71,7 +72,7 @@ module.exports = {
             choices.forEach((choice, index) => {
                 selectMenu.addOptions(
                     new StringSelectMenuOptionBuilder()
-                        .setLabel(choice.length > 100 ? choice.substring(0, 97) + '...' : choice) // Limite Discord à 100 char max par label
+                        .setLabel(choice.length > 100 ? choice.substring(0, 97) + '...' : choice)
                         .setValue(`${index}`)
                 );
             });
