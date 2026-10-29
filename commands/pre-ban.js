@@ -22,6 +22,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('pre-ban')
         .setDescription('Programme un bannissement différé avec un lien de retour')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addUserOption(option => 
             option.setName('membre')
                 .setDescription('Le membre à cibler')
