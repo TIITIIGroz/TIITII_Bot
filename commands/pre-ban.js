@@ -100,8 +100,14 @@ module.exports = {
                     { name: '📝 Raison', value: reason },
                     { name: '🔗 Lien de retour (si non définitif)', value: 'https://discord.gg/ZrZy5d9Mgd' }
                 )
-                .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` })
-
+                .setFooter({ 
+                text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { 
+                    timeZone: 'Europe/Paris', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                })}\\` 
+            });
+            
             await targetUser.send({ embeds: [dmEmbed] });
         } catch (dmErr) {
             console.warn(`Impossible d'envoyer un MP à ${targetUser.tag}.`);
