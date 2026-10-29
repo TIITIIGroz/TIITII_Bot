@@ -70,8 +70,14 @@ module.exports = {
                     .setColor(isFrench ? '#57F287' : '#FEE75C')
                     .setTitle(isFrench ? `Ticket de ${member.user.username} (FR)` : `Ticket for ${member.user.username} (EN)`)
                     .setDescription(isFrench ? "Merci d'avoir ouvert un ticket ! Si c'est une fausse manipulation, ferme-le vite ; sinon, décris ton problème en détail et partage tes preuves sans attendre." : "Thank you for opening a ticket! If this was a mistake, please close it quickly; otherwise, describe your issue in detail and share your proof right away.")
-                    .setFooter({ text: 'Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛' })
-                    .setTimestamp();
+                    .setFooter({ 
+                    text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { 
+                        timeZone: 'Europe/Paris', 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    })}\\` 
+                });
+            
 
                 const closeButtonLabel = isFrench ? 'Fermer le ticket' : 'Close ticket';
                 const closeRow = new ActionRowBuilder().addComponents(
