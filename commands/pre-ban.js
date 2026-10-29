@@ -54,7 +54,7 @@ module.exports = {
         const guildId = interaction.guild.id;
         const authorId = interaction.user.id;
 
-        // Enregistrement persistant dans Supabase
+        // 1. Enregistrement persistant dans Supabase
         const { error } = await supabase.from('scheduled_bans').insert([{
             user_id: targetUser.id,
             guild_id: guildId,
@@ -68,12 +68,30 @@ module.exports = {
             return interaction.editReply({ content: "❌ Erreur lors de l'enregistrement en base de données." });
         }
 
-        // Envoi du log dans le salon demandé : 1552573413850218587
+        // 2. Envoi d'un Message Privé (MP) au membre ciblé avec la raison et le lien de retour
+        try {
+            const dmEmbed = new EmbedBuilder()
+                .setTitle('⚠️ Avertissement : Sanction programmée')
+                .setColor('#E74C3C')
+                .setDescription(`Tu as été programmé pour un bannissement sur le serveur **${interaction.guild.name}**.`)
+                .addFields(
+                    { name: '⏱️ Temps avant application', value: durationStr, inline: true },
+                    { name: '📝 Raison', value: reason },
+                    { name: '🔗 Lien de retour (si non définitif)', value: 'https://discord.gg/ZrZy5d9Mgd' }
+                )
+                .setTimestamp();
+
+            await targetUser.send({ embeds: [dmEmbed] });
+        } catch (dmErr) {
+            console.warn(`Impossible d'envoyer un MP à ${targetUser.tag} (ses DMs sont sûrement fermés).`);
+        }
+
+        // 3. Envoi du log dans le salon dédié : 1552573413850218587
         const logChannelId = '1552573413850218587';
         const logChannel = interaction.guild.channels.cache.get(logChannelId);
 
         if (logChannel) {
-            const embed = new EmbedBuilder()
+            const logEmbed = new EmbedBuilder()
                 .setTitle('⏳ Nouveau Pré-Ban Programmé')
                 .setColor('#FFA500')
                 .addFields(
@@ -85,11 +103,11 @@ module.exports = {
                 )
                 .setTimestamp();
 
-            await logChannel.send({ embeds: [embed] });
+            await logChannel.send({ embeds: [logEmbed] });
         }
 
         await interaction.editReply({ 
-            content: `✅ Le pré-ban de **${targetUser.tag}** a été programmé avec succès. Il sera banni dans **${durationStr}**.` 
+            content: `✅ Le pré-ban de **${targetUser.tag}** a été programmé. Un message privé lui a été envoyé, et il sera banni dans **${durationStr}**.` 
         });
     }
 };
