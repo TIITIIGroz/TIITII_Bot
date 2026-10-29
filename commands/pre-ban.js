@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const supabase = require('../supabase'); // Ajuste le chemin vers ton client Supabase
 
-// Fonction utilitaire pour convertir le format (ex: "5d", "3h", "15m", "30s") en millisecondes
+// Fonction utilitaire pour convertir la durée (ex: "5d", "3h", "15m", "30s") en ms
 function parseDuration(durationStr) {
     const match = durationStr.match(/^(\d+)([dhms])$/i);
     if (!match) return null;
@@ -42,7 +42,29 @@ module.exports = {
         const targetUser = interaction.options.getUser('membre');
         const durationStr = interaction.options.getString('duree');
         const reason = interaction.options.getString('raison');
+        const guildId = interaction.guild.id;
+        const authorId = interaction.user.id;
 
+        // 1. Vérifier si une sanction future existe déjà pour ce membre
+        const { data: existingBan, error: checkError } = await supabase
+            .from('scheduled_bans')
+            .select('id, ban_at')
+            .eq('guild_id', guildId)
+            .eq('user_id', targetUser.id)
+            .maybeSingle();
+
+        if (checkError) {
+            console.error("Erreur lors de la vérification des pré-bans existants :", checkError);
+        }
+
+        if (existingBan) {
+            const banTimestamp = Math.floor(new Date(existingBan.ban_at).getTime() / 1000);
+            return await interaction.editReply({ 
+                content: `⚠️ Impossible de programmer ce pré-ban : **${targetUser.tag}** a déjà une sanction programmée qui s'exécutera le <t:${banTimestamp}:F> (<t:${banTimestamp}:R>).\n\n*Utilise \`/unpre-ban\` si tu souhaites annuler ou modifier la sanction actuelle.*` 
+            });
+        }
+
+        // 2. Validation de la durée
         const durationMs = parseDuration(durationStr);
         if (!durationMs || durationMs <= 0) {
             return interaction.editReply({ 
@@ -51,11 +73,9 @@ module.exports = {
         }
 
         const banAt = new Date(Date.now() + durationMs);
-        const guildId = interaction.guild.id;
-        const authorId = interaction.user.id;
 
-        // 1. Enregistrement persistant dans Supabase
-        const { error } = await supabase.from('scheduled_bans').insert([{
+        // 3. Enregistrement persistant dans Supabase
+        const { error: insertError } = await supabase.from('scheduled_bans').insert([{
             user_id: targetUser.id,
             guild_id: guildId,
             author_id: authorId,
@@ -63,12 +83,12 @@ module.exports = {
             ban_at: banAt.toISOString()
         }]);
 
-        if (error) {
-            console.error("Erreur insertion pré-ban:", error);
+        if (insertError) {
+            console.error("Erreur insertion pré-ban :", insertError);
             return interaction.editReply({ content: "❌ Erreur lors de l'enregistrement en base de données." });
         }
 
-        // 2. Envoi d'un Message Privé (MP) au membre ciblé avec la raison et le lien de retour
+        // 4. Message Privé (MP) au membre ciblé
         try {
             const dmEmbed = new EmbedBuilder()
                 .setTitle('⚠️ Avertissement : Sanction programmée')
@@ -83,10 +103,10 @@ module.exports = {
 
             await targetUser.send({ embeds: [dmEmbed] });
         } catch (dmErr) {
-            console.warn(`Impossible d'envoyer un MP à ${targetUser.tag} (ses DMs sont sûrement fermés).`);
+            console.warn(`Impossible d'envoyer un MP à ${targetUser.tag}.`);
         }
 
-        // 3. Envoi du log dans le salon dédié : 1552573413850218587
+        // 5. Log dans le salon dédié : 1552573413850218587
         const logChannelId = '1552573413850218587';
         const logChannel = interaction.guild.channels.cache.get(logChannelId);
 
@@ -107,7 +127,7 @@ module.exports = {
         }
 
         await interaction.editReply({ 
-            content: `✅ Le pré-ban de **${targetUser.tag}** a été programmé. Un message privé lui a été envoyé, et il sera banni dans **${durationStr}**.` 
+            content: `✅ Le pré-ban de **${targetUser.tag}** a été programmé. Un message privé lui a été envoyé et il sera banni dans **${durationStr}**.` 
         });
     }
 };
