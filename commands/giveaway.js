@@ -66,8 +66,14 @@ module.exports = {
                 .setColor('#2ECC71')
                 .setTitle('🎉 RÉSULTAT DU GIVEAWAY 🎉')
                 .setDescription(`Lot : **${prize}**\n\n🏆 Félicitations à <@${winnerId}> qui remporte le lot !`)
-                .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` })
-
+                .setFooter({ 
+                text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { 
+                    timeZone: 'Europe/Paris', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                })}\\` 
+            });
+            
             await msg.edit({ embeds: [winEmbed], components: [] });
             await interaction.channel.send(`🎊 Félicitations <@${winnerId}> ! Tu as gagné **${prize}** !`);
         });
