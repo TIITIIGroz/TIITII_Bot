@@ -33,14 +33,14 @@ module.exports = {
 
             if (error) throw error;
 
-            // Si aucune ligne n'a été supprimée, l'utilisateur n'avait pas de sanction en attente
+            // Si aucune ligne n'a été supprimée
             if (!data || data.length === 0) {
                 return await interaction.editReply({ 
                     content: `⚠️ **${targetUser.tag}** n'a aucun pré-ban en attente.` 
                 });
             }
 
-            // 2. Envoi du Message Privé (MP) à la personne concernée
+            // 2. Envoi du Message Privé (MP)
             let dmSent = true;
             try {
                 const dmEmbed = new EmbedBuilder()
@@ -56,23 +56,28 @@ module.exports = {
                 console.warn(`Impossible d'envoyer un MP à ${targetUser.tag} (DMs fermés).`);
             }
 
-            // 3. Log dans le salon dédié : 1552573413850218587
-            const logChannel = interaction.guild.channels.cache.get('1552573413850218587');
-            if (logChannel) {
-                const logEmbed = new EmbedBuilder()
-                    .setTitle('🟢 Pré-Ban Annulé')
-                    .setColor('#2ECC71')
-                    .addFields(
-                        { name: '👤 Membre concerné', value: `${targetUser.tag} (<@${targetUser.id}>)`, inline: true },
-                        { name: '🛡️ Modérateur', value: `<@${interaction.user.id}>`, inline: true },
-                        { name: '📝 Raison de l\'annulation', value: reason },
-                        { name: '📩 MP envoyé', value: dmSent ? 'Oui' : 'Non (DMs fermés)', inline: true }
-                    )
-                    .setFooter({ text: `Rôles page ${page + 1}/${totalPages} • /Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` });
+            // 3. Log sécurisé dans le salon dédié : 1552573413850218587
+            try {
+                const logChannel = await interaction.guild.channels.fetch('1552573413850218587').catch(() => null);
+                if (logChannel) {
+                    const logEmbed = new EmbedBuilder()
+                        .setTitle('🟢 Pré-Ban Annulé')
+                        .setColor('#2ECC71')
+                        .addFields(
+                            { name: '👤 Membre concerné', value: `${targetUser.tag} (<@${targetUser.id}>)`, inline: true },
+                            { name: '🛡️ Modérateur', value: `<@${interaction.user.id}>`, inline: true },
+                            { name: '📝 Raison de l\'annulation', value: reason },
+                            { name: '📩 MP envoyé', value: dmSent ? 'Oui' : 'Non (DMs fermés)', inline: true }
+                        )
+                        .setTimestamp();
 
-                await logChannel.send({ embeds: [logEmbed] });
+                    await logChannel.send({ embeds: [logEmbed] });
+                }
+            } catch (logErr) {
+                console.error("Erreur d'envoi du log de pré-ban :", logErr);
             }
 
+            // 4. Confirmation finale à l'utilisateur
             await interaction.editReply({ 
                 content: `✅ Le pré-ban de **${targetUser.tag}** a bien été annulé.${dmSent ? ' Un message privé lui a été envoyé.' : ' (MP non envoyé : DMs fermés)'}` 
             });
