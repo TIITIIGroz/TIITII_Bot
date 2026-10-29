@@ -28,7 +28,7 @@ module.exports = {
             return interaction.editReply("Erreur : collection des commandes introuvable.");
         }
 
-        // 📝 TON ORDRE PERSONNALISÉ STRICT (Modifie l'ordre ici comme tu veux)
+        // 📝 TON ORDRE PERSONNALISÉ STRICT
         const customOrder = [
             'links',
             'rank',
@@ -61,13 +61,9 @@ module.exports = {
                 const indexA = customOrder.indexOf(a);
                 const indexB = customOrder.indexOf(b);
                 
-                // Si les deux sont dans la liste, on respecte l'index
                 if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-                // Si seulement A y est, il passe avant
                 if (indexA !== -1) return -1;
-                // Si seulement B y est, il passe avant
                 if (indexB !== -1) return 1;
-                // Si aucune des deux n'est dans la liste, elles gardent leur ordre d'origine
                 return 0;
             });
 
@@ -131,12 +127,13 @@ module.exports = {
                 .setDescription(isFrench ? "Voici la liste des commandes disponibles :" : "Here is the list of available commands:")
                 .addFields({ name: '\u200b', value: commandListText || "Aucune commande.", inline: false })
                 .setFooter({ 
-                text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { 
-                    timeZone: 'Europe/Paris', 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                })}\\` 
-            });
+                    text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { 
+                        timeZone: 'Europe/Paris', 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    })}\\` 
+                });
+        }; // ⬅️ L'accolade manquante était ici !
 
         // Boutons minimalistes : uniquement les flèches (◀ et ▶)
         const generateRow = (currentPage) => {
