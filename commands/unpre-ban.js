@@ -5,6 +5,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('unpre-ban')
         .setDescription('Annule un bannissement différé programmé')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addUserOption(option => 
             option.setName('membre')
                 .setDescription('Le membre dont tu veux annuler le pré-ban')
