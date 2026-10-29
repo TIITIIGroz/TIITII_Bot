@@ -2,7 +2,7 @@ const { Events, AttachmentBuilder } = require('discord.js');
 const path = require('path');
 const supabase = require('../supabase'); // Connexion Supabase
 
-const MEMBRE_ROLE_ID = '1492064548101034076'; // ID du rôle "Membre" qui déclenche l'accueil unique
+const MEMBRE_ROLE_ID = '894668498180124703'; // ID du rôle "Membre" qui déclenche l'accueil unique
 
 module.exports = (client) => {
     const welcomeChannelId = '894671498965561394'; // Salon avec l'image
