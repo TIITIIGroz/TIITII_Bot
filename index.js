@@ -365,6 +365,7 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
     } catch (err) { console.error("Erreur dans guildMemberUpdate unifié :", err); }
 });
 
+console.log("➡️ Chargement des automatismes...");
 require('./Automatisme/ConfigReminder')(client);
 require('./Automatisme/WelcomeSystem')(client);
 require('./Automatisme/Gbye.js')(client);
@@ -372,6 +373,7 @@ require('./systems/levels/voiceXp')(client);
 require('./systems/confession/confessionSystem')(client);
 require('./Automatisme/ServerStats')(client);
 require('./Automatisme/OnboardingSystem')(client);
+console.log("➡️ Automatismes chargés. Initialisation du Dashboard et connexion Discord...");
 
 const setupDashboard = require('./website/server');
 setupDashboard(client);
