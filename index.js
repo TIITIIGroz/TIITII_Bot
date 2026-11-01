@@ -129,7 +129,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                         { name: '👤 Propriétaire', value: `${member.user.tag} (<@${member.id}>)`, inline: true },
                         { name: '📂 Salon', value: `${tempChannel} (\`${tempChannel.name}\`)`, inline: true }
                     )
-                    .setFooter({ text: '/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑲𝒓𝒐𝒛\\' })
+                    .setFooter({ text: '/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛\\' })
                     .setTimestamp();
                 await logsChannel.send({ embeds: [voiceLogEmbed] });
             }
@@ -153,7 +153,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                             { name: '📂 Salon', value: `\`${emptyChannel.name}\``, inline: true },
                             { name: '👤 Propriétaire initial', value: `<@${ownerId}>`, inline: true }
                         )
-                        .setFooter({ text: '/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑲𝒓𝒐𝒛\\' })
+                        .setFooter({ text: '/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛\\' })
                         .setTimestamp();
                     await logsChannel.send({ embeds: [deleteLogEmbed] });
                 }
@@ -312,7 +312,7 @@ client.once(Events.ClientReady, async () => {
                         .setColor('#FF69B4')
                         .setTitle('🎉 Joyeux Anniversaire ! 🎂')
                         .setDescription(`Tout le monde souhaite un excellent anniversaire à <@${b.user_id}> ! Passe une merveilleuse journée ! 🎈`)
-                        .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑲𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` });
+                        .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` });
 
                     await channel.send({ content: `<@&${PING_ROLE_ID}>`, embeds: [bdayEmbed] });
                 }
@@ -380,10 +380,8 @@ require('./systems/confession/confessionSystem')(client);
 require('./Automatisme/ServerStats')(client);
 require('./Automatisme/OnboardingSystem')(client);
 
-// 3. Lancer la connexion Discord en arrière-plan
+// 3. Lancer la connexion Discord avec un garde-fou (Timeout de 10 secondes)
 console.log("🤖 Tentative de connexion à l'API Discord...");
-client.login(process.env.TOKEN)
-    .then(() => console.log("🤖 Connexion à l'API Discord réussie !"))
-    .catch(err => {
-        console.error("❌ ERREUR FATALE DE CONNEXION DISCORD (Vérifie ton Token) :", err);
-    });
+
+const loginTimeout = setTimeout(() => {
+    console.error("❌ ERREUR CRITIQUE : Le login
