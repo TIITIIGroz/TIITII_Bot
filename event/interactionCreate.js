@@ -85,7 +85,7 @@ module.exports = {
             try {
                 if (interaction.replied || interaction.deferred) {
                     await interaction.editReply(errorMsg);
-                } else if (!interaction.isHidden()) {
+                } else {
                     await interaction.reply(errorMsg);
                 }
             } catch (err) {
