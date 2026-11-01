@@ -235,25 +235,6 @@ client.once(Events.ClientReady, async () => {
         status: "online",
     });
 
-    console.log("🔄 Lancement de la synchronisation globale des rôles...");
-    try {
-        for (const [guildId, guild] of client.guilds.cache) {
-            const resDb = await pool.query(`SELECT userid, level FROM users WHERE guildid = $1`, [guildId]);
-            
-            for (const row of resDb.rows) {
-                if (row.level > 0) {
-                    const member = await guild.members.fetch(row.userid).catch(() => null);
-                    if (member) {
-                        await checkAndReward(member, parseInt(row.level));
-                    }
-                }
-            }
-        }
-        console.log("✅ Synchronisation globale terminée avec succès !");
-    } catch (err) {
-        console.error("❌ Erreur lors de la synchronisation globale :", err);
-    }
-
     const ONLINE_CHANNEL_ID = "1547854332333006899";
     try {
         const channel = await client.channels.fetch(ONLINE_CHANNEL_ID).catch(() => null);
@@ -262,6 +243,28 @@ client.once(Events.ClientReady, async () => {
             await channel.send(`Je suis en ligne depuis <t:${timestamp}:T> !\n----------------------------------------------`);
         }
     } catch (err) { console.error("Erreur message en ligne :", err); }
+
+    // Synchro des rôles lancée en arrière-plan (non bloquante pour le démarrage)
+    setTimeout(async () => {
+        console.log("🔄 Lancement de la synchronisation globale des rôles...");
+        try {
+            for (const [guildId, guild] of client.guilds.cache) {
+                const resDb = await pool.query(`SELECT userid, level FROM users WHERE guildid = $1`, [guildId]);
+                
+                for (const row of resDb.rows) {
+                    if (row.level > 0) {
+                        const member = await guild.members.fetch(row.userid).catch(() => null);
+                        if (member) {
+                            await checkAndReward(member, parseInt(row.level));
+                        }
+                    }
+                }
+            }
+            console.log("✅ Synchronisation globale terminée avec succès !");
+        } catch (err) {
+            console.error("❌ Erreur lors de la synchronisation globale :", err);
+        }
+    }, 5000);
 
     setInterval(async () => {
         const now = new Date();
@@ -318,52 +321,48 @@ client.once(Events.ClientReady, async () => {
     }, 60000);
 });
 
+// --- ÉVÉNEMENT UNIFIÉ GUILD MEMBER UPDATE (Accès, Boosts, Tag) ---
 client.on("guildMemberUpdate", async (oldMember, newMember) => {
-    const ACCESS_ROLE = "1509584318203433001";
-    const TRIGGER_ROLES = ["1269778023826067699", "1533558027825840218"];
-    const hasTriggerRole = TRIGGER_ROLES.some(roleId => newMember.roles.cache.has(roleId));
-    const hasAccessRole = newMember.roles.cache.has(ACCESS_ROLE);
-
     try {
+        // 1. Rôle d'accès
+        const ACCESS_ROLE = "1509584318203433001";
+        const TRIGGER_ROLES = ["1269778023826067699", "1533558027825840218"];
+        const hasTriggerRole = TRIGGER_ROLES.some(roleId => newMember.roles.cache.has(roleId));
+        const hasAccessRole = newMember.roles.cache.has(ACCESS_ROLE);
+
         if (hasTriggerRole && !hasAccessRole) await newMember.roles.add(ACCESS_ROLE);
         if (!hasTriggerRole && hasAccessRole) await newMember.roles.remove(ACCESS_ROLE);
-    } catch (err) { console.error("Erreur rôle d'accès :", err); }
-});
 
-client.on("guildMemberUpdate", async (oldMember, newMember) => {
-    const BOOST_ROLE_ID = "1547695661435195424";
-    const LOG_CHANNEL_ID = "1534224381109076172";
-    const wasBoosting = oldMember.premiumSinceTimestamp !== null;
-    const isBoosting = newMember.premiumSinceTimestamp !== null;
+        // 2. Boosts Nitro
+        const BOOST_ROLE_ID = "1547695661435195424";
+        const LOG_CHANNEL_ID = "1534224381109076172";
+        const wasBoosting = oldMember.premiumSinceTimestamp !== null;
+        const isBoosting = newMember.premiumSinceTimestamp !== null;
 
-    try {
         if (!wasBoosting && isBoosting) {
             if (!newMember.roles.cache.has(BOOST_ROLE_ID)) await newMember.roles.add(BOOST_ROLE_ID);
             const channel = await client.channels.fetch(LOG_CHANNEL_ID).catch(() => null);
-            if (channel) await channel.send(`Le propriétaire et le staff te remerci beaucoup ${newMember} pour le boost du serveur ! Le rôle de soutien t'a été attribué.`);
+            if (channel) await channel.send(`Le propriétaire et le staff te remercient beaucoup ${newMember} pour le boost du serveur ! Le rôle de soutien t'a été attribué.`);
         }
         if (wasBoosting && !isBoosting) {
             if (newMember.roles.cache.has(BOOST_ROLE_ID)) await newMember.roles.remove(BOOST_ROLE_ID);
         }
-    } catch (err) { console.error("Erreur boost :", err); }
-});
 
-client.on("guildMemberUpdate", async (oldMember, newMember) => {
-    const TAG_ROLE_ID = "1547699213700309072";
-    const TARGET_TAG = "GROZ"; 
-    const oldName = oldMember.nickname || oldMember.user.username;
-    const newName = newMember.nickname || newMember.user.username;
-    const hadTag = oldName.includes(TARGET_TAG);
-    const hasTag = newName.includes(TARGET_TAG);
+        // 3. Tag "GROZ"
+        const TAG_ROLE_ID = "1547699213700309072";
+        const TARGET_TAG = "GROZ"; 
+        const oldName = oldMember.nickname || oldMember.user.username;
+        const newName = newMember.nickname || newMember.user.username;
+        const hadTag = oldName.includes(TARGET_TAG);
+        const hasTag = newName.includes(TARGET_TAG);
 
-    try {
         if (!hadTag && hasTag) {
             if (!newMember.roles.cache.has(TAG_ROLE_ID)) await newMember.roles.add(TAG_ROLE_ID);
         }
         if (hadTag && !hasTag) {
             if (newMember.roles.cache.has(TAG_ROLE_ID)) await newMember.roles.remove(TAG_ROLE_ID);
         }
-    } catch (err) { console.error("Erreur tag :", err); }
+    } catch (err) { console.error("Erreur dans guildMemberUpdate unifié :", err); }
 });
 
 require('./Automatisme/ConfigReminder')(client);
