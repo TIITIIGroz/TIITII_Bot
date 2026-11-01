@@ -365,24 +365,25 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
     } catch (err) { console.error("Erreur dans guildMemberUpdate unifié :", err); }
 });
 
-// Connexion Discord prioritaire et chargement propre
+// 1. Démarrer le Dashboard Web IMMÉDIATEMENT pour ouvrir le port Render (10000)
+console.log("🌐 Démarrage du Dashboard web...");
+const setupDashboard = require('./website/server');
+setupDashboard(client);
+
+// 2. Charger les automatismes
+console.log("➡️ Chargement des automatismes...");
+require('./Automatisme/ConfigReminder')(client);
+require('./Automatisme/WelcomeSystem')(client);
+require('./Automatisme/Gbye.js')(client);
+require('./systems/levels/voiceXp')(client);
+require('./systems/confession/confessionSystem')(client);
+require('./Automatisme/ServerStats')(client);
+require('./Automatisme/OnboardingSystem')(client);
+
+// 3. Lancer la connexion Discord en arrière-plan
 console.log("🤖 Tentative de connexion à l'API Discord...");
 client.login(process.env.TOKEN)
-    .then(() => {
-        console.log("🤖 Connexion à l'API Discord réussie !");
-
-        console.log("➡️ Chargement des automatismes...");
-        require('./Automatisme/ConfigReminder')(client);
-        require('./Automatisme/WelcomeSystem')(client);
-        require('./Automatisme/Gbye.js')(client);
-        require('./systems/levels/voiceXp')(client);
-        require('./systems/confession/confessionSystem')(client);
-        require('./Automatisme/ServerStats')(client);
-        require('./Automatisme/OnboardingSystem')(client);
-
-        const setupDashboard = require('./website/server');
-        setupDashboard(client);
-    })
+    .then(() => console.log("🤖 Connexion à l'API Discord réussie !"))
     .catch(err => {
         console.error("❌ ERREUR FATALE DE CONNEXION DISCORD (Vérifie ton Token) :", err);
     });
