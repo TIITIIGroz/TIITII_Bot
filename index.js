@@ -360,26 +360,4 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
             if (!newMember.roles.cache.has(TAG_ROLE_ID)) await newMember.roles.add(TAG_ROLE_ID);
         }
         if (hadTag && !hasTag) {
-            if (newMember.roles.cache.has(TAG_ROLE_ID)) await newMember.roles.remove(TAG_ROLE_ID);
-        }
-    } catch (err) { console.error("Erreur dans guildMemberUpdate unifié :", err); }
-});
-
-console.log("➡️ Chargement des automatismes...");
-require('./Automatisme/ConfigReminder')(client);
-require('./Automatisme/WelcomeSystem')(client);
-require('./Automatisme/Gbye.js')(client);
-require('./systems/levels/voiceXp')(client);
-require('./systems/confession/confessionSystem')(client);
-require('./Automatisme/ServerStats')(client);
-require('./Automatisme/OnboardingSystem')(client);
-console.log("➡️ Automatismes chargés. Initialisation du Dashboard et connexion Discord...");
-
-const setupDashboard = require('./website/server');
-setupDashboard(client);
-
-client.login(process.env.TOKEN)
-    .then(() => console.log("🤖 Connexion à l'API Discord réussie !"))
-    .catch(err => {
-        console.error("❌ ERREUR FATALE DE CONNEXION DISCORD (Vérifie ton Token) :", err);
-    });
+            if (newMember.roles.cache.has(TAG_ROLE_ID)) await newMember.roles.remove(TAG_ROLE_ID
