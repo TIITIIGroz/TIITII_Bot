@@ -376,6 +376,8 @@ require('./Automatisme/OnboardingSystem')(client);
 const setupDashboard = require('./website/server');
 setupDashboard(client);
 
-client.login(process.env.TOKEN).catch(err => {
-    console.error("❌ ERREUR FATALE DE CONNEXION DISCORD :", err);
-});
+client.login(process.env.TOKEN)
+    .then(() => console.log("🤖 Connexion à l'API Discord réussie !"))
+    .catch(err => {
+        console.error("❌ ERREUR FATALE DE CONNEXION DISCORD (Vérifie ton Token) :", err);
+    });
