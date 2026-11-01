@@ -380,12 +380,12 @@ require('./systems/confession/confessionSystem')(client);
 require('./Automatisme/ServerStats')(client);
 require('./Automatisme/OnboardingSystem')(client);
 
-// 3. Lancer la connexion Discord avec un garde-fou (Timeout de 10 secondes)
+// 3. Lancer la connexion Discord avec un garde-fou élargi à 40 secondes (latence Render)
 console.log("🤖 Tentative de connexion à l'API Discord...");
 
 const loginTimeout = setTimeout(() => {
-    console.error("❌ ERREUR CRITIQUE : Le login Discord prend trop de temps. Vérifie tes Gateway Intents sur le Developer Portal !");
-}, 10000);
+    console.error("❌ ERREUR CRITIQUE : Le login Discord prend trop de temps (latence réseau Render).");
+}, 40000);
 
 client.login(process.env.TOKEN)
     .then(() => {
