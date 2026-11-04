@@ -113,14 +113,14 @@ module.exports = {
             console.warn(`Impossible d'envoyer un MP à ${targetUser.tag}.`);
         }
 
-        // 5. Log dans le salon dédié : 1552573413850218587
+        // 5. Log dans le salon dédié : 1552573413850218587 (Programmation)
         const logChannelId = '1552573413850218587';
         const logChannel = interaction.guild.channels.cache.get(logChannelId);
 
         if (logChannel) {
             const logEmbed = new EmbedBuilder()
                 .setTitle('⏳ Nouveau Pré-Ban Programmé')
-                .setColor('#FFA500')
+                .setColor('#FFA500') // Orange pour la programmation
                 .addFields(
                     { name: '👤 Membre ciblé', value: `${targetUser.tag} (<@${targetUser.id}>)`, inline: true },
                     { name: '🛡️ Modérateur', value: `<@${interaction.user.id}>`, inline: true },
@@ -128,8 +128,7 @@ module.exports = {
                     { name: '📝 Raison', value: reason },
                     { name: '🔗 Lien de retour', value: 'https://discord.gg/ZrZy5d9Mgd' }
                 )
-                .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\\` })
-
+                .setFooter({ text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` })
 
             await logChannel.send({ embeds: [logEmbed] });
         }
