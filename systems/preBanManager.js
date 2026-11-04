@@ -1,3 +1,4 @@
+const { EmbedBuilder } = require('discord.js');
 const supabase = require('../supabase');
 
 function initPreBanChecker(client) {
@@ -29,10 +30,27 @@ function initPreBanChecker(client) {
                         reason: `Pré-ban expiré. Raison initiale : ${ban.reason}` 
                     });
 
-                    // Log de l'exécution dans le salon 1552573413850218587
+                    // Log de l'exécution dans le salon 1552573413850218587 avec un Embed ROUGE
                     const logChannel = guild.channels.cache.get('1552573413850218587');
                     if (logChannel) {
-                        logChannel.send(`🔨 Le délai est écoulé : <@${ban.user_id}> vient d'être **banni** automatiquement (Raison : ${ban.reason}) | Lien de retour : https://discord.gg/ZrZy5d9Mgd`);
+                        const banLogEmbed = new EmbedBuilder()
+                            .setTitle('🔨 Pré-Ban Exécuté (Membre Banni)')
+                            .setColor('#E74C3C') // <-- Couleur ROUGE demandée
+                            .addFields(
+                                { name: '👤 Membre banni', value: `<@${ban.user_id}> (\`${ban.user_id}\`)`, inline: true },
+                                { name: '📝 Raison', value: ban.reason },
+                                { name: '🔗 Lien de retour', value: 'https://discord.gg/ZrZy5d9Mgd' }
+                            )
+                            .setTimestamp()
+                            .setFooter({ 
+                                text: `/Bot créé par 𝑻𝑰𝑰𝑻𝑰𝑰_𝑮𝒓𝒐𝒛 - ${new Date().toLocaleTimeString('fr-FR', { 
+                                    timeZone: 'Europe/Paris', 
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                })}` 
+                            });
+
+                        await logChannel.send({ embeds: [banLogEmbed] });
                     }
 
                 } catch (banErr) {
