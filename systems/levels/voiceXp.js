@@ -13,9 +13,14 @@ module.exports = (client) => {
     // 🔒 Rôles prison
     const PRISON_ROLES = ["1549495761761214484", "913882559363043388"];
 
+    // ⏱️ Map pour suivre l'heure d'arrivée des membres en vocal (clé : `${guildId}-${userId}`, valeur : timestamp)
+    const voiceSessions = new Map();
+
     // Vérification toutes les 60 secondes (60000 ms)
     setInterval(async () => {
         try {
+            const currentActiveUsers = new Set();
+
             // Parcourt tous les serveurs du bot
             for (const guild of client.guilds.cache.values()) {
                 // Parcourt tous les salons vocaux
@@ -31,11 +36,43 @@ module.exports = (client) => {
 
                         // 🔒 RÔLES PRISON : Si l'utilisateur a un rôle prison, il ne gagne aucun XP vocal
                         if (member.roles.cache.some(role => PRISON_ROLES.includes(role.id))) {
-                            continue; // Ignore ce membre pour l'XP vocal
+                            continue;
                         }
 
                         const userId = member.id;
                         const guildId = guild.id;
+                        const sessionKey = `${guildId}-${userId}`;
+                        currentActiveUsers.add(sessionKey);
+
+                        const nowTime = Date.now();
+                        
+                        // Si l'utilisateur n'a pas de session enregistrée, on l'initialise
+                        if (!voiceSessions.has(sessionKey)) {
+                            voiceSessions.set(sessionKey, nowTime);
+                        }
+
+                        const joinTime = voiceSessions.get(sessionKey);
+                        const durationMs = nowTime - joinTime;
+                        const twoHoursMs = 2 * 60 * 60 * 1000; // 2 heures en millisecondes
+
+                        const isAlone = channel.members.size === 1;
+                        const isMuted = member.voice.mute; // Muet (micro coupé)
+                        const isDeaf = member.voice.deaf;   // Sourdine (audio coupé)
+
+                        // 🛑 RÈGLE 1 : Sourdine + Seul = Pas d'XP
+                        if (isDeaf && isAlone) {
+                            continue;
+                        }
+
+                        // 🛑 RÈGLE 2 : Muet
+                        // S'il est muet, il ne gagne de l'XP que s'il est à plusieurs (isAlone === false) 
+                        // OU si cela fait au moins 2 heures qu'il est dans le salon (durationMs >= twoHoursMs)
+                        if (isMuted) {
+                            if (isAlone && durationMs < twoHoursMs) {
+                                continue; // Pas d'XP
+                            }
+                        }
+
                         const voiceXpEarned = 2; // XP gagné par minute en vocal
 
                         // Vérifie si l'utilisateur existe déjà en BDD
@@ -84,6 +121,14 @@ module.exports = (client) => {
                     }
                 }
             }
+
+            // Nettoyage de la Map pour les utilisateurs qui ont quitté le vocal
+            for (const [key] of voiceSessions.entries()) {
+                if (!currentActiveUsers.has(key)) {
+                    voiceSessions.delete(key);
+                }
+            }
+
         } catch (error) {
             console.error("❌ Erreur dans le système d'XP vocal :", error);
         }
