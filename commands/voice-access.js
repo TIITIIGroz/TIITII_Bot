@@ -3,11 +3,20 @@ const { SlashCommandBuilder, MessageFlags, PermissionFlagsBits } = require('disc
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('voice-access')
-        .setDescription('Autorise une ou plusieurs personnes à accéder à ton salon vocal caché')
+        .setDescription('Autorise une ou plusieurs personnes à accéder à ton salon vocal et gère sa visibilité')
         .setDescriptionLocalizations({
-            fr: "Autorise une ou plusieurs personnes à accéder à ton salon vocal caché",
-            "en-US": "Grants one or more people access to your hidden voice channel"
+            fr: "Autorise une ou plusieurs personnes à accéder à ton salon vocal et gère sa visibilité",
+            "en-US": "Grants one or more people access to your voice channel and manages visibility"
         })
+        .addStringOption(option =>
+            option.setName('cacher')
+                .setDescription('Écris oui ou non pour cacher le salon à tout le monde / Type yes or no to hide the channel from everyone')
+                .setDescriptionLocalizations({
+                    fr: "Écris oui ou non pour cacher le salon à tout le monde",
+                    "en-US": "Type yes or no to hide the channel from everyone"
+                })
+                .setRequired(true)
+        )
         .addUserOption(option =>
             option.setName('ami1')
                 .setDescription('Le premier ami à autoriser / First friend to allow')
@@ -43,6 +52,22 @@ module.exports = {
             });
         }
 
+        // Récupérer le choix de l'option "cacher" (converti en minuscules pour éviter les soucis de casse)
+        const cacherInput = interaction.options.getString('cacher').trim().toLowerCase();
+
+        // Vérifier si la réponse correspond à "oui" ou "non" (en acceptant aussi l'anglais yes/no au cas où)
+        const ouiValues = ['oui', 'yes'];
+        const nonValues = ['non', 'no'];
+
+        if (!ouiValues.includes(cacherInput) && !nonValues.includes(cacherInput)) {
+            return await interaction.reply({
+                content: `❌ Réponse invalide pour l'option de masquage. Tu dois écrire **oui** ou **non** (ou *yes* / *no* selon la langue de ton Discord).`,
+                flags: [MessageFlags.Ephemeral]
+            });
+        }
+
+        const shouldHide = ouiValues.includes(cacherInput);
+
         // Récupérer tous les amis mentionnés dans les options (jusqu'à 4)
         const friends = [
             interaction.options.getUser('ami1'),
@@ -59,9 +84,17 @@ module.exports = {
         }
 
         try {
+            // 2. Si l'utilisateur a répondu "oui", on retire l'accès à tout le monde (@everyone)
+            if (shouldHide) {
+                await userVoiceChannel.permissionOverwrites.edit(interaction.guild.id, {
+                    [PermissionFlagsBits.ViewChannel]: false,
+                    [PermissionFlagsBits.Connect]: false
+                });
+            }
+
             const allowedNames = [];
 
-            // Appliquer les permissions pour chaque ami mentionné
+            // 3. Appliquer les permissions pour chaque ami mentionné
             for (const friend of friends) {
                 await userVoiceChannel.permissionOverwrites.edit(friend.id, {
                     [PermissionFlagsBits.ViewChannel]: true,
@@ -72,9 +105,10 @@ module.exports = {
             }
 
             const friendListStr = allowedNames.join(', ');
+            const hideMessage = shouldHide ? " (et le salon a été masqué à tout le monde)" : "";
 
             return await interaction.reply({
-                content: `✅ Accès accordé ! ${friendListStr} peut/peuvent désormais voir et rejoindre ton salon vocal.`,
+                content: `✅ Accès accordé${hideMessage} ! ${friendListStr} peut/peuvent désormais voir et rejoindre ton salon vocal.`,
                 flags: [MessageFlags.Ephemeral]
             });
 
