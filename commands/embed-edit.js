@@ -35,9 +35,9 @@ module.exports = {
                 .setDescription('Le nouveau texte/description (laisse vide pour ne pas changer)')
                 .setRequired(false)
         )
-        .addAttachmentOption(option =>
-            option.setName('nouvelle_image')
-                .setDescription('Une nouvelle image à inclure')
+        .addStringOption(option =>
+            option.setName('nouvelle_image_url')
+                .setDescription('Lien direct permanent de la nouvelle image (URL en .png / .jpg)')
                 .setRequired(false)
         )
         .addBooleanOption(option =>
@@ -66,7 +66,7 @@ module.exports = {
         const targetChannel = interaction.options.getChannel('salon');
         const newTitle = interaction.options.getString('nouveau_titre');
         const newMessageText = interaction.options.getString('nouveau_message');
-        const newImageAttachment = interaction.options.getAttachment('nouvelle_image');
+        const newImageUrl = interaction.options.getString('nouvelle_image_url');
         const removeImage = interaction.options.getBoolean('supprimer_image');
         const newColorInput = interaction.options.getString('nouvelle_couleur');
 
@@ -102,11 +102,11 @@ module.exports = {
                 updatedEmbed.setDescription(formattedMessage);
             }
 
-            // Gestion de l'image (Suppression prioritaire ou ajout d'une nouvelle)
+            // Gestion de l'image (Suppression prioritaire ou ajout d'une nouvelle URL permanente)
             if (removeImage === true) {
                 updatedEmbed.setImage(null);
-            } else if (newImageAttachment) {
-                updatedEmbed.setImage(newImageAttachment.url);
+            } else if (newImageUrl) {
+                updatedEmbed.setImage(newImageUrl);
             }
 
             if (newColorInput) {
