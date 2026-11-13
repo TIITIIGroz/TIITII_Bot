@@ -13,22 +13,22 @@ const AUTHORIZED_USERS = [
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('embed')
-        .setDescription('Crée un embed personnalisé (avec option d\'image) dans le salon de ton choix')
+        .setDescription('Crée un embed personnalisé (avec URL d\'image) dans le salon de ton choix')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
         .addStringOption(option =>
             option.setName('titre')
                 .setDescription('Le titre de l\'embed')
-                .setRequired(false) // Devenu optionnel si tu veux mettre juste une image
+                .setRequired(false)
         )
         .addStringOption(option =>
             option.setName('message')
                 .setDescription('Le texte/description de l\'embed')
-                .setRequired(false) // Devenu optionnel
+                .setRequired(false)
         )
-        .addAttachmentOption(option =>
-            option.setName('image')
-                .setDescription('Une photo à inclure dans l\'embed')
-                .setRequired(false) // Optionnel aussi
+        .addStringOption(option =>
+            option.setName('image-url')
+                .setDescription('Lien direct permanent de l\'image (URL en .png / .jpg)')
+                .setRequired(false)
         )
         .addStringOption(option =>
             option.setName('couleur')
@@ -54,18 +54,18 @@ module.exports = {
 
         const title = interaction.options.getString('titre');
         const messageText = interaction.options.getString('message');
-        const imageAttachment = interaction.options.getAttachment('image');
+        const imageUrl = interaction.options.getString('image-url');
         const colorInput = interaction.options.getString('couleur') || '#FF0000'; // Rouge par défaut
         const targetChannel = interaction.options.getChannel('salon') || interaction.channel;
 
         // Petite sécurité : vérifier qu'on a au moins mis un titre, un message ou une image
-        if (!title && !messageText && !imageAttachment) {
-            return interaction.editReply("❌ Tu dois fournir au moins un **titre**, un **message** ou une **image** pour créer l'embed !");
+        if (!title && !messageText && !imageUrl) {
+            return interaction.editReply("❌ Tu dois fournir au moins un **titre**, un **message** ou une **URL d'image** pour créer l'embed !");
         }
 
         try {
             const customEmbed = new EmbedBuilder()
-                .setColor(colorInput)
+                .setColor(colorInput);
 
             if (title) customEmbed.setTitle(title);
             
@@ -74,9 +74,9 @@ module.exports = {
                 customEmbed.setDescription(formattedMessage);
             }
 
-            // Si une image a été jointe, on l'ajoute dans l'embed
-            if (imageAttachment) {
-                customEmbed.setImage(imageAttachment.url);
+            // Si une URL d'image permanente a été fournie, on l'ajoute
+            if (imageUrl) {
+                customEmbed.setImage(imageUrl);
             }
 
             // Envoyer l'embed dans le salon cible
@@ -88,7 +88,7 @@ module.exports = {
 
         } catch (error) {
             console.error("❌ Erreur lors de la création de l'embed :", error);
-            await interaction.editReply("❌ Une erreur est survenue lors de la création de l'embed. Vérifie que la couleur est valide (ex: `#FF0000`) ou que l'image est correcte.");
+            await interaction.editReply("❌ Une erreur est survenue. Vérifie que ton lien d'image est valide et commence par `https://`.");
         }
     },
 };
