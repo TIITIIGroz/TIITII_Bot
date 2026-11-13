@@ -3,38 +3,38 @@ const { SlashCommandBuilder, MessageFlags, PermissionFlagsBits } = require('disc
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('voice-access')
-        .setDescription('Autorise une ou plusieurs personnes à accéder à ton salon vocal et gère sa visibilité')
+        .setDescription('Autorise une ou plusieurs personnes à accéder à ton salon vocal')
         .setDescriptionLocalizations({
-            fr: "Autorise une ou plusieurs personnes à accéder à ton salon vocal et gère sa visibilité",
-            "en-US": "Grants one or more people access to your voice channel and manages visibility"
+            fr: "Autorise une ou plusieurs personnes à accéder à ton salon vocal",
+            "en-US": "Grants one or more people access to your voice channel"
         })
         .addStringOption(option =>
             option.setName('cacher')
-                .setDescription('Écris oui ou non pour cacher le salon à tout le monde / Type yes or no to hide the channel from everyone')
+                .setDescription('Cacher le salon ? / Hide channel? (oui/non)')
                 .setDescriptionLocalizations({
-                    fr: "Écris oui ou non pour cacher le salon à tout le monde",
-                    "en-US": "Type yes or no to hide the channel from everyone"
+                    fr: "Cacher le salon ? (oui/non)",
+                    "en-US": "Hide channel? (yes/no)"
                 })
                 .setRequired(true)
         )
         .addUserOption(option =>
             option.setName('ami1')
-                .setDescription('Le premier ami à autoriser / First friend to allow')
+                .setDescription('Le premier ami à autoriser')
                 .setRequired(true)
         )
         .addUserOption(option =>
             option.setName('ami2')
-                .setDescription('Un deuxième ami à autoriser (optionnel) / Second friend (optional)')
+                .setDescription('Deuxième ami (optionnel)')
                 .setRequired(false)
         )
         .addUserOption(option =>
             option.setName('ami3')
-                .setDescription('Un troisième ami à autoriser (optionnel) / Third friend (optional)')
+                .setDescription('Troisième ami (optionnel)')
                 .setRequired(false)
         )
         .addUserOption(option =>
             option.setName('ami4')
-                .setDescription('Un quatrième ami à autoriser (optionnel) / Fourth friend (optional)')
+                .setDescription('Quatrième ami (optionnel)')
                 .setRequired(false)
         ),
 
@@ -52,16 +52,15 @@ module.exports = {
             });
         }
 
-        // Récupérer le choix de l'option "cacher" (converti en minuscules pour éviter les soucis de casse)
+        // Récupérer le choix de l'option "cacher" (converti en minuscules)
         const cacherInput = interaction.options.getString('cacher').trim().toLowerCase();
 
-        // Vérifier si la réponse correspond à "oui" ou "non" (en acceptant aussi l'anglais yes/no au cas où)
         const ouiValues = ['oui', 'yes'];
         const nonValues = ['non', 'no'];
 
         if (!ouiValues.includes(cacherInput) && !nonValues.includes(cacherInput)) {
             return await interaction.reply({
-                content: `❌ Réponse invalide pour l'option de masquage. Tu dois écrire **oui** ou **non** (ou *yes* / *no* selon la langue de ton Discord).`,
+                content: `❌ Réponse invalide. Tu dois écrire **oui** ou **non** (ou *yes* / *no*).`,
                 flags: [MessageFlags.Ephemeral]
             });
         }
@@ -74,7 +73,7 @@ module.exports = {
             interaction.options.getUser('ami2'),
             interaction.options.getUser('ami3'),
             interaction.options.getUser('ami4')
-        ].filter(Boolean); // Retire les valeurs nulles/non fournies
+        ].filter(Boolean);
 
         if (friends.length === 0) {
             return await interaction.reply({
