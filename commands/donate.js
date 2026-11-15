@@ -11,7 +11,7 @@ module.exports = {
 
     async execute(interaction) {
         // Tu peux rendre la réponse visible uniquement pour la personne (true) ou pour tout le salon (false)
-        const isEphemeral = true; 
+        const isEphemeral = false; 
 
         const donateEmbed = new EmbedBuilder()
             .setColor('#9b59b6') // Vert pour les dons/soutien
