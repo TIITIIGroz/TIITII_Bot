@@ -1,10 +1,13 @@
 const { Events } = require('discord.js');
 
 module.exports = {
-    name: Events.MessageCreate, // ou simplement 'messageCreate'
+    name: Events.MessageCreate,
     async execute(message, client) {
-        // Ignorer les messages des bots pour éviter les boucles infinies
-        if (message.author.bot) return;
+        // 1. Ignorer les messages des bots ET les messages du bot lui-même
+        if (message.author.bot || message.author.id === client.user.id) return;
+
+        // 2. (Optionnel mais recommandé) Ignorer les messages privés si tu veux que ça fonctionne uniquement sur les serveurs
+        if (!message.guild) return;
 
         const content = message.content.toLowerCase();
 
@@ -18,7 +21,6 @@ module.exports = {
             const inviteLink = "https://discord.gg/ZrZy5d9Mgd";
 
             try {
-                // 1. Envoyer le message privé (ou réponse) à l'utilisateur avec la version Française et Anglaise
                 const helpResponseText = `
 🇫🇷 ___**Français**___ 🇫🇷
 
@@ -37,8 +39,9 @@ If you need assistance on the **${serverName}** server, feel free to check out t
 ${inviteLink}.
                 `.trim();
 
-                // Envoyer en MP si possible, sinon en réponse dans le salon
+                // Envoyer en MP à l'utilisateur
                 await message.author.send(helpResponseText).catch(() => {
+                    // Si ses MP sont fermés, on lui répond dans le salon
                     return message.reply(helpResponseText);
                 });
 
