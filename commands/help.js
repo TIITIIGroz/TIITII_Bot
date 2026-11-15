@@ -31,20 +31,23 @@ module.exports = {
         // 📝 TON ORDRE PERSONNALISÉ STRICT
         const customOrder = [
             'links',
-            'rank',
-            'leaderboard',
+            'donate',
+            'stats',
+            'stats-serv',
             'statut',
             'statut-serv',
             'stats',
             'stats-serv',
-            'voice-access',
-            'voice-hide',
             'bday-add',
             'bday-list',
             'bday-rm',
+            'rank',
+            'leaderboard',
             'anniv-aj',
             'anniv-rt',
-            'anniv-list'
+            'anniv-list',
+            'voice-access',
+            'voice-unaccess'
         ];
 
         // Filtrer et trier strictement selon ton tableau customOrder
