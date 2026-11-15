@@ -23,7 +23,7 @@ Merci de vouloir soutenir le projet et la communauté 𝑭𝒂𝒎𝒊𝒍𝒍�
 Tu peux faire un don ou apporter ton soutien via les liens ci-dessous :
 
 • **PayPal :** https://www.paypal.com/paypalme/TiiTiiGroz
-• **Tipeee :** [Ton lien de don ici]
+• **Tipeee :** https://tipeee.com/TIITIIGROZ
 • **Booster le serveur :** Un grand merci si tu décides de booster le serveur !
 
 ----------------------------------------------
@@ -34,7 +34,7 @@ Thank you for wanting to support the project and the 𝑭𝒂𝒎𝒊𝒍𝒍�
 You can donate or show your support using the links below:
 
 • **PayPal :** https://www.paypal.com/paypalme/TiiTiiGroz
-• **Tipeee :** [Ton lien de don ici]
+• **Tipeee :** https://tipeee.com/TIITIIGROZ
 • **Boost the server:** A huge thank you if you decide to boost the server!
             `.trim())
             .setFooter({ text: 'Merci pour ton soutien ! / Thank you for your support!' });
