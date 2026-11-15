@@ -19,7 +19,7 @@ module.exports = {
             const serverName = "𝑭𝒂𝒎𝒊𝒍𝒍𝒆 𝑮𝒓𝒐𝒛";
             const helpChannelId = "988382286221299813";
             const logsChannelId = "1552573413850218587";
-            const inviteLink = "https://discord.gg/ZrZy5d9Mgd";
+            const inviteLink = "https://discord.gg/nuRh7bjYRk";
 
             try {
                 const helpResponseText = `
