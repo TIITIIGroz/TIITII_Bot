@@ -20,7 +20,8 @@ module.exports = {
             try {
                 // 1. Envoyer le message privé (ou réponse) à l'utilisateur avec la version Française et Anglaise
                 const helpResponseText = `
-🇫🇷 **Français**
+🇫🇷 ___**Français**___ 🇫🇷
+
 Bonjour !
 J'ai remarqué que tu parlais d'aide.
 Si tu as besoin d'assistance sur le serveur **${serverName}**, n'hésite pas à te rendre dans le salon d'aide <#${helpChannelId}> ou à rejoindre notre communauté et demander de l'aide:
@@ -28,7 +29,8 @@ ${inviteLink}.
 
 ----------------------------------------------
 
-🇬🇧 **Anglais**
+🇬🇧 ___**English**___ 🇬🇧
+
 Hello!
 I noticed you were talking about help.
 If you need assistance on the **${serverName}** server, feel free to check out the help channel <#${helpChannelId}> or join our community and ask for help:
