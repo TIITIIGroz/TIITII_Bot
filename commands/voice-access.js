@@ -10,12 +10,12 @@ module.exports = {
         })
         .addStringOption(option =>
             option.setName('cacher')
-                .setDescription('Cacher le salon ? / Hide channel? (oui/non)')
-                .setDescriptionLocalizations({
-                    fr: "Cacher le salon ? (oui/non)",
-                    "en-US": "Hide channel? (yes/no)"
-                })
+                .setDescription('Cacher le salon aux autres membres ? / Hide channel?')
                 .setRequired(true)
+                .addChoices(
+                    { name: 'Oui (Privé / Private)', value: 'oui' },
+                    { name: 'Non (Public)', value: 'non' }
+                )
         )
         .addUserOption(option =>
             option.setName('ami1')
@@ -41,60 +41,67 @@ module.exports = {
     async execute(interaction) {
         const member = interaction.member;
         const PILOT_CHANNEL_ID = "1533281900318167060";
-
-        // 1. Vérifier si l'utilisateur est dans un salon vocal
         const userVoiceChannel = member.voice.channel;
 
-        if (!userVoiceChannel) {
+        // 1. Vérifier que l'utilisateur est dans un vocal (et pas dans le salon pilote)
+        if (!userVoiceChannel || userVoiceChannel.id === PILOT_CHANNEL_ID) {
             return await interaction.reply({
-                content: `❌ Tu n'es dans aucun salon vocal. Rejoins d'abord le salon vocal <#${PILOT_CHANNEL_ID}> pour gérer les accès de ton salon personnalisé !`,
+                content: `❌ Tu dois d'abord rejoindre <#${PILOT_CHANNEL_ID}> pour créer ton salon vocal personnalisé avant d'utiliser cette commande !`,
                 flags: [MessageFlags.Ephemeral]
             });
         }
 
-        // Récupérer le choix de l'option "cacher" (converti en minuscules)
-        const cacherInput = interaction.options.getString('cacher').trim().toLowerCase();
-
-        const ouiValues = ['oui', 'yes'];
-        const nonValues = ['non', 'no'];
-
-        if (!ouiValues.includes(cacherInput) && !nonValues.includes(cacherInput)) {
+        // 2. Sécurité : Vérifier que l'utilisateur est bien le propriétaire / gestionnaire de ce salon
+        if (!userVoiceChannel.permissionsFor(member).has(PermissionFlagsBits.ManageChannels)) {
             return await interaction.reply({
-                content: `❌ Réponse invalide. Tu dois écrire **oui** ou **non** (ou *yes* / *no*).`,
+                content: "❌ Tu n'es pas le propriétaire de ce salon vocal, tu ne peux pas modifier ses accès.",
                 flags: [MessageFlags.Ephemeral]
             });
         }
 
-        const shouldHide = ouiValues.includes(cacherInput);
+        const shouldHide = interaction.options.getString('cacher') === 'oui';
 
-        // Récupérer tous les amis mentionnés dans les options (jusqu'à 4)
-        const friends = [
+        // 3. Récupérer les amis en filtrant les bots, les doublons et l'auteur lui-même
+        const rawFriends = [
             interaction.options.getUser('ami1'),
             interaction.options.getUser('ami2'),
             interaction.options.getUser('ami3'),
             interaction.options.getUser('ami4')
         ].filter(Boolean);
 
-        if (friends.length === 0) {
+        const uniqueFriends = [...new Map(rawFriends.map(u => [u.id, u])).values()]
+            .filter(u => !u.bot && u.id !== member.id);
+
+        if (uniqueFriends.length === 0) {
             return await interaction.reply({
-                content: "❌ Tu dois mentionner au moins un ami (`@utilisateur`) pour lui donner accès.",
+                content: "❌ Tu dois mentionner au moins un ami valide (pas un bot, ni toi-même).",
                 flags: [MessageFlags.Ephemeral]
             });
         }
 
         try {
-            // 2. Si l'utilisateur a répondu "oui", on retire l'accès à tout le monde (@everyone)
+            // 4. Appliquer la visibilité globale (@everyone) et sécuriser l'accès du créateur
             if (shouldHide) {
                 await userVoiceChannel.permissionOverwrites.edit(interaction.guild.id, {
                     [PermissionFlagsBits.ViewChannel]: false,
                     [PermissionFlagsBits.Connect]: false
                 });
+                // S'assurer que le créateur ne s'enferme pas dehors
+                await userVoiceChannel.permissionOverwrites.edit(member.id, {
+                    [PermissionFlagsBits.ViewChannel]: true,
+                    [PermissionFlagsBits.Connect]: true,
+                    [PermissionFlagsBits.Speak]: true
+                });
+            } else {
+                await userVoiceChannel.permissionOverwrites.edit(interaction.guild.id, {
+                    [PermissionFlagsBits.ViewChannel]: null,
+                    [PermissionFlagsBits.Connect]: null
+                });
             }
 
+            // 5. Donner l'accès aux amis sélectionnés
             const allowedNames = [];
-
-            // 3. Appliquer les permissions pour chaque ami mentionné
-            for (const friend of friends) {
+            for (const friend of uniqueFriends) {
                 await userVoiceChannel.permissionOverwrites.edit(friend.id, {
                     [PermissionFlagsBits.ViewChannel]: true,
                     [PermissionFlagsBits.Connect]: true,
@@ -103,18 +110,17 @@ module.exports = {
                 allowedNames.push(friend.toString());
             }
 
-            const friendListStr = allowedNames.join(', ');
-            const hideMessage = shouldHide ? " (et le salon a été masqué à tout le monde)" : "";
+            const statusText = shouldHide ? "🔒 **Salon masqué** à tout le monde" : "🔓 **Salon visible** par tout le monde";
 
             return await interaction.reply({
-                content: `✅ Accès accordé${hideMessage} ! ${friendListStr} peut/peuvent désormais voir et rejoindre ton salon vocal.`,
+                content: `✅ Accès accordé à ${allowedNames.join(', ')} !\n${statusText}.`,
                 flags: [MessageFlags.Ephemeral]
             });
 
         } catch (err) {
             console.error("Erreur lors de l'attribution des accès au vocal :", err);
             return await interaction.reply({
-                content: "❌ Une erreur est survenue lors de la modification des permissions pour tes amis.",
+                content: "❌ Une erreur est survenue lors de la modification des permissions.",
                 flags: [MessageFlags.Ephemeral]
             });
         }
