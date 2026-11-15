@@ -3,11 +3,12 @@ const { Events } = require('discord.js');
 module.exports = {
     name: Events.MessageCreate,
     async execute(message, client) {
-        // 1. Ignorer les messages des bots ET les messages du bot lui-même
+        // 1. Ignorer les messages des bots et les propres messages du bot
         if (message.author.bot || message.author.id === client.user.id) return;
 
-        // 2. (Optionnel mais recommandé) Ignorer les messages privés si tu veux que ça fonctionne uniquement sur les serveurs
-        if (!message.guild) return;
+        // 2. FILTRE STRICT : Si le message vient d'un serveur (guild), on l'ignore totalement !
+        // Le bot ne réagit QUE s'il est en Message Privé (DM).
+        if (message.guild) return;
 
         const content = message.content.toLowerCase();
 
@@ -39,20 +40,17 @@ If you need assistance on the **${serverName}** server, feel free to check out t
 ${inviteLink}.
                 `.trim();
 
-                // Envoyer en MP à l'utilisateur
-                await message.author.send(helpResponseText).catch(() => {
-                    // Si ses MP sont fermés, on lui répond dans le salon
-                    return message.reply(helpResponseText);
-                });
+                // Répondre directement en MP à la personne
+                await message.reply(helpResponseText);
 
-                // 2. Envoyer le message de notification dans le salon de logs
+                // 2. Envoyer le message de notification dans le salon de logs (sur ton serveur principal)
                 const logsChannel = client.channels.cache.get(logsChannelId);
                 if (logsChannel) {
-                    await logsChannel.send(`🛡️ **${message.author.tag}** vient d'envoyer un message d'aide, j'ai répondu.`);
+                    await logsChannel.send(`🛡️ **${message.author.tag}** vient de m'envoyer un message d'aide en MP, j'ai répondu.`);
                 }
 
             } catch (error) {
-                console.error("❌ Erreur dans le système de détection d'aide :", error);
+                console.error("❌ Erreur dans le système de détection d'aide en MP :", error);
             }
         }
     },
