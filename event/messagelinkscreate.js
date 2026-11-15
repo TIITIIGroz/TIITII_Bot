@@ -26,7 +26,7 @@ Bonjour !
 
 Tu souhaites retrouver mes réseaux et mes liens ? Les voici :
 
-___**Tous les liens de TIITII_Groz:**___
+__**Tous les liens de TIITII_Groz:**__
 
 • **Serveur Discord :** ${inviteLink}
 • **Twitch :** https://twitch.tv/TIITII_Groz
@@ -41,7 +41,7 @@ Hello!
 
 Looking for my social media and links? Here they are:
 
-___**All the links of TIITII_Groz:**___
+__**All the links of TIITII_Groz:**__
 
 • **Server Discord :** ${inviteLink}
 • **Twitch :** https://twitch.tv/TIITII_Groz
