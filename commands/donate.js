@@ -18,6 +18,7 @@ module.exports = {
             .setTitle('Soutenir le Créateur du serveur / Support the Creator of the server')
             .setDescription(`
 🇫🇷 ___**Français**___ 🇫🇷
+
 Merci de vouloir soutenir le projet et la communauté 𝑭𝒂𝒎𝒊𝒍𝒍𝒆 𝑮𝒓𝒐𝒛 ! 
 Tu peux faire un don ou apporter ton soutien via les liens ci-dessous :
 
@@ -28,6 +29,7 @@ Tu peux faire un don ou apporter ton soutien via les liens ci-dessous :
 ----------------------------------------------
 
 🇬🇧 ___**English**___ 🇬🇧
+
 Thank you for wanting to support the project and the 𝑭𝒂𝒎𝒊𝒍𝒍𝒆 𝑮𝒓𝒐𝒛 community!
 You can donate or show your support using the links below:
 
