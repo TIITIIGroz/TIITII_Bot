@@ -8,6 +8,15 @@ module.exports = {
             fr: "Retire l'accès à ton salon vocal personnalisé à un ou plusieurs amis",
             "en-US": "Revokes access to your custom voice channel from one or more friends"
         })
+        .addStringOption(option =>
+            option.setName('cacher')
+                .setDescription('Cacher le salon ? / Hide channel? (oui/non)')
+                .setDescriptionLocalizations({
+                    fr: "Cacher le salon ? (oui/non)",
+                    "en-US": "Hide channel? (yes/no)"
+                })
+                .setRequired(true)
+        )
         .addUserOption(option =>
             option.setName('ami1')
                 .setDescription('Le premier ami à retirer')
@@ -43,6 +52,21 @@ module.exports = {
             });
         }
 
+        // Récupérer le choix de l'option "cacher" (converti en minuscules)
+        const cacherInput = interaction.options.getString('cacher').trim().toLowerCase();
+
+        const ouiValues = ['oui', 'yes'];
+        const nonValues = ['non', 'no'];
+
+        if (!ouiValues.includes(cacherInput) && !nonValues.includes(cacherInput)) {
+            return await interaction.reply({
+                content: `❌ Réponse invalide. Tu dois écrire **oui** ou **non** (ou *yes* / *no*).`,
+                flags: [MessageFlags.Ephemeral]
+            });
+        }
+
+        const shouldHide = ouiValues.includes(cacherInput);
+
         // Récupérer tous les amis mentionnés dans les options (jusqu'à 4)
         const friends = [
             interaction.options.getUser('ami1'),
@@ -59,18 +83,33 @@ module.exports = {
         }
 
         try {
+            // 2. Si l'utilisateur a répondu "oui", on cache le salon à tout le monde (@everyone)
+            if (shouldHide) {
+                await userVoiceChannel.permissionOverwrites.edit(interaction.guild.id, {
+                    [PermissionFlagsBits.ViewChannel]: false,
+                    [PermissionFlagsBits.Connect]: false
+                });
+            } else {
+                // Si l'utilisateur a répondu "non", on s'assure de ré-autoriser la visibilité globale si besoin, ou on supprime l'override restrictif de everyone
+                await userVoiceChannel.permissionOverwrites.edit(interaction.guild.id, {
+                    [PermissionFlagsBits.ViewChannel]: null,
+                    [PermissionFlagsBits.Connect]: null
+                });
+            }
+
             const revokedNames = [];
 
-            // Supprimer l'override de permission pour chaque ami mentionné
+            // 3. Supprimer l'override de permission pour chaque ami mentionné
             for (const friend of friends) {
                 await userVoiceChannel.permissionOverwrites.delete(friend.id);
                 revokedNames.push(friend.toString());
             }
 
             const friendListStr = revokedNames.join(', ');
+            const hideMessage = shouldHide ? " (et le salon a été masqué à tout le monde)" : " (et le salon a été rendu visible)";
 
             return await interaction.reply({
-                content: `✅ Accès retiré ! ${friendListStr} ne peut/peuvent plus accéder à ton salon vocal.`,
+                content: `✅ Accès retiré${hideMessage} ! ${friendListStr} ne peut/peuvent plus accéder à ton salon vocal.`,
                 flags: [MessageFlags.Ephemeral]
             });
 
