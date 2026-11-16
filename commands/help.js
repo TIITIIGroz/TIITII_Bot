@@ -42,6 +42,7 @@ module.exports = {
             'bday-list',
             'bday-rm',
             'rank',
+            'my-stats',
             'leaderboard',
             'anniv-aj',
             'anniv-rt',
