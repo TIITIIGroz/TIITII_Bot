@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, MessageFlags, PermissionFlagsBits } = require('discord.js');
+const { temporaryVoiceChannels } = require('../index.js'); // Ajuste si ton dossier commands est imbriqué (ex: '../../index.js')
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -41,27 +42,55 @@ module.exports = {
     async execute(interaction) {
         const member = interaction.member;
         const PILOT_CHANNEL_ID = "1533281900318167060";
-        const userVoiceChannel = member.voice.channel;
+        let userVoiceChannel = member.voice.channel;
 
-        // 1. Vérifier que l'utilisateur est dans un vocal (et pas dans le salon pilote)
+        // 1. Si l'utilisateur n'est pas dans son salon vocal, on le cherche et on le téléporte
         if (!userVoiceChannel || userVoiceChannel.id === PILOT_CHANNEL_ID) {
-            return await interaction.reply({
-                content: `❌ Tu dois d'abord rejoindre <#${PILOT_CHANNEL_ID}> pour créer ton salon vocal personnalisé avant d'utiliser cette commande !`,
-                flags: [MessageFlags.Ephemeral]
-            });
+            let foundChannelId = null;
+            for (const [channelId, ownerId] of temporaryVoiceChannels.entries()) {
+                if (ownerId === member.id) {
+                    foundChannelId = channelId;
+                    break;
+                }
+            }
+
+            if (foundChannelId) {
+                const foundChannel = interaction.guild.channels.cache.get(foundChannelId);
+                if (foundChannel) {
+                    try {
+                        await member.voice.setChannel(foundChannel);
+                        userVoiceChannel = foundChannel;
+                    } catch (err) {
+                        return await interaction.reply({
+                            content: `❌ Tu n'es dans aucun vocal et je n'ai pas pu te téléporter dans ton salon personnalisé.`,
+                            flags: [MessageFlags.Ephemeral]
+                        });
+                    }
+                } else {
+                    temporaryVoiceChannels.delete(foundChannelId);
+                }
+            }
+
+            if (!userVoiceChannel || userVoiceChannel.id === PILOT_CHANNEL_ID) {
+                return await interaction.reply({
+                    content: `❌ Tu ne possèdes aucun salon vocal temporaire actif. Rejoins d'abord <#${PILOT_CHANNEL_ID}> pour en créer un !`,
+                    flags: [MessageFlags.Ephemeral]
+                });
+            }
         }
 
-        // 2. Sécurité : Vérifier que l'utilisateur est bien le propriétaire / gestionnaire de ce salon
-        if (!userVoiceChannel.permissionsFor(member).has(PermissionFlagsBits.ManageChannels)) {
+        // 2. VÉRIFICATION STRICTE DU PROPRIÉTAIRE
+        const ownerId = temporaryVoiceChannels.get(userVoiceChannel.id);
+        if (!ownerId || ownerId !== member.id) {
             return await interaction.reply({
-                content: "❌ Tu n'es pas le propriétaire de ce salon vocal, tu ne peux pas modifier ses accès.",
+                content: "❌ **Accès refusé :** Tu n'es pas le propriétaire de ce salon vocal temporaire, tu ne peux pas utiliser cette commande ici.",
                 flags: [MessageFlags.Ephemeral]
             });
         }
 
         const shouldHide = interaction.options.getString('cacher') === 'oui';
 
-        // 3. Récupérer les amis en filtrant les bots, les doublons et l'auteur lui-même
+        // 3. Récupérer et filtrer les amis (pas de bots, pas de doublons, pas soi-même)
         const rawFriends = [
             interaction.options.getUser('ami1'),
             interaction.options.getUser('ami2'),
@@ -86,7 +115,6 @@ module.exports = {
                     [PermissionFlagsBits.ViewChannel]: false,
                     [PermissionFlagsBits.Connect]: false
                 });
-                // S'assurer que le créateur ne s'enferme pas dehors
                 await userVoiceChannel.permissionOverwrites.edit(member.id, {
                     [PermissionFlagsBits.ViewChannel]: true,
                     [PermissionFlagsBits.Connect]: true,
@@ -113,7 +141,7 @@ module.exports = {
             const statusText = shouldHide ? "🔒 **Salon masqué** à tout le monde" : "🔓 **Salon visible** par tout le monde";
 
             return await interaction.reply({
-                content: `✅ Accès accordé à ${allowedNames.join(', ')} !\n${statusText}.`,
+                content: `✅ Téléporté dans ton salon ! Accès accordé à ${allowedNames.join(', ')} !\n${statusText}.`,
                 flags: [MessageFlags.Ephemeral]
             });
 
