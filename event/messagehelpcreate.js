@@ -30,6 +30,8 @@ J'ai remarqué que tu parlais d'aide.
 Si tu as besoin d'assistance sur le serveur **${serverName}**, n'hésite pas à te rendre dans le salon d'aide <#${helpChannelId}> ou à rejoindre notre communauté et demander de l'aide:
 ${inviteLink}.
 
+Si le problème persiste, rendez-vous sur ce site et cliquez sur l'un des réseaux pour contacter TIITII_Groz.
+
 ----------------------------------------------
 
 🇬🇧 ___**English**___ 🇬🇧
@@ -38,6 +40,7 @@ Hello!
 I noticed you were talking about help.
 If you need assistance on the **${serverName}** server, feel free to check out the help channel <#${helpChannelId}> or join our community and ask for help:
 ${inviteLink}.
+If the issue persists, visit this site and click on one of the social links to contact TIITII_Groz.
                 `.trim();
 
                 // Répondre directement en MP à la personne
