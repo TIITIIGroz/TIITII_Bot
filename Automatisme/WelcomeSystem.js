@@ -48,7 +48,7 @@ module.exports = (client) => {
                 if (welcomeChannel) {
                     const imagePath = path.join(__dirname, '../Images/Welcome.png');
                     const attachment = new AttachmentBuilder(imagePath, { name: 'Welcome.png' });
-                    const welcomeMessage = `Bienvenu(e) ! ${newMember} vient de nous rejoindre, j'espère que tu as pris tes chips 🍟!\n\nWelcome ! ${newMember} just joined us, I hope you took your chips 🍟!`;
+                    const welcomeMessage = `Bienvenu(e) ! ${newMember} vient de nous rejoindre, j'espère que tu as pris tes chips 🍟!\n----------------------------------------------\nWelcome ! ${newMember} just joined us, I hope you took your chips 🍟!`;
 
                     await welcomeChannel.send({
                         content: welcomeMessage,
