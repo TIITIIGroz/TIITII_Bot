@@ -3,9 +3,6 @@ const { Events } = require('discord.js');
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 module.exports = (client) => {
-    // Rôle de catégorie / séparateur attribué à tout le monde lors de l'actualisation
-    const CATEGORY_ROLE_ID = "1571883008640680079";
-
     const SENIORITY_ROLES = [
         { minMonths: 180, id: "1571880924361007174" }, // 15 ans (15 * 12 = 180 mois)
         { minMonths: 168, id: "1571880871865094234" }, // 14 ans
@@ -29,21 +26,11 @@ module.exports = (client) => {
     const allRoleIds = SENIORITY_ROLES.map(r => r.id);
     let isScanning = false;
 
-    // Fonction qui calcule l'ancienneté et met à jour les rôles d'un membre
+    // Fonction qui calcule l'ancienneté et met à jour le rôle d'un membre
     async function updateMemberSeniority(member) {
         if (!member || member.user.bot || !member.joinedTimestamp) return;
 
-        // 1. Attribution du rôle de catégorie à tout le monde
-        try {
-            if (CATEGORY_ROLE_ID && !member.roles.cache.has(CATEGORY_ROLE_ID)) {
-                await member.roles.add(CATEGORY_ROLE_ID).catch(() => {});
-                await wait(350);
-            }
-        } catch (err) {
-            console.error(`❌ Erreur ajout rôle catégorie pour ${member.user.tag} :`, err);
-        }
-
-        // 2. Calcul précis du nombre de mois écoulés depuis l'arrivée sur le serveur
+        // Calcul précis du nombre de mois écoulés depuis l'arrivée sur le serveur
         const now = new Date();
         const joined = new Date(member.joinedTimestamp);
         let months = (now.getFullYear() - joined.getFullYear()) * 12;
@@ -54,14 +41,14 @@ module.exports = (client) => {
         }
         months = Math.max(0, months);
 
-        // Trouver le rôle d'ancienneté correspondant au palier atteint
+        // Trouver le rôle correspondant au palier atteint (la liste est triée du plus grand au plus petit)
         const targetRoleObj = SENIORITY_ROLES.find(r => months >= r.minMonths);
         if (!targetRoleObj) return;
 
         const targetRoleId = targetRoleObj.id;
 
         try {
-            // Retirer les anciens rôles d'ancienneté qui ne correspondent plus
+            // Vérifier si le membre a d'anciens rôles d'ancienneté à retirer
             const rolesToRemove = member.roles.cache.filter(
                 r => allRoleIds.includes(r.id) && r.id !== targetRoleId
             );
@@ -71,7 +58,7 @@ module.exports = (client) => {
                 await wait(350);
             }
 
-            // Ajouter le bon rôle d'ancienneté s'il ne l'a pas encore
+            // Ajouter le bon rôle s'il ne l'a pas encore
             if (!member.roles.cache.has(targetRoleId)) {
                 await member.roles.add(targetRoleId).catch(() => {});
                 await wait(350);
@@ -86,7 +73,7 @@ module.exports = (client) => {
         if (isScanning) return;
         isScanning = true;
 
-        console.log("⏳ Vérification des rôles d'ancienneté et du rôle de catégorie en cours...");
+        console.log("⏳ Vérification des rôles d'ancienneté en cours...");
         let hadError = false;
 
         try {
@@ -114,7 +101,7 @@ module.exports = (client) => {
             }
 
             if (!hadError) {
-                console.log("✅ Rôles d'ancienneté et rôle de catégorie mis à jour !");
+                console.log("✅ Rôles d'ancienneté mis à jour !");
             }
         } finally {
             isScanning = false;
