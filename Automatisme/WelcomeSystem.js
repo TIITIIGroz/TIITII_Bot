@@ -5,16 +5,14 @@ const supabase = require('../supabase'); // Connexion Supabase
 const MEMBRE_ROLE_ID = '894668498180124703'; // ID du rôle "Membre" qui déclenche l'accueil unique
 
 module.exports = (client) => {
-    const welcomeChannelId = '894671498965561394'; // Salon avec l'image
-    const notificationChannelId = '895430893416636417'; // Salon pour le message textuel FR
-    const EN_NOTIFICATION_CHANNEL_ID = "1026121915951230987"; // Salon pour le message textuel EN
+    // Uniquement le salon avec l'image de bienvenue
+    const welcomeChannelId = '894671498965561394';
 
     // 1. Événement lorsqu'un membre obtient le rôle Membre (pour la première fois)
     client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
         const hadMembreRole = oldMember.roles.cache.has(MEMBRE_ROLE_ID);
         const hasMembreRole = newMember.roles.cache.has(MEMBRE_ROLE_ID);
 
-        // Si la personne vient d'obtenir le rôle Membre
         if (!hadMembreRole && hasMembreRole) {
             const guildId = newMember.guild.id;
             const userId = newMember.id;
@@ -32,10 +30,10 @@ module.exports = (client) => {
                     console.error("Erreur vérification welcomed_users :", selectError);
                 }
 
-                // S'il a déjà été accueilli, on ne fait rien (même s'il a retiré et remis son rôle)
+                // S'il a déjà été accueilli, on ne fait rien
                 if (existingUser) return;
 
-                // Sinon, c'est sa toute première fois ! On enregistre son ID en BDD
+                // Enregistrer l'utilisateur en BDD pour garantir l'accueil unique
                 const { error: insertError } = await supabase
                     .from('welcomed_users')
                     .insert([{ guild_id: guildId, user_id: userId }]);
@@ -45,9 +43,7 @@ module.exports = (client) => {
                     return;
                 }
 
-                // --- ENVOI DES MESSAGES DE BIENVENUE ---
-
-                // A. Envoi de l'image et du message bilingue dans le salon de bienvenue
+                // A. Envoi de l'image et du message bilingue dans le salon dédié à la photo
                 const welcomeChannel = await newMember.guild.channels.fetch(welcomeChannelId).catch(() => null);
                 if (welcomeChannel) {
                     const imagePath = path.join(__dirname, '../Images/Welcome.png');
@@ -60,19 +56,7 @@ module.exports = (client) => {
                     });
                 }
 
-                // B. Envoi du message dans le salon de notification FR
-                const notificationChannel = await newMember.guild.channels.fetch(notificationChannelId).catch(() => null);
-                if (notificationChannel) {
-                    await notificationChannel.send(`Bienvenue en français ! ${newMember} vient de nous rejoindre 🇫🇷`);
-                }
-
-                // C. Envoi du message dans le salon de notification EN
-                const enNotificationChannel = await newMember.guild.channels.fetch(EN_NOTIFICATION_CHANNEL_ID).catch(() => null);
-                if (enNotificationChannel) {
-                    await enNotificationChannel.send(`Welcome in English! ${newMember} just joined us 🇬🇧`);
-                }
-
-                // D. Envoi du message de présentation en Message Privé (DM)
+                // B. Envoi du message de présentation en Message Privé (DM)
                 try {
                     const dmMessage = `┌━━━━━━━━━━━━━┐⚕️ 𝑭𝒂𝒎𝒊𝒍𝒍𝒆 𝑮𝒓𝒐𝒛 ⚕️┌━━━━━━━━━━━━━┐
 
@@ -123,8 +107,7 @@ module.exports = (client) => {
         }
     });
 
-    // 2. Si le membre quitte le serveur, on supprime son entrée de Supabase.
-    // Ainsi, s'il quitte et revient plus tard, il recevra son message de bienvenue unique une nouvelle fois.
+    // 2. Si le membre quitte le serveur, on supprime son entrée de Supabase
     client.on(Events.GuildMemberRemove, async (member) => {
         try {
             await supabase
