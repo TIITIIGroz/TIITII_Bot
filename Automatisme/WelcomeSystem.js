@@ -47,12 +47,12 @@ module.exports = (client) => {
 
                 // --- ENVOI DES MESSAGES DE BIENVENUE ---
 
-                // A. Envoi de l'image et du message dans le salon de bienvenue
+                // A. Envoi de l'image et du message bilingue dans le salon de bienvenue
                 const welcomeChannel = await newMember.guild.channels.fetch(welcomeChannelId).catch(() => null);
                 if (welcomeChannel) {
-                    const imagePath = path.join(__dirname, '../Images/Welcome.png'); 
+                    const imagePath = path.join(__dirname, '../Images/Welcome.png');
                     const attachment = new AttachmentBuilder(imagePath, { name: 'Welcome.png' });
-                    const welcomeMessage = `Bienvenu(e) ! ${newMember} vient de nous rejoindre, j'espère que tu as pris tes chips 🍟!`;
+                    const welcomeMessage = `Bienvenu(e) ! ${newMember} vient de nous rejoindre, j'espère que tu as pris tes chips 🍟!\n\nWelcome ! ${newMember} just joined us, I hope you took your chips 🍟!`;
 
                     await welcomeChannel.send({
                         content: welcomeMessage,
@@ -63,13 +63,13 @@ module.exports = (client) => {
                 // B. Envoi du message dans le salon de notification FR
                 const notificationChannel = await newMember.guild.channels.fetch(notificationChannelId).catch(() => null);
                 if (notificationChannel) {
-                    await notificationChannel.send(`${newMember} vient d'arriver dans le royaume !`);
+                    await notificationChannel.send(`Bienvenue en français ! ${newMember} vient de nous rejoindre 🇫🇷`);
                 }
 
                 // C. Envoi du message dans le salon de notification EN
                 const enNotificationChannel = await newMember.guild.channels.fetch(EN_NOTIFICATION_CHANNEL_ID).catch(() => null);
                 if (enNotificationChannel) {
-                    await enNotificationChannel.send(`${newMember} just joined the Kingdom !`);
+                    await enNotificationChannel.send(`Welcome in English! ${newMember} just joined us 🇬🇧`);
                 }
 
                 // D. Envoi du message de présentation en Message Privé (DM)
