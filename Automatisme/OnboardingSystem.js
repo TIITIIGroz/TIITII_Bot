@@ -1,13 +1,13 @@
 const { Events } = require('discord.js');
 
 const ADMIS_ROLE_ID = '1492064548101034076';
-const RULES_ROLE_ID = '894668498180124703'; 
+const RULES_ROLE_ID = '894668498180124703';
 
 const RULES_CHANNEL_ID = '864920115270909972';
 const LANG_CHANNEL_ID = '896545873570455553';
 
-// Salons de discussion où envoyer les messages de bienvenue selon la langue
-const FR_CHAT_CHANNEL_ID = '894671498965561394';
+// Salons textuels FR et EN pour les messages de bienvenue selon la langue choisie
+const FR_CHAT_CHANNEL_ID = '895430893416636417';
 const EN_CHAT_CHANNEL_ID = '1026121915951230987';
 
 const FR_ROLE_ID = '1094758355085574204';
@@ -16,10 +16,10 @@ const EN_ROLE_ID = '1094758180938067989';
 const DELAY_MS = 45000; // 45 secondes d'attente avant d'identifier la personne
 
 const rulesMessages = new Map();
-const langMessages = new Map(); 
+const langMessages = new Map();
 const rulesTimers = new Map(); // Minuteurs en attente pour les règles
 const langTimers = new Map();  // Minuteurs en attente pour la langue
-const welcomeChatSent = new Map();
+const welcomeChatSent = new Map(); // Anti-spam pour éviter les envois répétés
 
 async function deleteUserMentionMessage(channel, userId, knownMsgId = null) {
     if (!channel) return;
@@ -34,7 +34,9 @@ async function deleteUserMentionMessage(channel, userId, knownMsgId = null) {
 
     const fetchedMessages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
     if (fetchedMessages) {
-        const targetMsg = fetchedMessages.find(m => m.author.id === channel.client.user.id && m.content.includes(`<@${userId}>`));
+        const targetMsg = fetchedMessages.find(
+            m => m.author.id === channel.client.user.id && m.content.includes(`<@${userId}>`)
+        );
         if (targetMsg) {
             await targetMsg.delete().catch(() => {});
         }
@@ -64,7 +66,6 @@ module.exports = (client) => {
                 const timer = setTimeout(async () => {
                     rulesTimers.delete(newMember.id);
 
-                    // Re-vérifier l'état actuel du membre après les 45 secondes
                     const freshMember = await newMember.guild.members.fetch(newMember.id).catch(() => null);
                     if (!freshMember || !freshMember.roles.cache.has(ADMIS_ROLE_ID) || freshMember.roles.cache.has(RULES_ROLE_ID)) {
                         return;
@@ -98,7 +99,6 @@ module.exports = (client) => {
                 const timer = setTimeout(async () => {
                     langTimers.delete(newMember.id);
 
-                    // Re-vérifier l'état actuel du membre après les 45 secondes
                     const freshMember = await newMember.guild.members.fetch(newMember.id).catch(() => null);
                     if (!freshMember) return;
 
