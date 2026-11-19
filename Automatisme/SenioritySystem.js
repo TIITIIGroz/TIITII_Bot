@@ -3,23 +3,23 @@ const { Events } = require('discord.js');
 module.exports = (client) => {
     // ⚠️ Remplace les textes "ID_..." par les vrais IDs des rôles que tu viens de créer sur Discord
     const SENIORITY_ROLES = [
-        { minMonths: 180, id: "ID_ROLE_15_ANS" },      // 15 ans (15 * 12 = 180 mois)
-        { minMonths: 168, id: "ID_ROLE_14_ANS" },      // 14 ans
-        { minMonths: 156, id: "ID_ROLE_13_ANS" },      // 13 ans
-        { minMonths: 144, id: "ID_ROLE_12_ANS" },      // 12 ans
-        { minMonths: 132, id: "ID_ROLE_11_ANS" },      // 11 ans
-        { minMonths: 120, id: "ID_ROLE_10_ANS" },      // 10 ans
-        { minMonths: 108, id: "ID_ROLE_9_ANS" },       // 9 ans
-        { minMonths: 96,  id: "ID_ROLE_8_ANS" },       // 8 ans
-        { minMonths: 84,  id: "ID_ROLE_7_ANS" },       // 7 ans
-        { minMonths: 72,  id: "ID_ROLE_6_ANS" },       // 6 ans
-        { minMonths: 60,  id: "ID_ROLE_5_ANS" },       // 5 ans
-        { minMonths: 48,  id: "ID_ROLE_4_ANS" },       // 4 ans
-        { minMonths: 36,  id: "ID_ROLE_3_ANS" },       // 3 ans
-        { minMonths: 24,  id: "ID_ROLE_2_ANS" },       // 2 ans
-        { minMonths: 12,  id: "ID_ROLE_1_AN" },        // 1 an (12 mois et +)
-        { minMonths: 5,   id: "ID_ROLE_MOINS_1_AN" },  // - 1 an (entre 5 et 11 mois)
-        { minMonths: 0,   id: "ID_ROLE_MOINS_5_MOIS" } // - de 5 mois (0 à 4 mois)
+        { minMonths: 180, id: "1571880924361007174" },      // 15 ans (15 * 12 = 180 mois)
+        { minMonths: 168, id: "1571880871865094234" },      // 14 ans
+        { minMonths: 156, id: "1571880830995800096" },      // 13 ans
+        { minMonths: 144, id: "1571880779808641054" },      // 12 ans
+        { minMonths: 132, id: "1571880693934329896" },      // 11 ans
+        { minMonths: 120, id: "1571880469379678378" },      // 10 ans
+        { minMonths: 108, id: "1571880392011677716" },       // 9 ans
+        { minMonths: 96,  id: "1571880330858725478" },       // 8 ans
+        { minMonths: 84,  id: "1571880275615420416" },       // 7 ans
+        { minMonths: 72,  id: "1571879138908835912" },       // 6 ans
+        { minMonths: 60,  id: "1571879050199302265" },       // 5 ans
+        { minMonths: 48,  id: "1571879002140971008" },       // 4 ans
+        { minMonths: 36,  id: "1571878954116059219" },       // 3 ans
+        { minMonths: 24,  id: "1571878885472342088" },       // 2 ans
+        { minMonths: 12,  id: "1571878712046133469" },        // 1 an (12 mois et +)
+        { minMonths: 5,   id: "1571878668370714684" },  // - 1 an (entre 5 et 11 mois)
+        { minMonths: 0,   id: "1571878584845475921" } // - de 5 mois (0 à 4 mois)
     ];
 
     const allRoleIds = SENIORITY_ROLES.map(r => r.id);
