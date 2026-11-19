@@ -260,6 +260,7 @@ require('./systems/confession/confessionSystem')(client);
 require('./Automatisme/ServerStats')(client);
 require('./Automatisme/OnboardingSystem')(client);
 require('./Automatisme/SenioritySystem')(client);
+require('./Automatisme/PreJeuSystem')(client);
 
 client.login(process.env.TOKEN)
     .then(() => console.log("🤖 Connexion à l'API Discord réussie !"))
