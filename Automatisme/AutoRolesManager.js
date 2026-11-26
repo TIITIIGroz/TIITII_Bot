@@ -95,14 +95,19 @@ module.exports = (client) => {
         await evaluateAllRules(member);
     });
 
-    // 3. Vérification au démarrage du bot (sur le cache existant, sans fetch massif)
+    // 3. Scan complet de tous les membres au démarrage du bot
     client.once(Events.ClientReady, () => {
         setTimeout(async () => {
             for (const [, guild] of client.guilds.cache) {
+                await guild.members.fetch().catch(err => {
+                    console.error(`⚠️ [AutoRoles] Impossible de fetch les membres de ${guild.name} :`, err);
+                });
+
                 for (const [, member] of guild.members.cache) {
                     await evaluateAllRules(member);
                 }
             }
-        }, 12000);
+            console.log('✅ [AutoRoles] Vérification complète des rôles terminée.');
+        }, 5000);
     });
 };
