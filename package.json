@@ -14,7 +14,8 @@
     "express": "^4.19.2",
     "express-session": "^1.18.0",
     "mongoose": "^8.7.0",
-    "pg": "^8.11.3"
+    "pg": "^8.11.3",
+    "tmi.js": "^1.8.5"
   },
   "engines": {
     "node": "20.18.0"
