@@ -262,6 +262,7 @@ require('./Automatisme/ServerStats')(client);
 require('./Automatisme/OnboardingSystem')(client);
 require('./Automatisme/SenioritySystem')(client);
 require('./Automatisme/PreJeuSystem')(client);
+try { require('./Automatisme/TwitchChatReader')(client); } catch (err) { console.error("⚠️ Impossible de charger TwitchChatReader :", err.message); }
 
 client.login(process.env.TOKEN)
     .then(() => console.log("🤖 Connexion à l'API Discord réussie !"))
